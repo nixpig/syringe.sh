@@ -33,7 +33,10 @@ func Create(config DbConfig) error {
 		create table if not exists variables_ (
 			id_ integer primary key generated not null, 
 			key_ text not null, 
-			value_ text not null
+			value_ text not null,
+			secret_ boolean,
+			project_name_ text,
+			environment_name_ text
 		)
 	`
 
