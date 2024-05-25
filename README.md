@@ -1,5 +1,7 @@
 # 💉 syringe.sh
 
+A terminal-based utility to securely manage environment variables across projects and environments.
+
 ## Proposed API
 
 Allow omission of any arguments which can be inferred. For example, if current project is already linked then allow omission of `--project` and `--env` arguments when setting a variable.
