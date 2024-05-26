@@ -2,7 +2,6 @@ package internal
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 const (
@@ -33,9 +32,12 @@ func NewVariableStoreSqlite(db *sql.DB) VariableStoreSqlite {
 }
 
 func (v VariableStoreSqlite) Set(variable Variable) error {
-	query := `insert into variables_ (key_, value_, secret_, project_name_, environment_name_) values ($1, $2, $3, $4, $5)`
-
-	fmt.Println("V.DB: ", v.db)
+	query := `insert into 
+		variables_ (key_, value_, secret_, project_name_, environment_name_) 
+		values ($1, $2, $3, $4, $5) 
+		on conflict (key_, project_name_, environment_name_) 
+		do update set value_ = $2, secret_ = $3
+	`
 
 	_, err := v.db.Exec(
 		query,

@@ -1,7 +1,5 @@
 package internal
 
-import "fmt"
-
 type Validator interface {
 	Struct(s interface{}) error
 }
@@ -42,8 +40,6 @@ func (v VariableCliHandler) Set(
 		Value:           variableValue,
 		Secret:          &secret,
 	}
-
-	fmt.Println(variable)
 
 	if err := v.validate.Struct(variable); err != nil {
 		return err

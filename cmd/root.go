@@ -1,10 +1,16 @@
 package cmd
 
 import (
+	"database/sql"
+	"fmt"
 	"os"
 
+	"github.com/nixpig/syringe.sh/internal/config"
+	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/spf13/cobra"
 )
+
+var DB *sql.DB
 
 var rootCmd = &cobra.Command{
 	Use:   "syringe",
@@ -13,7 +19,20 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	err := rootCmd.Execute()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		fmt.Println(fmt.Errorf("unable to load config: %s", err))
+	}
+
+	DB, err = database.Connection(cfg.DatabaseFilePath)
+	if err != nil {
+		fmt.Println(fmt.Errorf("unable to open database connection: %s", err))
+		os.Exit(1)
+	}
+
+	defer DB.Close()
+
+	err = rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
