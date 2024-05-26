@@ -6,22 +6,22 @@ import (
 	"os"
 	"path"
 
+	"github.com/go-playground/validator/v10"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/nixpig/syringe.sh/internal"
 	"github.com/nixpig/syringe.sh/internal/database"
+	internal "github.com/nixpig/syringe.sh/internal/variables"
 	"github.com/spf13/cobra"
 )
 
-// setCmd represents the set command
 var setCmd = &cobra.Command{
 	Use:   "set",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Set an environment variable.",
+	Long: `Set an environment variable against the current project and environment.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Examples:
+  syringe set DB_PASSWORD p4ssw0rd
+  syringe set -p dunce -e dev DB_PASSWORD p4ssw0rd
+	`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) != 2 {
 			fmt.Println(fmt.Errorf("expected 2 arguments - key and value - but got %d", len(args)))
@@ -52,29 +52,50 @@ to quickly create a Cobra application.`,
 			os.Exit(1)
 		}
 
-		store := internal.NewVariableSqliteStore(db)
+		store := internal.NewVariableStoreSqlite(db)
 
-		query := `
-		create table if not exists variables_ (
-			id_ integer primary key autoincrement, 
-			key_ text not null, 
-			value_ text not null,
-			secret_ boolean,
-			project_name_ text,
-			environment_name_ text
-		)
-	`
+		handler := internal.NewVariableCliHandler(store, validator.New())
 
-		_, err = db.Exec(query)
+		projectName, err := cmd.Flags().GetString("project")
 		if err != nil {
-			fmt.Println("ERROR: ", err)
+			fmt.Println("no project provided")
+			os.Exit(1)
 		}
 
-		if err := store.Set(internal.Variable{
-			Key:   args[0],
-			Value: args[1],
-		}); err != nil {
-			fmt.Println(fmt.Errorf("unable to insert: %s", err))
+		environmentName, err := cmd.Flags().GetString("environment")
+		if err != nil {
+			fmt.Println("no environment provided")
+			os.Exit(1)
+		}
+
+		secret, err := cmd.Flags().GetBool("secret")
+		if err != nil {
+			fmt.Println("unable to get secret value")
+			os.Exit(1)
+		}
+
+		fmt.Println("secret value: ", secret)
+
+		variableKey := args[0]
+		variableValue := args[1]
+
+		fmt.Println("args: ",
+			projectName,
+			environmentName,
+			variableKey,
+			variableValue,
+			secret,
+		)
+
+		err = handler.Set(
+			projectName,
+			environmentName,
+			variableKey,
+			variableValue,
+			secret,
+		)
+		if err != nil {
+			fmt.Println("error setting variable: ", err)
 			os.Exit(1)
 		}
 	},
@@ -83,13 +104,7 @@ to quickly create a Cobra application.`,
 func init() {
 	rootCmd.AddCommand(setCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// setCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// setCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	setCmd.Flags().StringP("project", "p", "", "Project")
+	setCmd.Flags().StringP("environment", "e", "", "Environment")
+	setCmd.Flags().BoolP("secret", "s", false, "Variable is secret")
 }
