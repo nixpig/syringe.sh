@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
-	"path"
 
+	"github.com/go-playground/validator/v10"
 	_ "github.com/mattn/go-sqlite3"
+	internal "github.com/nixpig/syringe.sh/internal/variables"
 	"github.com/spf13/cobra"
 )
 
@@ -20,74 +20,38 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
+	Args: cobra.MatchAll(cobra.ExactArgs(1)),
 	Run: func(cmd *cobra.Command, args []string) {
-		userConfigDir, err := os.UserConfigDir()
+		projectName, err := cmd.Flags().GetString("project")
 		if err != nil {
-			fmt.Println(fmt.Errorf("could not find user config directory: %s", err))
+			fmt.Println("no project provided")
 			os.Exit(1)
 		}
 
-		syringeConfigDir := path.Join(userConfigDir, "syringe")
-
-		syringeDatabaseFile := path.Join(syringeConfigDir, "database.db")
-
-		db, err := sql.Open("sqlite3", syringeDatabaseFile)
+		environmentName, err := cmd.Flags().GetString("environment")
 		if err != nil {
-			fmt.Println(fmt.Errorf("could not open database file: %s", err))
+			fmt.Println("no environment provided")
 			os.Exit(1)
 		}
 
-		defer db.Close()
+		variableKey := args[0]
 
-		if err := db.Ping(); err != nil {
-			fmt.Println(fmt.Errorf("could not ping database: %s", err))
+		store := internal.NewVariableStoreSqlite(DB)
+		handler := internal.NewVariableCliHandler(store, validator.New())
+
+		variable, err := handler.Get(projectName, environmentName, variableKey)
+		if err != nil {
+			fmt.Println("error getting variable: ", err)
 			os.Exit(1)
 		}
 
-		var rows *sql.Rows
-		var params = []string{}
-
-		if len(args) == 0 {
-			rows, err = db.Query(`select value_ from variables_`)
-			if err != nil {
-				return
-			}
-		} else {
-			params = append(params, args[0])
-			rows, err = db.Query(`select value_ from variables_ where key_ = ?`, params[0])
-			if err != nil {
-				return
-			}
-		}
-
-		var variables []string
-
-		for rows.Next() {
-			var variable string
-
-			if err := rows.Scan(&variable); err != nil {
-				fmt.Println(fmt.Errorf("unable to scan variable: %s", err))
-				os.Exit(1)
-			}
-
-			variables = append(variables, variable)
-
-		}
-
-		fmt.Println(variables)
+		fmt.Println(variable)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(getCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// getCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// getCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	getCmd.Flags().StringP("project", "p", "", "Project name")
+	getCmd.Flags().StringP("environment", "e", "", "Environment name")
 }

@@ -62,8 +62,7 @@ Examples:
 func init() {
 	rootCmd.AddCommand(setCmd)
 
-	setCmd.Flags().StringP("project", "p", "", "Project")
-	setCmd.Flags().StringP("environment", "e", "", "Environment")
+	setCmd.Flags().StringP("project", "p", "", "Project name")
+	setCmd.Flags().StringP("environment", "e", "", "Environment name")
 	setCmd.Flags().BoolP("secret", "s", false, "Variable is secret")
-
 }

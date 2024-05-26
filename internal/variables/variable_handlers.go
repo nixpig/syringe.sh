@@ -12,6 +12,8 @@ type VariableHandler interface {
 		variableValue string,
 		secret bool,
 	) error
+
+	Get(projectName, environmentName, variableKey string) (string, error)
 }
 
 type VariableCliHandler struct {
@@ -50,4 +52,17 @@ func (v VariableCliHandler) Set(
 	}
 
 	return nil
+}
+
+func (v VariableCliHandler) Get(
+	projectName,
+	environmentName,
+	variableKey string,
+) (string, error) {
+	variable, err := v.store.Get(projectName, environmentName, variableKey)
+	if err != nil {
+		return "", err
+	}
+
+	return variable, nil
 }
