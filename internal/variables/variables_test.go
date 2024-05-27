@@ -13,9 +13,13 @@ func TestVariablesStore(t *testing.T) {
 	scenarios := map[string]func(t *testing.T, mock sqlmock.Sqlmock, store VariableStore){
 		"set new variable in store (success)":          testVariableStoreSetNewSuccess,
 		"set new variable in store (error - database)": testVariableStoreSetNewDatabaseErrror,
-		"get variable from store (success)":            testVariableStoreGetVariableSuccess,
-		"get variable from store (success - empty)":    testVariableStoreGetVariableSuccessEmpty,
-		"get variable from store (error - row scan)":   testVariableStoreGetVariableRowScanError,
+
+		"get variable from store (success)":          testVariableStoreGetVariableSuccess,
+		"get variable from store (success - empty)":  testVariableStoreGetVariableSuccessEmpty,
+		"get variable from store (error - row scan)": testVariableStoreGetVariableRowScanError,
+
+		"delete variable from store (success)":          testVariableStoreDeleteVariableSuccess,
+		"delete variable from store (error - database)": testVariableStoreDeleteVariableDatabaseError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -45,10 +49,12 @@ func testVariableStoreSetNewSuccess(t *testing.T, mock sqlmock.Sqlmock, store Va
 		"dev",
 	).WillReturnResult(mockResult)
 
+	secret := false
+
 	err := store.Set(Variable{
 		Key:             "KEY",
 		Value:           "NAME",
-		Secret:          false,
+		Secret:          &secret,
 		ProjectName:     "project name",
 		EnvironmentName: "dev",
 	})
@@ -68,16 +74,17 @@ func testVariableStoreSetNewDatabaseErrror(t *testing.T, mock sqlmock.Sqlmock, s
 		"dev",
 	).WillReturnError(errors.New("database_error"))
 
+	secret := false
+
 	err := store.Set(Variable{
 		Key:             "KEY",
 		Value:           "NAME",
-		Secret:          false,
+		Secret:          &secret,
 		ProjectName:     "project name",
 		EnvironmentName: "dev",
 	})
 
 	require.EqualError(t, err, "database_error", "should return database error")
-
 	require.NoError(t, mock.ExpectationsWereMet(), "should meet expectations")
 }
 
@@ -96,6 +103,7 @@ func testVariableStoreGetVariableSuccess(t *testing.T, mock sqlmock.Sqlmock, sto
 
 	require.NoError(t, err, "should not return an error")
 	require.Equal(t, "var_value", variable, "should return variable value")
+	require.NoError(t, mock.ExpectationsWereMet(), "should meet expectations")
 }
 
 func testVariableStoreGetVariableSuccessEmpty(t *testing.T, mock sqlmock.Sqlmock, store VariableStore) {
@@ -113,6 +121,7 @@ func testVariableStoreGetVariableSuccessEmpty(t *testing.T, mock sqlmock.Sqlmock
 
 	require.NoError(t, err, "should not return an error")
 	require.Equal(t, "", variable, "should return empty string")
+	require.NoError(t, mock.ExpectationsWereMet(), "should meet expectations")
 }
 
 func testVariableStoreGetVariableRowScanError(t *testing.T, mock sqlmock.Sqlmock, store VariableStore) {
@@ -129,4 +138,35 @@ func testVariableStoreGetVariableRowScanError(t *testing.T, mock sqlmock.Sqlmock
 
 	require.Empty(t, variable, "should return empty string")
 	require.EqualError(t, err, "row_error", "should return row error")
+	require.NoError(t, mock.ExpectationsWereMet(), "should meet expectations")
+}
+
+func testVariableStoreDeleteVariableSuccess(t *testing.T, mock sqlmock.Sqlmock, store VariableStore) {
+	query := `delete from variables_ where project_name_ = $1 and environment_name_ = $2 and key_ = $3`
+
+	mock.ExpectExec(regexp.QuoteMeta(query)).WithArgs(
+		"project_name",
+		"environment_name",
+		"VAR_KEY",
+	).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	err := store.Delete("project_name", "environment_name", "VAR_KEY")
+
+	require.NoError(t, err, "should not return error")
+	require.NoError(t, mock.ExpectationsWereMet(), "should meet expectations")
+}
+
+func testVariableStoreDeleteVariableDatabaseError(t *testing.T, mock sqlmock.Sqlmock, store VariableStore) {
+	query := `delete from variables_ where project_name_ = $1 and environment_name_ = $2 and key_ = $3`
+
+	mock.ExpectExec(regexp.QuoteMeta(query)).WithArgs(
+		"project_name",
+		"environment_name",
+		"VAR_KEY",
+	).WillReturnError(errors.New("database_error"))
+
+	err := store.Delete("project_name", "environment_name", "VAR_KEY")
+
+	require.EqualError(t, err, "database_error", "should return database error")
+	require.NoError(t, mock.ExpectationsWereMet(), "should meet expectations")
 }

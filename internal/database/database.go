@@ -12,6 +12,14 @@ func Connection(path string) (*sql.DB, error) {
 		return nil, err
 	}
 
+	if err := db.Ping(); err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+func CreateTables(db *sql.DB) error {
 	query := `
 		create table if not exists variables_ (
 			id_ integer primary key autoincrement not null, 
@@ -24,14 +32,10 @@ func Connection(path string) (*sql.DB, error) {
 		)
 	`
 
-	_, err = db.Exec(query)
+	_, err := db.Exec(query)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
-
-	return db, nil
+	return nil
 }

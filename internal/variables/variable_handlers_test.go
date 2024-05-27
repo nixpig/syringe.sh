@@ -8,6 +8,32 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var mockStore = new(MockVariableStore)
+var mockValidator = new(MockValidator)
+
+func TestVariableHandlers(t *testing.T) {
+	scenarios := map[string]func(t *testing.T, handler VariableHandler){
+		"test variable handler set variable (success)":            testVariableHandlerSetVariableSuccess,
+		"test variable handler set variable (error - validation)": testVariableHandlerSetVariableValidationError,
+		"test variable handler set variable (error - store)":      testVariableHandlerSetVariableStoreError,
+
+		"test variable handler get variable (success)":       testVariableHandlerGetVariableSuccess,
+		"test variable handler get variable (error - store)": testVariableHandlerGetVariableStoreError,
+
+		"test variable handler delete variable (success)":       testVariableHandlerDeleteVariableSuccess,
+		"test variable handler delete variable (error - store)": testVariableHandlerDeleteVariableStoreError,
+	}
+
+	for scenario, fn := range scenarios {
+		t.Run(scenario, func(t *testing.T) {
+
+			handler := NewVariableCliHandler(mockStore, mockValidator)
+
+			fn(t, handler)
+		})
+	}
+}
+
 type MockVariableStore struct {
 	mock.Mock
 }
@@ -24,6 +50,12 @@ func (s *MockVariableStore) Get(projectName, environmentName, key string) (strin
 	return args.Get(0).(string), args.Error(1)
 }
 
+func (s *MockVariableStore) Delete(projectName, environmentName, key string) error {
+	args := s.Called(projectName, environmentName, key)
+
+	return args.Error(0)
+}
+
 type MockValidator struct {
 	mock.Mock
 }
@@ -34,33 +66,15 @@ func (v *MockValidator) Struct(s interface{}) error {
 	return args.Error(0)
 }
 
-var mockStore = new(MockVariableStore)
-var mockValidator = new(MockValidator)
-
-func TestVariableHandlers(t *testing.T) {
-	scenarios := map[string]func(t *testing.T, handler VariableHandler){
-		"test variable handler set variable (success)":            testVariableHandlerSetVariableSuccess,
-		"test variable handler set variable (error - validation)": testVariableHandlerSetVariableValidationError,
-		"test variable handler set variable (error - store)":      testVariableHandlerSetVariableStoreError,
-	}
-
-	for scenario, fn := range scenarios {
-		t.Run(scenario, func(t *testing.T) {
-
-			handler := NewVariableCliHandler(mockStore, mockValidator)
-
-			fn(t, handler)
-		})
-	}
-}
-
 func testVariableHandlerSetVariableSuccess(t *testing.T, handler VariableHandler) {
+	secret := true
+
 	variable := Variable{
 		ProjectName:     "project_name",
 		EnvironmentName: "environment_name",
 		Key:             "VAR_KEY",
 		Value:           "var_value",
-		Secret:          true,
+		Secret:          &secret,
 	}
 
 	mockValidatorStruct := mockValidator.On("Struct", variable).Return(nil)
@@ -89,12 +103,14 @@ func testVariableHandlerSetVariableSuccess(t *testing.T, handler VariableHandler
 }
 
 func testVariableHandlerSetVariableValidationError(t *testing.T, handler VariableHandler) {
+	secret := true
+
 	variable := Variable{
 		ProjectName:     "project_name",
 		EnvironmentName: "environment_name",
 		Key:             "VAR_KEY",
 		Value:           "var_value",
-		Secret:          true,
+		Secret:          &secret,
 	}
 
 	mockValidatorStruct := mockValidator.
@@ -123,12 +139,14 @@ func testVariableHandlerSetVariableValidationError(t *testing.T, handler Variabl
 }
 
 func testVariableHandlerSetVariableStoreError(t *testing.T, handler VariableHandler) {
+	secret := true
+
 	variable := Variable{
 		ProjectName:     "project_name",
 		EnvironmentName: "environment_name",
 		Key:             "VAR_KEY",
 		Value:           "var_value",
-		Secret:          true,
+		Secret:          &secret,
 	}
 
 	mockValidatorStruct := mockValidator.
@@ -148,7 +166,7 @@ func testVariableHandlerSetVariableStoreError(t *testing.T, handler VariableHand
 	require.EqualError(t, err, "store_error", "should return store error")
 
 	if expectations := mockValidator.AssertExpectations(t); !expectations {
-		t.Error("validatoe was not called as expected")
+		t.Error("validator was not called as expected")
 	}
 
 	if expectations := mockStore.AssertExpectations(t); !expectations {
@@ -157,4 +175,70 @@ func testVariableHandlerSetVariableStoreError(t *testing.T, handler VariableHand
 
 	mockValidatorStruct.Unset()
 	mockStoreSet.Unset()
+}
+
+func testVariableHandlerGetVariableSuccess(t *testing.T, handler VariableHandler) {
+	mockStoreGet := mockStore.
+		On("Get", "project_name", "environment_name", "VAR_KEY").
+		Return("var_value", nil)
+
+	variable, err := handler.Get("project_name", "environment_name", "VAR_KEY")
+
+	require.NoError(t, err, "should not return error")
+	require.Equal(t, "var_value", variable, "should return variable value")
+
+	if expectations := mockStore.AssertExpectations(t); !expectations {
+		t.Error("store was not called as expected")
+	}
+
+	mockStoreGet.Unset()
+}
+
+func testVariableHandlerGetVariableStoreError(t *testing.T, handler VariableHandler) {
+	mockStoreGet := mockStore.
+		On("Get", "project_name", "environment_name", "VAR_KEY").
+		Return("", errors.New("store_error"))
+
+	variable, err := handler.Get("project_name", "environment_name", "VAR_KEY")
+
+	require.Empty(t, variable, "should return empty variable")
+	require.EqualError(t, err, "store_error", "should return store error")
+
+	if expectations := mockStore.AssertExpectations(t); !expectations {
+		t.Error("store was not called as expected")
+	}
+
+	mockStoreGet.Unset()
+}
+
+func testVariableHandlerDeleteVariableSuccess(t *testing.T, handler VariableHandler) {
+	mockStoreDelete := mockStore.
+		On("Delete", "project_name", "environment_name", "VAR_KEY").
+		Return(nil)
+
+	err := handler.Delete("project_name", "environment_name", "VAR_KEY")
+
+	require.NoError(t, err, "should not return error")
+
+	if expectations := mockStore.AssertExpectations(t); !expectations {
+		t.Error("store was not called as expected")
+	}
+
+	mockStoreDelete.Unset()
+}
+
+func testVariableHandlerDeleteVariableStoreError(t *testing.T, handler VariableHandler) {
+	mockStoreDelete := mockStore.
+		On("Delete", "project_name", "environment_name", "VAR_KEY").
+		Return(errors.New("store_error"))
+
+	err := handler.Delete("project_name", "environment_name", "VAR_KEY")
+
+	require.EqualError(t, err, "store_error", "should return store error")
+
+	if expectations := mockStore.AssertExpectations(t); !expectations {
+		t.Error("store was not called as expected")
+	}
+
+	mockStoreDelete.Unset()
 }

@@ -5,37 +5,35 @@ import (
 	"os"
 
 	"github.com/go-playground/validator/v10"
-	_ "github.com/mattn/go-sqlite3"
 	internal "github.com/nixpig/syringe.sh/internal/variables"
 	"github.com/spf13/cobra"
 )
 
 var setCmd = &cobra.Command{
-	Use:   "set",
-	Short: "Set an environment variable.",
-	Long: `Set an environment variable against the current project and environment.
-
-Examples:
-  syringe set DB_PASSWORD p4ssw0rd
-  syringe set -p dunce -e dev DB_PASSWORD p4ssw0rd
-	`,
+	Use:     "set [flags] VARIABLE_KEY VARIABLE_VALUE",
+	Aliases: []string{"s"},
+	Short:   "Set an environment variable",
+	Long:    `Set an environment variable against the current or specified project and environment.`,
+	Example: `  syringe set DB_PASSWORD p4ssw0rd
+  syringe set --env dev DB_PASSWORD p4ssw0rd
+  syringe s -p dunce -e dev DB_PASSWORD p4ssw0rd`,
 	Args: cobra.MatchAll(cobra.ExactArgs(2)),
 	Run: func(cmd *cobra.Command, args []string) {
 		projectName, err := cmd.Flags().GetString("project")
 		if err != nil {
-			fmt.Println("no project provided")
+			fmt.Fprint(os.Stderr, "no project provided")
 			os.Exit(1)
 		}
 
 		environmentName, err := cmd.Flags().GetString("environment")
 		if err != nil {
-			fmt.Println("no environment provided")
+			fmt.Fprint(os.Stderr, "no environment provided")
 			os.Exit(1)
 		}
 
 		secret, err := cmd.Flags().GetBool("secret")
 		if err != nil {
-			fmt.Println("unable to get secret value")
+			fmt.Fprint(os.Stderr, "unable to get secret value")
 			os.Exit(1)
 		}
 
@@ -50,10 +48,10 @@ Examples:
 			environmentName,
 			variableKey,
 			variableValue,
-			secret,
+			&secret,
 		)
 		if err != nil {
-			fmt.Println("error setting variable: ", err)
+			fmt.Fprintf(os.Stderr, "error setting variable: %s", err)
 			os.Exit(1)
 		}
 	},

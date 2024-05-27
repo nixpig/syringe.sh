@@ -1,54 +1,47 @@
 package cmd
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
-	"path"
 
+	"github.com/go-playground/validator/v10"
 	_ "github.com/mattn/go-sqlite3"
+	internal "github.com/nixpig/syringe.sh/internal/variables"
 	"github.com/spf13/cobra"
 )
 
 // removeCmd represents the remove command
 var removeCmd = &cobra.Command{
-	Use:   "remove",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:     "remove [flags] VARIABLE_KEY",
+	Aliases: []string{"r"},
+	Short:   "Remove an environment variable",
+	Long:    `Remove an environment variable against the current or specified project and environment.`,
+	Example: `  syringe remove DB_PASSWORD
+  syringe remove --env dev DB_PASSWORD
+  syringe r -p dunce -e dev DB_PASSWORD`,
+	Args: cobra.MatchAll(cobra.ExactArgs(1)),
 	Run: func(cmd *cobra.Command, args []string) {
-		userConfigDir, err := os.UserConfigDir()
+		projectName, err := cmd.Flags().GetString("project")
 		if err != nil {
-			fmt.Println(fmt.Errorf("could not find user config directory: %s", err))
+			fmt.Fprint(os.Stderr, "no project provided")
 			os.Exit(1)
 		}
 
-		syringeConfigDir := path.Join(userConfigDir, "syringe")
-
-		syringeDatabaseFile := path.Join(syringeConfigDir, "database.db")
-
-		db, err := sql.Open("sqlite3", syringeDatabaseFile)
+		environmentName, err := cmd.Flags().GetString("environment")
 		if err != nil {
-			fmt.Println(fmt.Errorf("could not open database file: %s", err))
+			fmt.Fprint(os.Stderr, "no environment provided")
 			os.Exit(1)
 		}
 
-		defer db.Close()
+		variableKey := args[0]
 
-		if err := db.Ping(); err != nil {
-			fmt.Println(fmt.Errorf("could not ping database: %s", err))
-			os.Exit(1)
-		}
+		store := internal.NewVariableStoreSqlite(DB)
+		internal.NewVariableCliHandler(store, validator.New())
 
-		_, err = db.Exec(`
-		delete from variables_ where key_ = ?
-	`, args[0])
+		err = store.Delete(projectName, environmentName, variableKey)
+
 		if err != nil {
-			fmt.Println(fmt.Errorf("unable to remove: %s", err))
+			fmt.Fprintf(os.Stderr, "unable to delete variable: %s", err)
 			os.Exit(1)
 		}
 	},
@@ -57,13 +50,6 @@ to quickly create a Cobra application.`,
 func init() {
 	rootCmd.AddCommand(removeCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// removeCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// removeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	removeCmd.Flags().StringP("project", "p", "", "Project name")
+	removeCmd.Flags().StringP("environment", "e", "", "Environment name")
 }

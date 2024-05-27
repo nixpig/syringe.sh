@@ -19,8 +19,8 @@ type Variable struct {
 type VariableStore interface {
 	Set(variable Variable) error
 	Get(projectName, environmentName, key string) (string, error)
+	Delete(projectName, environmentName, key string) error
 	// GetAll() ([]Variable, error)
-	// Delete(variable Variable) error
 }
 
 type VariableStoreSqlite struct {
@@ -70,4 +70,15 @@ func (v VariableStoreSqlite) Get(projectName, environmentName, key string) (stri
 	}
 
 	return variable, nil
+}
+
+func (v VariableStoreSqlite) Delete(projectName, environmentName, key string) error {
+	query := `delete from variables_ where project_name_ = $1 and environment_name_ = $2 and key_ = $3`
+
+	_, err := v.db.Exec(query, projectName, environmentName, key)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 
@@ -11,6 +12,7 @@ import (
 )
 
 var DB *sql.DB
+var CONFIG *config.Config
 
 var rootCmd = &cobra.Command{
 	Use:   "syringe",
@@ -18,24 +20,32 @@ var rootCmd = &cobra.Command{
 	Long:  "A terminal-based utility to securely manage environment variables across projects and environments.",
 }
 
-func Execute() {
-	cfg, err := config.GetConfig()
+func Execute() error {
+	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
-		fmt.Println(fmt.Errorf("unable to load config: %s", err))
+		return errors.New(fmt.Sprintf("unable to determine user config directory: %s", err))
 	}
 
-	DB, err = database.Connection(cfg.DatabaseFilePath)
+	cfg, err := config.GetConfig(userConfigDir)
 	if err != nil {
-		fmt.Println(fmt.Errorf("unable to open database connection: %s", err))
-		os.Exit(1)
+		return errors.New(fmt.Sprintf("unable to load config: %s", err))
+	}
+
+	CONFIG = &cfg
+
+	DB, err = database.Connection(CONFIG.DatabaseFilePath)
+	if err != nil {
+		return errors.New(fmt.Sprintf("unable to open database connection: %s", err))
 	}
 
 	defer DB.Close()
 
 	err = rootCmd.Execute()
 	if err != nil {
-		os.Exit(1)
+		return errors.New(fmt.Sprintf("unable to execute root command: %s", err))
 	}
+
+	return nil
 }
 
 func init() {
@@ -47,5 +57,5 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

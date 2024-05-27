@@ -10,10 +10,11 @@ type VariableHandler interface {
 		environmentName,
 		variableKey,
 		variableValue string,
-		secret bool,
+		secret *bool,
 	) error
 
 	Get(projectName, environmentName, variableKey string) (string, error)
+	Delete(projectName, environmentName, variableKey string) error
 }
 
 type VariableCliHandler struct {
@@ -33,14 +34,14 @@ func (v VariableCliHandler) Set(
 	environmentName,
 	variableKey,
 	variableValue string,
-	secret bool,
+	secret *bool,
 ) error {
 	variable := Variable{
 		ProjectName:     projectName,
 		EnvironmentName: environmentName,
 		Key:             variableKey,
 		Value:           variableValue,
-		Secret:          &secret,
+		Secret:          secret,
 	}
 
 	if err := v.validate.Struct(variable); err != nil {
@@ -65,4 +66,17 @@ func (v VariableCliHandler) Get(
 	}
 
 	return variable, nil
+}
+
+func (v VariableCliHandler) Delete(
+	projectName,
+	environmentName,
+	variableKey string,
+) error {
+	err := v.store.Delete(projectName, environmentName, variableKey)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

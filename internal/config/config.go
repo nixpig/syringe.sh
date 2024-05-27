@@ -1,8 +1,15 @@
 package config
 
 import (
-	"os"
 	"path"
+
+	"github.com/denisbrodbeck/machineid"
+)
+
+const (
+	APP_NAME          = "syringe"
+	DATABASE_FILENAME = "database.db"
+	CONFIG_FILENAME   = "config"
 )
 
 type Config struct {
@@ -10,19 +17,18 @@ type Config struct {
 	DatabaseFilePath string
 }
 
-func GetConfig() (*Config, error) {
-	userConfigDir, err := os.UserConfigDir()
-	if err != nil {
-		return nil, err
-	}
+func GetConfig(configDir string) (Config, error) {
+	syringeConfigDir := path.Join(configDir, APP_NAME)
 
-	syringeConfigDir := path.Join(userConfigDir, "syringe")
+	syringeConfigFilePath := path.Join(syringeConfigDir, CONFIG_FILENAME)
+	syringeDatabaseFilePath := path.Join(syringeConfigDir, DATABASE_FILENAME)
 
-	syringeConfigFilePath := path.Join(syringeConfigDir, "config")
-	syringeDatabaseFilePath := path.Join(syringeConfigDir, "database.db")
-
-	return &Config{
+	return Config{
 		ConfigFilePath:   syringeConfigFilePath,
 		DatabaseFilePath: syringeDatabaseFilePath,
 	}, nil
+}
+
+func GetUid() (string, error) {
+	return machineid.ProtectedID(APP_NAME)
 }
