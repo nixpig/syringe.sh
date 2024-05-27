@@ -23,13 +23,13 @@ var removeCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		projectName, err := cmd.Flags().GetString("project")
 		if err != nil {
-			fmt.Fprint(os.Stderr, "no project provided")
+			fmt.Fprintf(os.Stderr, "Unable to read 'project' flag.\n%s", err)
 			os.Exit(1)
 		}
 
 		environmentName, err := cmd.Flags().GetString("environment")
 		if err != nil {
-			fmt.Fprint(os.Stderr, "no environment provided")
+			fmt.Fprintf(os.Stderr, "Unable to read 'environment' flag.\n%s", err)
 			os.Exit(1)
 		}
 
@@ -41,7 +41,7 @@ var removeCmd = &cobra.Command{
 		err = store.Delete(projectName, environmentName, variableKey)
 
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "unable to delete variable: %s", err)
+			fmt.Fprintf(os.Stderr, "Unable to delete variable: %s", err)
 			os.Exit(1)
 		}
 	},

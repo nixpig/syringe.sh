@@ -9,7 +9,7 @@ import (
 const (
 	APP_NAME          = "syringe"
 	DATABASE_FILENAME = "database.db"
-	CONFIG_FILENAME   = "config"
+	CONFIG_FILENAME   = "config.cfg"
 )
 
 type Config struct {

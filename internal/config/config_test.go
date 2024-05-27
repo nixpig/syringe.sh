@@ -21,7 +21,7 @@ func testGetConfigSuccess(t *testing.T) {
 	config, err := GetConfig("/home/username/.config")
 
 	require.Equal(t, Config{
-		ConfigFilePath:   "/home/username/.config/syringe/config",
+		ConfigFilePath:   "/home/username/.config/syringe/config.cfg",
 		DatabaseFilePath: "/home/username/.config/syringe/database.db",
 	}, config, "should construct config correctly")
 

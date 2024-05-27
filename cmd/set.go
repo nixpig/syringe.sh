@@ -21,19 +21,19 @@ var setCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		projectName, err := cmd.Flags().GetString("project")
 		if err != nil {
-			fmt.Fprint(os.Stderr, "no project provided")
+			fmt.Fprintf(os.Stderr, "Unable to read 'project' flag.\n%s", err)
 			os.Exit(1)
 		}
 
 		environmentName, err := cmd.Flags().GetString("environment")
 		if err != nil {
-			fmt.Fprint(os.Stderr, "no environment provided")
+			fmt.Fprintf(os.Stderr, "Unable to read 'environment' flag.\n%s", err)
 			os.Exit(1)
 		}
 
 		secret, err := cmd.Flags().GetBool("secret")
 		if err != nil {
-			fmt.Fprint(os.Stderr, "unable to get secret value")
+			fmt.Fprintf(os.Stderr, "Unable to read 'secret' flag.\n%s", err)
 			os.Exit(1)
 		}
 
@@ -51,7 +51,7 @@ var setCmd = &cobra.Command{
 			&secret,
 		)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error setting variable: %s", err)
+			fmt.Fprintf(os.Stderr, "Unable to set variable.\n%s", err)
 			os.Exit(1)
 		}
 	},

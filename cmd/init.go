@@ -37,13 +37,13 @@ var initCmd = &cobra.Command{
 			[]byte(""),
 			os.ModePerm,
 		); err != nil {
-			fmt.Fprintf(os.Stderr, "unable to write config file: %s", err)
+			fmt.Fprintf(os.Stderr, "Unable to write config file.\n%s", err)
 			os.Exit(1)
 		}
 
 		// 2. Create database and tables
 		if err := database.CreateTables(DB); err != nil {
-			fmt.Fprintf(os.Stderr, "unable to create database tables: %s", err)
+			fmt.Fprintf(os.Stderr, "Unable to create database tables.\n%s", err)
 			os.Exit(1)
 		}
 	},

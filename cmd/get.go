@@ -21,13 +21,13 @@ var getCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		projectName, err := cmd.Flags().GetString("project")
 		if err != nil {
-			fmt.Fprint(os.Stderr, "no project provided")
+			fmt.Fprintf(os.Stderr, "Unable to read 'project' flag.\n%s", err)
 			os.Exit(1)
 		}
 
 		environmentName, err := cmd.Flags().GetString("environment")
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "no environment provided")
+			fmt.Fprintf(os.Stderr, "Unable to read 'environment' flag.\n%s", err)
 			os.Exit(1)
 		}
 
@@ -38,7 +38,7 @@ var getCmd = &cobra.Command{
 
 		variable, err := handler.Get(projectName, environmentName, variableKey)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error getting variable: %s\n", err)
+			fmt.Fprintf(os.Stderr, "Error getting variable.%s\n", err)
 			os.Exit(1)
 		}
 
