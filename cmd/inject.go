@@ -3,49 +3,45 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"slices"
 
 	"github.com/spf13/cobra"
 )
 
 var injectCmd = &cobra.Command{
-	Use:     "inject [flags] COMMAND",
-	Aliases: []string{"i"},
-	Short:   "Inject environment variables into command execution",
-	Long:    `Inject environment variables for the current or specified project and environment into a command.`,
-	Example: `  syringe inject server
-  syringe inject -p dunce -e dev server
-  syringe i -v DB_USERNAME -v DB_PASSWORD server`,
+	Use:                "inject [flags] COMMAND",
+	Aliases:            []string{"i"},
+	Short:              "Inject environment variables into command execution",
+	Long:               `Inject environment variables for the current or specified project and environment into a command.`,
+	DisableFlagParsing: true,
+	Example:            `  syringe inject server`,
+	Args:               cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName, err := cmd.Flags().GetString("project")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to read 'project' flag.\n%s", err)
-			os.Exit(1)
+		subcommand := args[0]
+		subargs := []string{}
+
+		if len(args) > 1 {
+			subargs = args[1:]
 		}
 
-		environmentName, err := cmd.Flags().GetString("environment")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to read 'environment' flag.\n%s", err)
-			os.Exit(1)
-		}
+		command := exec.Command(subcommand)
+		command.Args = slices.Concat(command.Args, subargs)
+		command.Stderr = os.Stderr
+		command.Stdout = os.Stdout
+		command.Stdin = os.Stdin
+		env := command.Environ()
 
-		variables, err := cmd.Flags().GetStringSlice("variable")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to read 'variable' flag(s).\n%s", err)
-			os.Exit(1)
-		}
+		variables := []string{} // GET VARIABLES FOR LINKED PROJECT/ENV
 
-		fmt.Println(projectName)
-		fmt.Println(environmentName)
-		fmt.Println(variables)
+		command.Env = slices.Concat(env, variables)
+
+		fmt.Println("env: ", command.Env)
+
+		command.Run()
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(injectCmd)
-
-	injectCmd.Flags().StringP("project", "p", "", "Project name")
-	injectCmd.Flags().StringP("environment", "e", "", "Environment name")
-
-	var variables []string
-	injectCmd.Flags().StringSliceVarP(&variables, "variable", "v", []string{}, "Variable keys")
 }
