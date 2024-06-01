@@ -24,8 +24,8 @@ test_watch:
 
 .PHONY: coverage
 coverage:
-	go test -v -race -buildvcs -covermode atomic -coverprofile=tmp/coverage.out ./...
-	go tool cover -html=tmp/coverage.out
+	go test -v -race -buildvcs -covermode atomic -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out
 
 .PHONY: build
 build:
