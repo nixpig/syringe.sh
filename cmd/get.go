@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/go-playground/validator/v10"
-	internal "github.com/nixpig/syringe.sh/internal/variables"
+	internal "github.com/nixpig/syringe.sh/cli/internal/variables"
 	"github.com/spf13/cobra"
 )
 

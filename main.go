@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/nixpig/syringe.sh/cmd"
+	"github.com/nixpig/syringe.sh/cli/cmd"
 )
 
 func main() {

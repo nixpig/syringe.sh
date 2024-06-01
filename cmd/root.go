@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nixpig/syringe.sh/internal/config"
-	"github.com/nixpig/syringe.sh/internal/database"
+	"github.com/nixpig/syringe.sh/cli/internal/config"
+	"github.com/nixpig/syringe.sh/cli/internal/database"
 	"github.com/spf13/cobra"
 )
 

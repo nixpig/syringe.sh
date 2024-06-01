@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/nixpig/syringe.sh/internal/database"
+	"github.com/nixpig/syringe.sh/cli/internal/database"
 	"github.com/spf13/cobra"
 )
 
