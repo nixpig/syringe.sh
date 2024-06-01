@@ -1,5 +1,10 @@
 package internal
 
+import (
+	"fmt"
+	"strings"
+)
+
 type Validator interface {
 	Struct(s interface{}) error
 }
@@ -15,6 +20,7 @@ type VariableHandler interface {
 
 	Get(projectName, environmentName, variableKey string) (string, error)
 	Delete(projectName, environmentName, variableKey string) error
+	GetAll(projectName, environmentName string) ([]string, error)
 }
 
 type VariableCliHandler struct {
@@ -79,4 +85,20 @@ func (v VariableCliHandler) Delete(
 	}
 
 	return nil
+}
+
+func (v VariableCliHandler) GetAll(projectName, environmentName string) ([]string, error) {
+	fmt.Println("handling: ", projectName, environmentName)
+	vars, err := v.store.GetAll(projectName, environmentName)
+	if err != nil {
+		return nil, err
+	}
+
+	variables := make([]string, len(vars))
+
+	for i, variable := range vars {
+		variables[i] = strings.Join([]string{variable.Key, variable.Value}, "=")
+	}
+
+	return variables, nil
 }

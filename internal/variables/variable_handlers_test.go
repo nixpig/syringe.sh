@@ -22,6 +22,9 @@ func TestVariableHandlers(t *testing.T) {
 
 		"test variable handler delete variable (success)":       testVariableHandlerDeleteVariableSuccess,
 		"test variable handler delete variable (error - store)": testVariableHandlerDeleteVariableStoreError,
+
+		"test variable handler get all for project and environment (success)":       testVariableHandlerGetAllSuccess,
+		"test variable handler get all for project and environment (error - store)": testVariableHandlerGetAllStoreError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -54,6 +57,12 @@ func (s *MockVariableStore) Delete(projectName, environmentName, key string) err
 	args := s.Called(projectName, environmentName, key)
 
 	return args.Error(0)
+}
+
+func (s *MockVariableStore) GetAll(projectName, environmentName string) ([]Variable, error) {
+	args := s.Called(projectName, environmentName)
+
+	return args.Get(0).([]Variable), args.Error(1)
 }
 
 type MockValidator struct {
@@ -241,4 +250,52 @@ func testVariableHandlerDeleteVariableStoreError(t *testing.T, handler VariableH
 	}
 
 	mockStoreDelete.Unset()
+}
+
+func testVariableHandlerGetAllSuccess(t *testing.T, handler VariableHandler) {
+	truePtr := true
+	falsePtr := false
+
+	mockStoreGetAll := mockStore.
+		On("GetAll", "project_name", "environment_name").
+		Return([]Variable{
+			{
+				Key:    "KEY_1",
+				Value:  "value_1",
+				Secret: &falsePtr,
+			},
+			{
+				Key:    "KEY_2",
+				Value:  "value_2",
+				Secret: &truePtr,
+			},
+		}, nil)
+
+	variables, err := handler.GetAll("project_name", "environment_name")
+
+	require.NoError(t, err, "should not return error")
+	require.Equal(t, []string{"KEY_1=value_1", "KEY_2=value_2"}, variables, "should return variables to inject in environment")
+
+	if expectations := mockStore.AssertExpectations(t); !expectations {
+		t.Error("store was not called as expected")
+	}
+
+	mockStoreGetAll.Unset()
+}
+
+func testVariableHandlerGetAllStoreError(t *testing.T, handler VariableHandler) {
+	mockStoreGetAll := mockStore.
+		On("GetAll", "project_name", "environment_name").
+		Return([]Variable{}, errors.New("store_error"))
+
+	variables, err := handler.GetAll("project_name", "environment_name")
+
+	require.EqualError(t, err, "store_error", "should return store error")
+	require.Empty(t, variables, "should not return any variables")
+
+	if expectations := mockStore.AssertExpectations(t); !expectations {
+		t.Error("store was not called as expected")
+	}
+
+	mockStoreGetAll.Unset()
 }

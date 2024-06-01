@@ -20,6 +20,10 @@ func TestVariablesStore(t *testing.T) {
 
 		"delete variable from store (success)":          testVariableStoreDeleteVariableSuccess,
 		"delete variable from store (error - database)": testVariableStoreDeleteVariableDatabaseError,
+
+		"get all variables for project and environment (success)":       testVariableStoreGetAllSuccess,
+		"get all variables for project and environment (error - query)": testVariableStoreGetAllQueryError,
+		"get all variables for project and environment (error - row)":   testVariableStoreGetAllRowError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -169,4 +173,76 @@ func testVariableStoreDeleteVariableDatabaseError(t *testing.T, mock sqlmock.Sql
 
 	require.EqualError(t, err, "database_error", "should return database error")
 	require.NoError(t, mock.ExpectationsWereMet(), "should meet expectations")
+}
+
+func testVariableStoreGetAllSuccess(t *testing.T, mock sqlmock.Sqlmock, store VariableStore) {
+	query := `select key_, value_, secret_ from variables_ where project_name_ = $1 and environment_name_ = $2`
+
+	mockRows := mock.
+		NewRows([]string{"key_", "value_", "secret_"}).
+		AddRow("KEY_1", "value_1", true).
+		AddRow("KEY_2", "value_2", false)
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs("project_name", "environment_name").
+		WillReturnRows(mockRows)
+
+	variables, err := store.GetAll("project_name", "environment_name")
+
+	require.NoError(t, err, "should not return error")
+
+	truePtr := true
+	falsePtr := false
+
+	require.Equal(t, []Variable{
+		{
+			Key:    "KEY_1",
+			Value:  "value_1",
+			Secret: &truePtr,
+		},
+		{
+			Key:    "KEY_2",
+			Value:  "value_2",
+			Secret: &falsePtr,
+		},
+	}, variables, "should return variables for project and environment")
+
+	require.NoError(t, mock.ExpectationsWereMet(), "all expectations should be met")
+}
+
+func testVariableStoreGetAllQueryError(t *testing.T, mock sqlmock.Sqlmock, store VariableStore) {
+	query := `select key_, value_, secret_ from variables_ where project_name_ = $1 and environment_name_ = $2`
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs("project_name", "environment_name").
+		WillReturnError(errors.New("query_error"))
+
+	variables, err := store.GetAll("project_name", "environment_name")
+
+	require.Nil(t, variables, "should not return variables")
+	require.EqualError(t, err, "query_error", "should return error from query")
+	require.NoError(t, mock.ExpectationsWereMet(), "all expectations should be met")
+}
+
+func testVariableStoreGetAllRowError(t *testing.T, mock sqlmock.Sqlmock, store VariableStore) {
+	query := `select key_, value_, secret_ from variables_ where project_name_ = $1 and environment_name_ = $2`
+
+	mockRows := mock.
+		NewRows([]string{"key_", "value_", "secret_"}).
+		AddRow("VAR_KEY_1", "var_value_1", false).
+		AddRow(nil, "var_value_2", true).
+		RowError(2, errors.New("row_error"))
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs("project_name", "environment_name").
+		WillReturnRows(mockRows)
+
+	variables, err := store.GetAll("project_name", "environment_name")
+
+	require.Nil(t, variables, "should not return variables")
+	require.Error(t, err, "should return row error")
+	require.NoError(t, mock.ExpectationsWereMet(), "all expectations should be met")
 }

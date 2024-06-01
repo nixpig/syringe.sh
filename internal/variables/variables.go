@@ -20,7 +20,7 @@ type VariableStore interface {
 	Set(variable Variable) error
 	Get(projectName, environmentName, key string) (string, error)
 	Delete(projectName, environmentName, key string) error
-	// GetAll() ([]Variable, error)
+	GetAll(projectName, environmentName string) ([]Variable, error)
 }
 
 type VariableStoreSqlite struct {
@@ -81,4 +81,29 @@ func (v VariableStoreSqlite) Delete(projectName, environmentName, key string) er
 	}
 
 	return nil
+}
+
+func (v VariableStoreSqlite) GetAll(projectName, environmentName string) ([]Variable, error) {
+	query := `select key_, value_, secret_ from variables_ where project_name_ = $1 and environment_name_ = $2`
+
+	rows, err := v.db.Query(query, projectName, environmentName)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var variables []Variable
+
+	for rows.Next() {
+		var variable Variable
+
+		if err := rows.Scan(&variable.Key, &variable.Value, &variable.Secret); err != nil {
+			return nil, err
+		}
+
+		variables = append(variables, variable)
+	}
+
+	return variables, nil
 }
