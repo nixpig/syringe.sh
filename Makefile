@@ -1,5 +1,10 @@
+ifneq (,$(wildcard .env))
+	include .env
+	export
+endif
+
 APP_PACKAGE_PATH := main.go
-APP_BINARY_NAME := syringe
+APP_BINARY_NAME := syringeserver
 
 .PHONY: tidy
 tidy: 
@@ -50,4 +55,6 @@ env:
 	# Echos out environment variables
 	APP_PACKAGE_PATH=${APP_PACKAGE_PATH}
 	APP_BINARY_NAME=${APP_BINARY_NAME}
+	TURSO_DATABASE_URL=${TURSO_DATABASE_URL}
+	TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN}
 
