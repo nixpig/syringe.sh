@@ -1,3 +1,6 @@
+[![Workflow Status](https://github.com/nixpig/syringe.sh/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/nixpig/dunce/actions/workflows/validate.yml?query=branch%3Amain)
+[![Coverage Status](https://coveralls.io/repos/github/nixpig/syringe.sh/badge.svg?branch=main)](https://coveralls.io/github/nixpig/dunce?branch=main)
+
 # 💉 syringe.sh
 
 A terminal-based utility to securely manage environment variables across projects and environments.
