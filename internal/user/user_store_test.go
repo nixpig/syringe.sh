@@ -45,12 +45,12 @@ func TestSqliteUserStore(t *testing.T) {
 
 func testSqliteUserStoreInsertUserSuccess(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
 	query := `
-		insert into users_ (username_, email_, password_) 
-		values ($1, $2, $3) 
+		insert into users_ (username_, email_, password_, created_at_) 
+		values ($username, $email, $password, $createdAt) 
 		returning id_, username_, email_, password_, created_at_
 	`
 
-	createdAt := time.Now()
+	createdAt := time.Now().UTC()
 
 	mockRow := mock.
 		NewRows([]string{"id_", "username_", "email_", "password_", "created_at_"}).
@@ -58,7 +58,7 @@ func testSqliteUserStoreInsertUserSuccess(t *testing.T, mock sqlmock.Sqlmock, st
 
 	mock.
 		ExpectQuery(regexp.QuoteMeta(query)).
-		WithArgs("janedoe", "jane@example.org", "p4ssw0rd").
+		WithArgs("janedoe", "jane@example.org", "p4ssw0rd", sqlmock.AnyArg()).
 		WillReturnRows(mockRow)
 
 	insertedUser, err := store.Insert("janedoe", "jane@example.org", "p4ssw0rd")
@@ -79,12 +79,12 @@ func testSqliteUserStoreInsertUserSuccess(t *testing.T, mock sqlmock.Sqlmock, st
 
 func testSqliteUserStoreInsertUserScanError(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
 	query := `
-		insert into users_ (username_, email_, password_) 
-		values ($1, $2, $3) 
+		insert into users_ (username_, email_, password_, created_at_) 
+		values ($username, $email, $password, $createdAt) 
 		returning id_, username_, email_, password_, created_at_
 	`
 
-	createdAt := time.Now()
+	createdAt := time.Now().UTC()
 
 	mockRow := mock.
 		NewRows([]string{"id_", "username_", "email_", "password_", "created_at_"}).
@@ -93,7 +93,7 @@ func testSqliteUserStoreInsertUserScanError(t *testing.T, mock sqlmock.Sqlmock, 
 
 	mock.
 		ExpectQuery(regexp.QuoteMeta(query)).
-		WithArgs("janedoe", "jane@example.org", "p4ssw0rd").
+		WithArgs("janedoe", "jane@example.org", "p4ssw0rd", sqlmock.AnyArg()).
 		WillReturnRows(mockRow)
 
 	insertedUser, err := store.Insert("janedoe", "jane@example.org", "p4ssw0rd")
