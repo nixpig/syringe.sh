@@ -40,7 +40,7 @@ func main() {
 	userService := user.NewJsonUserService(userStore, validator.New(validator.WithRequiredStructEnabled()))
 	httpHandlers := handlers.NewHttpHandlers(userService)
 
-	mux.HandleFunc("POST /users/create", httpHandlers.PostUsersCreate)
+	mux.HandleFunc("POST /users/create", httpHandlers.CreateUser)
 
 	fmt.Println("starting server...")
 	server := &http.Server{
