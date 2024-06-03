@@ -33,8 +33,8 @@ type MockUserStore struct {
 	mock.Mock
 }
 
-func (m *MockUserStore) Insert(username, email, password string) (*User, error) {
-	args := m.Called(username, email, password)
+func (m *MockUserStore) Insert(username, email, publicKey string) (*User, error) {
+	args := m.Called(username, email, publicKey)
 
 	return args.Get(0).(*User), args.Error(1)
 }
@@ -70,9 +70,9 @@ func testJsonUserServiceCreateUserSuccess(t *testing.T, service UserService) {
 		}, nil)
 
 	createdUser, err := service.Create(RegisterUserRequestJsonDto{
-		Username: "janedoe",
-		Email:    "jane@example.org",
-		Password: "p4ssw0rd",
+		Username:  "janedoe",
+		Email:     "jane@example.org",
+		PublicKey: "p4ssw0rd",
 	})
 
 	require.NoError(t, err, "should not return error")
@@ -93,48 +93,48 @@ func testJsonUserServiceCreateUserFieldValidationError(t *testing.T, service Use
 	var err error
 
 	usernameMinLength, err := service.Create(RegisterUserRequestJsonDto{
-		Username: "ja",
-		Email:    "jane@example.org",
-		Password: "p4ssw0rd",
+		Username:  "ja",
+		Email:     "jane@example.org",
+		PublicKey: "p4ssw0rd",
 	})
 	require.Empty(t, usernameMinLength)
 	require.Error(t, err, "should return validation error")
 
 	usernameMaxLength, err := service.Create(RegisterUserRequestJsonDto{
-		Username: "janedoejanedoejanedoejanedoejanedoe",
-		Email:    "jane@example.org",
-		Password: "p4ssw0rd",
+		Username:  "janedoejanedoejanedoejanedoejanedoe",
+		Email:     "jane@example.org",
+		PublicKey: "p4ssw0rd",
 	})
 	require.Empty(t, usernameMaxLength)
 	require.Error(t, err, "should return validation error")
 
 	emailInvalid, err := service.Create(RegisterUserRequestJsonDto{
-		Username: "janedoe",
-		Email:    "janeexampleorg",
-		Password: "p4ssw0rd",
+		Username:  "janedoe",
+		Email:     "janeexampleorg",
+		PublicKey: "p4ssw0rd",
 	})
 	require.Empty(t, emailInvalid)
 	require.Error(t, err, "should return validation error")
 
 	missingUsername, err := service.Create(RegisterUserRequestJsonDto{
-		Email:    "jane@example.org",
-		Password: "p4ssw0rd",
+		Email:     "jane@example.org",
+		PublicKey: "p4ssw0rd",
 	})
 	require.Empty(t, missingUsername)
 	require.Error(t, err, "should return validation error")
 
 	missingEmail, err := service.Create(RegisterUserRequestJsonDto{
-		Username: "janedoe",
-		Password: "p4ssw0rd",
+		Username:  "janedoe",
+		PublicKey: "p4ssw0rd",
 	})
 	require.Empty(t, missingEmail)
 	require.Error(t, err, "should return validation error")
 
-	missingPassword, err := service.Create(RegisterUserRequestJsonDto{
+	missingPublicKey, err := service.Create(RegisterUserRequestJsonDto{
 		Username: "janedoe",
 		Email:    "jane@example.org",
 	})
-	require.Empty(t, missingPassword)
+	require.Empty(t, missingPublicKey)
 	require.Error(t, err, "should return validation error")
 
 	if mockUserStoreNotCalled := mockUserStore.AssertNotCalled(t, "Insert"); !mockUserStoreNotCalled {
@@ -148,9 +148,9 @@ func testJsonUserServiceCreateUserStoreError(t *testing.T, service UserService) 
 		Return(&User{}, errors.New("store_insert_error"))
 
 	createdUser, err := service.Create(RegisterUserRequestJsonDto{
-		Username: "janedoe",
-		Email:    "jane@example.org",
-		Password: "p4ssw0rd",
+		Username:  "janedoe",
+		Email:     "jane@example.org",
+		PublicKey: "p4ssw0rd",
 	})
 
 	require.Empty(t, createdUser)

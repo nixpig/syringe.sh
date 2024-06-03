@@ -7,7 +7,7 @@ import (
 )
 
 type UserStore interface {
-	Insert(username, email, password string) (*User, error)
+	Insert(username, email, publicKey string) (*User, error)
 	GetByUsername(username string) (*User, error)
 	DeleteByUsername(username string) error
 	Update(user User) (*User, error)
@@ -21,18 +21,18 @@ func NewSqliteUserStore(db *sql.DB) SqliteUserStore {
 	return SqliteUserStore{db}
 }
 
-func (u SqliteUserStore) Insert(username, email, password string) (*User, error) {
+func (u SqliteUserStore) Insert(username, email, publicKey string) (*User, error) {
 	query := `
-		insert into users_ (username_, email_, password_, created_at_) 
-		values ($username, $email, $password, $createdAt) 
-		returning id_, username_, email_, password_, created_at_
+		insert into users_ (username_, email_, public_key_, created_at_) 
+		values ($username, $email, $publicKey, $createdAt) 
+		returning id_, username_, email_, public_key_, created_at_
 	`
 
 	row := u.db.QueryRow(
 		query,
 		sql.Named("username", username),
 		sql.Named("email", email),
-		sql.Named("password", password),
+		sql.Named("publicKey", publicKey),
 		sql.Named("createdAt", time.Now().UTC()),
 	)
 
@@ -42,7 +42,7 @@ func (u SqliteUserStore) Insert(username, email, password string) (*User, error)
 		&insertedUser.Id,
 		&insertedUser.Username,
 		&insertedUser.Email,
-		&insertedUser.Password,
+		&insertedUser.PublicKey,
 		&insertedUser.CreatedAt,
 	); err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (u SqliteUserStore) Insert(username, email, password string) (*User, error)
 
 func (u SqliteUserStore) GetByUsername(username string) (*User, error) {
 	query := `
-		select id_, username_, email_, password_, created_at_ 
+		select id_, username_, email_, public_key_, created_at_ 
 		from users_ 
 		where username_ = $1
 	`
@@ -66,7 +66,7 @@ func (u SqliteUserStore) GetByUsername(username string) (*User, error) {
 		&user.Id,
 		&user.Username,
 		&user.Email,
-		&user.Password,
+		&user.PublicKey,
 		&user.CreatedAt,
 	); err != nil {
 		return nil, err
@@ -97,12 +97,12 @@ func (u SqliteUserStore) DeleteByUsername(username string) error {
 
 func (u SqliteUserStore) Update(user User) (*User, error) {
 	query := `
-		update users_ set email_ = $2, set password_ = $3
+		update users_ set email_ = $2, set public_key_ = $3
 		where username_ = $1 
-		returning id_, username_, email_, password, created_at_
+		returning id_, username_, email_, public_key_, created_at_
 	`
 
-	row := u.db.QueryRow(query, user.Username, user.Email, user.Password)
+	row := u.db.QueryRow(query, user.Username, user.Email, user.PublicKey)
 
 	var updatedUser User
 
@@ -110,7 +110,7 @@ func (u SqliteUserStore) Update(user User) (*User, error) {
 		&updatedUser.Id,
 		&updatedUser.Username,
 		&updatedUser.Email,
-		&updatedUser.Password,
+		&updatedUser.PublicKey,
 		&updatedUser.CreatedAt,
 	); err != nil {
 		return nil, err

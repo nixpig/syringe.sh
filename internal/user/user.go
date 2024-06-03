@@ -11,5 +11,5 @@ type User struct {
 	Username  string
 	Email     string
 	CreatedAt time.Time
-	Password  string // for database??
+	PublicKey string
 }

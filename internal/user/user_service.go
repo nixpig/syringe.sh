@@ -7,9 +7,9 @@ import (
 )
 
 type RegisterUserRequestJsonDto struct {
-	Username string `json:"username" validate:"required,min=3,max=30"`
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required"`
+	Username  string `json:"username" validate:"required,min=3,max=30"`
+	Email     string `json:"email" validate:"required,email"`
+	PublicKey string `json:"public_key" validate:"required"`
 }
 
 type UserDetailsResponseJsonDto struct {
@@ -40,7 +40,7 @@ func (u JsonUserService) Create(user RegisterUserRequestJsonDto) (*UserDetailsRe
 		return nil, err
 	}
 
-	insertedUser, err := u.store.Insert(user.Username, user.Email, user.Password)
+	insertedUser, err := u.store.Insert(user.Username, user.Email, user.PublicKey)
 	if err != nil {
 		return nil, err
 	}
