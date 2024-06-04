@@ -1,52 +1,54 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/joho/godotenv"
+	"github.com/nixpig/syringe.sh/server/internal/database"
 	"github.com/nixpig/syringe.sh/server/internal/register"
 )
 
-// "database/sql"
-// "fmt"
-// "net/http"
-// "os"
-//
-// "github.com/go-playground/validator/v10"
-// "github.com/nixpig/syringe.sh/server/internal/database"
-// "github.com/nixpig/syringe.sh/server/internal/handlers"
-// "github.com/nixpig/syringe.sh/server/internal/user"
+var DB *sql.DB
 
 func main() {
-	p := tea.NewProgram(register.InitialModel())
+	if err := godotenv.Load(".env"); err != nil {
+		fmt.Fprintf(os.Stdout, "unable to load env:\n%s", err)
+	}
+
+	databaseUrl := os.Getenv("TURSO_DATABASE_URL")
+	databaseToken := os.Getenv("TURSO_AUTH_TOKEN")
+
+	fmt.Println("databaseUrl: ", databaseUrl)
+	fmt.Println("databaseToken: ", databaseToken)
+
+	databaseConnectionString := databaseUrl + "?authToken=" + databaseToken
+
+	DB, err := database.Connection(databaseConnectionString)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to connect to database: %s\n%s", databaseConnectionString, err)
+		os.Exit(1)
+	}
+
+	if err := database.CreateTables(DB); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create tables: \n%s", err)
+	}
+
+	defer DB.Close()
+
+	fmt.Println(DB.Stats())
+
+	p := tea.NewProgram(register.InitialModel(DB))
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("error:\n%s", err)
 		os.Exit(1)
 	}
 }
 
-// var DB *sql.DB
-
 // func main() {
-// 	databaseUrl := os.Getenv("TURSO_DATABASE_URL")
-// 	databaseToken := os.Getenv("TURSO_AUTH_TOKEN")
-//
-// 	databaseConnectionString := databaseUrl + "?authToken=" + databaseToken
-//
-// 	DB, err := database.Connection(databaseConnectionString)
-// 	if err != nil {
-// 		fmt.Fprintf(os.Stderr, "failed to connect to database: %s\n%s", databaseConnectionString, err)
-// 		os.Exit(1)
-// 	}
-//
-// 	if err := database.CreateTables(DB); err != nil {
-// 		fmt.Fprintf(os.Stderr, "failed to create tables: \n%s", err)
-// 	}
-//
-// 	defer DB.Close()
-//
-// 	fmt.Println(DB.Stats())
 //
 // 	mux := http.NewServeMux()
 //

@@ -45,15 +45,15 @@ func TestSqliteUserStore(t *testing.T) {
 
 func testSqliteUserStoreInsertUserSuccess(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
 	query := `
-		insert into users_ (username_, email_, public_key_, created_at_) 
-		values ($username, $email, $publicKey, $createdAt) 
-		returning id_, username_, email_, public_key_, created_at_
+		insert into users_ (username_, email_, status_, created_at_) 
+		values ($username, $email, $status, $createdAt) 
+		returning id_, username_, email_, status_, created_at_
 	`
 
 	createdAt := time.Now().UTC()
 
 	mockRow := mock.
-		NewRows([]string{"id_", "username_", "email_", "public_key_", "created_at_"}).
+		NewRows([]string{"id_", "username_", "email_", "status_", "created_at_"}).
 		AddRow(23, "janedoe", "jane@example.org", "p4ssw0rd", createdAt)
 
 	mock.
@@ -68,7 +68,7 @@ func testSqliteUserStoreInsertUserSuccess(t *testing.T, mock sqlmock.Sqlmock, st
 		Id:        23,
 		Username:  "janedoe",
 		Email:     "jane@example.org",
-		PublicKey: "p4ssw0rd",
+		Status:    "p4ssw0rd",
 		CreatedAt: createdAt,
 	}, insertedUser, "should return inserted user record")
 
@@ -79,15 +79,15 @@ func testSqliteUserStoreInsertUserSuccess(t *testing.T, mock sqlmock.Sqlmock, st
 
 func testSqliteUserStoreInsertUserScanError(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
 	query := `
-		insert into users_ (username_, email_, public_key_, created_at_) 
-		values ($username, $email, $publicKey, $createdAt) 
-		returning id_, username_, email_, public_key_, created_at_
+		insert into users_ (username_, email_, status_, created_at_) 
+		values ($username, $email, $status, $createdAt) 
+		returning id_, username_, email_, status_, created_at_
 	`
 
 	createdAt := time.Now().UTC()
 
 	mockRow := mock.
-		NewRows([]string{"id_", "username_", "email_", "public_key_", "created_at_"}).
+		NewRows([]string{"id_", "username_", "email_", "status_", "created_at_"}).
 		AddRow(23, "janedoe", "jane@example.org", "p4ssw0rd", createdAt).
 		RowError(0, errors.New("row_error"))
 
@@ -108,14 +108,14 @@ func testSqliteUserStoreInsertUserScanError(t *testing.T, mock sqlmock.Sqlmock, 
 
 func testSqliteUserStoreGetUserByUsernameSuccess(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
 	query := `
-		select id_, username_, email_, public_key_, created_at_ 
+		select id_, username_, email_, status_, created_at_ 
 		from users_ 
 		where username_ = $1
 	`
 	createdAt := time.Now()
 
 	mockRow := mock.
-		NewRows([]string{"id_", "username_", "email_", "public_key_", "created_at_"}).
+		NewRows([]string{"id_", "username_", "email_", "status_", "created_at_"}).
 		AddRow(23, "janedoe", "jane@example.org", "p4ssw0rd", createdAt)
 
 	mock.
@@ -130,7 +130,7 @@ func testSqliteUserStoreGetUserByUsernameSuccess(t *testing.T, mock sqlmock.Sqlm
 		Id:        23,
 		Username:  "janedoe",
 		Email:     "jane@example.org",
-		PublicKey: "p4ssw0rd",
+		Status:    "p4ssw0rd",
 		CreatedAt: createdAt,
 	}, user, "should return user record")
 
@@ -141,13 +141,13 @@ func testSqliteUserStoreGetUserByUsernameSuccess(t *testing.T, mock sqlmock.Sqlm
 
 func testSqliteUserStoreGetUserByUsernameSuccessNoUser(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
 	query := `
-		select id_, username_, email_, public_key_, created_at_ 
+		select id_, username_, email_, status_, created_at_ 
 		from users_ 
 		where username_ = $1
 	`
 
 	mockRow := mock.
-		NewRows([]string{"id_", "username_", "email_", "public_key_", "created_at_"})
+		NewRows([]string{"id_", "username_", "email_", "status_", "created_at_"})
 
 	mock.
 		ExpectQuery(regexp.QuoteMeta(query)).
@@ -167,7 +167,7 @@ func testSqliteUserStoreGetUserByUsernameSuccessNoUser(t *testing.T, mock sqlmoc
 
 func testSqliteUserStoreGetUserByUsernameScanError(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
 	query := `
-		select id_, username_, email_, public_key_, created_at_ 
+		select id_, username_, email_, status_, created_at_ 
 		from users_ 
 		where username_ = $1
 	`
@@ -175,7 +175,7 @@ func testSqliteUserStoreGetUserByUsernameScanError(t *testing.T, mock sqlmock.Sq
 	createdAt := time.Now()
 
 	mockRows := mock.
-		NewRows([]string{"id_", "username_", "email_", "public_key_", "created_at_"}).
+		NewRows([]string{"id_", "username_", "email_", "status_", "created_at_"}).
 		AddRow(23, "janedoe", "jane@example.org", "p4ssw0rd", createdAt).
 		RowError(0, errors.New("row_error"))
 
@@ -270,15 +270,15 @@ func testSqliteUserStoreDeleteUserByUsernameNoUserError(t *testing.T, mock sqlmo
 
 func testSqliteUserStoreUpdateUserSuccess(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
 	query := `
-		update users_ set email_ = $2, set public_key_ = $3
+		update users_ set email_ = $2, set status_ = $3
 		where username_ = $1 
-		returning id_, username_, email_, public_key_, created_at_
+		returning id_, username_, email_, status_, created_at_
 	`
 
 	createdAt := time.Now()
 
 	mockRow := mock.
-		NewRows([]string{"id_", "username_", "email_", "public_key_", "created_at_"}).
+		NewRows([]string{"id_", "username_", "email_", "status_", "created_at_"}).
 		AddRow(23, "janedoe", "jane@example.org", "p4ssw0rd", createdAt)
 
 	mock.
@@ -290,7 +290,7 @@ func testSqliteUserStoreUpdateUserSuccess(t *testing.T, mock sqlmock.Sqlmock, st
 		Id:        23,
 		Username:  "janedoe",
 		Email:     "jane@example.org",
-		PublicKey: "p4ssw0rd",
+		Status:    "p4ssw0rd",
 		CreatedAt: createdAt,
 	})
 
@@ -299,7 +299,7 @@ func testSqliteUserStoreUpdateUserSuccess(t *testing.T, mock sqlmock.Sqlmock, st
 		Id:        23,
 		Username:  "janedoe",
 		Email:     "jane@example.org",
-		PublicKey: "p4ssw0rd",
+		Status:    "p4ssw0rd",
 		CreatedAt: createdAt,
 	}, user, "should return user record")
 
@@ -310,15 +310,15 @@ func testSqliteUserStoreUpdateUserSuccess(t *testing.T, mock sqlmock.Sqlmock, st
 
 func testSqliteUserStoreUpdateUserScanError(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
 	query := `
-		update users_ set email_ = $2, set public_key_ = $3
+		update users_ set email_ = $2, set status_ = $3
 		where username_ = $1 
-		returning id_, username_, email_, public_key_, created_at_
+		returning id_, username_, email_, status_, created_at_
 	`
 
 	createdAt := time.Now()
 
 	mockRow := mock.
-		NewRows([]string{"id_", "username_", "email_", "public_key_", "created_at_"}).
+		NewRows([]string{"id_", "username_", "email_", "status_", "created_at_"}).
 		AddRow(23, "janedoe", "jane@example.org", "p4ssw0rd", createdAt).
 		RowError(0, errors.New("row_error"))
 
@@ -331,7 +331,7 @@ func testSqliteUserStoreUpdateUserScanError(t *testing.T, mock sqlmock.Sqlmock, 
 		Id:        23,
 		Username:  "janedoe",
 		Email:     "jane@example.org",
-		PublicKey: "p4ssw0rd",
+		Status:    "p4ssw0rd",
 		CreatedAt: createdAt,
 	})
 

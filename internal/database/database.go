@@ -24,6 +24,8 @@ func Connection(url string) (*sql.DB, error) {
 }
 
 func CreateTables(db *sql.DB) error {
+	var err error
+
 	// query := `
 	// 	create table if not exists variables_ (
 	// 		id_ integer primary key autoincrement not null,
@@ -36,23 +38,45 @@ func CreateTables(db *sql.DB) error {
 	// 	)
 	// `
 
-	dropQuery := `drop table if exists users_`
-	_, err := db.Exec(dropQuery)
+	dropKeysTable := `drop table if exists keys_`
+	_, err = db.Exec(dropKeysTable)
 	if err != nil {
 		return err
 	}
 
-	query := `
+	dropUsersTable := `drop table if exists users_`
+	_, err = db.Exec(dropUsersTable)
+	if err != nil {
+		return err
+	}
+
+	createUsersTable := `
 		create table if not exists users_ (
 			id_ integer primary key autoincrement not null,
 			username_ text,
 			email_ text,
-			created_at_ datetime,
-			password_ text
+			created_at_ datetime without time zone default current_timestamp,
+			status_ text
 		)
 	`
 
-	_, err = db.Exec(query)
+	createKeysTable := `
+		create table if not exists keys_ (
+			id_ integer primary key autoincrement not null,
+			ssh_public_key_ text,
+			user_id_ integer not null,
+			created_at_ datetime without time zone default current_timestamp,
+
+			foreign key (user_id_) references users_(id_)
+		)
+	`
+
+	_, err = db.Exec(createUsersTable)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(createKeysTable)
 	if err != nil {
 		return err
 	}

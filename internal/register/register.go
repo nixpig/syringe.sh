@@ -1,36 +1,38 @@
 package register
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nixpig/syringe.sh/server/internal/key"
+	"github.com/nixpig/syringe.sh/server/internal/user"
 )
 
 var (
-	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	cursorStyle         = focusedStyle.Copy()
-	noStyle             = lipgloss.NewStyle()
-	helpStyle           = blurredStyle.Copy()
-	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	cursorStyle  = focusedStyle
+	noStyle      = lipgloss.NewStyle()
+	helpStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 
-	focusedButton = focusedStyle.Copy().Render("[ Submit ]")
+	focusedButton = focusedStyle.Render("[ Submit ]")
 	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
 )
 
 type model struct {
 	focusIndex int
 	inputs     []textinput.Model
-	cursorMode cursor.Mode
+	db         *sql.DB
 }
 
-func InitialModel() model {
+func InitialModel(db *sql.DB) model {
 	m := model{
 		inputs: make([]textinput.Model, 3),
+		db:     db,
 	}
 
 	for i := range m.inputs {
@@ -69,18 +71,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "esc":
 			return m, tea.Quit
 
-		// Change cursor mode
-		case "ctrl+r":
-			m.cursorMode++
-			if m.cursorMode > cursor.CursorHide {
-				m.cursorMode = cursor.CursorBlink
-			}
-			cmds := make([]tea.Cmd, len(m.inputs))
-			for i := range m.inputs {
-				cmds[i] = m.inputs[i].Cursor.SetMode(m.cursorMode)
-			}
-			return m, tea.Batch(cmds...)
-
 		// Set focus to next input
 		case "tab", "shift+tab", "enter", "up", "down":
 			s := msg.String()
@@ -88,6 +78,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Did the user press enter while the submit button was focused?
 			// If so, exit.
 			if s == "enter" && m.focusIndex == len(m.inputs) {
+				m.submit(m.inputs[0].Value(), m.inputs[1].Value(), m.inputs[2].Value())
 				return m, tea.Quit
 			}
 
@@ -156,9 +147,31 @@ func (m model) View() string {
 	}
 	fmt.Fprintf(&b, "\n\n%s\n\n", *button)
 
-	b.WriteString(helpStyle.Render("cursor mode is "))
-	b.WriteString(cursorModeHelpStyle.Render(m.cursorMode.String()))
-	b.WriteString(helpStyle.Render(" (ctrl+r to change style)"))
-
 	return b.String()
+}
+
+func (m model) submit(username, sshPublicKey, email string) error {
+	var err error
+
+	userStore := user.NewSqliteUserStore(m.db)
+
+	fmt.Println("inserting user")
+	user, err := userStore.Insert(username, email, "active")
+	if err != nil {
+		fmt.Printf("error inserting new user:\n%s", err)
+		return err
+	}
+
+	keyStore := key.NewSqliteKeyStore(m.db)
+
+	fmt.Println("inserting key")
+	_, err = keyStore.Insert(user.Id, sshPublicKey)
+	if err != nil {
+		fmt.Printf("error inserting key:\n%s", err)
+		return err
+	}
+
+	fmt.Println("")
+
+	return nil
 }
