@@ -1,41 +1,39 @@
 package user
 
 import (
-	"time"
-
 	"github.com/go-playground/validator/v10"
 )
 
-type RegisterUserRequestJsonDto struct {
+type RegisterUserRequestDto struct {
 	Username  string `json:"username" validate:"required,min=3,max=30"`
 	Email     string `json:"email" validate:"required,email"`
 	PublicKey string `json:"public_key" validate:"required"`
 }
 
-type UserDetailsResponseJsonDto struct {
-	Id        int       `json:"id"`
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
+type UserDetailsResponseDto struct {
+	Id        int    `json:"id"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	CreatedAt string `json:"created_at"`
 }
 
 type UserService interface {
-	Create(user RegisterUserRequestJsonDto) (*UserDetailsResponseJsonDto, error)
+	Create(user RegisterUserRequestDto) (*UserDetailsResponseDto, error)
 }
 
-type JsonUserService struct {
+type UserServiceImpl struct {
 	store    UserStore
 	validate *validator.Validate
 }
 
-func NewJsonUserService(store UserStore, validate *validator.Validate) JsonUserService {
-	return JsonUserService{
+func NewJsonUserService(store UserStore, validate *validator.Validate) UserServiceImpl {
+	return UserServiceImpl{
 		store:    store,
 		validate: validate,
 	}
 }
 
-func (u JsonUserService) Create(user RegisterUserRequestJsonDto) (*UserDetailsResponseJsonDto, error) {
+func (u UserServiceImpl) Create(user RegisterUserRequestDto) (*UserDetailsResponseDto, error) {
 	if err := u.validate.Struct(user); err != nil {
 		return nil, err
 	}
@@ -45,7 +43,7 @@ func (u JsonUserService) Create(user RegisterUserRequestJsonDto) (*UserDetailsRe
 		return nil, err
 	}
 
-	return &UserDetailsResponseJsonDto{
+	return &UserDetailsResponseDto{
 		Id:        insertedUser.Id,
 		Username:  insertedUser.Username,
 		Email:     insertedUser.Email,

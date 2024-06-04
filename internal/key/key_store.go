@@ -18,7 +18,7 @@ func (k SqliteKeyStore) Insert(userId int, publicKey string) (*Key, error) {
 	query := `
 		insert into keys_ (user_id_, ssh_public_key_)
 		values ($userId, $publicKey)
-		returning id_, user_id_, ssh_public_key_
+		returning id_, user_id_, ssh_public_key_, created_at_
 	`
 
 	row := k.db.QueryRow(
@@ -33,6 +33,7 @@ func (k SqliteKeyStore) Insert(userId int, publicKey string) (*Key, error) {
 		&insertedKey.Id,
 		&insertedKey.UserId,
 		&insertedKey.PublicKey,
+		&insertedKey.CreatedAt,
 	); err != nil {
 		return nil, err
 	}

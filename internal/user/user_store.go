@@ -24,7 +24,7 @@ func (u SqliteUserStore) Insert(username, email, status string) (*User, error) {
 	query := `
 		insert into users_ (username_, email_, status_) 
 		values ($username, $email, $status) 
-		returning id_, username_, email_, status_
+		returning id_, username_, email_, status_, created_at_
 	`
 
 	row := u.db.QueryRow(
@@ -32,7 +32,6 @@ func (u SqliteUserStore) Insert(username, email, status string) (*User, error) {
 		sql.Named("username", username),
 		sql.Named("email", email),
 		sql.Named("status", status),
-		// sql.Named("createdAt", time.Now().UTC()),
 	)
 
 	var insertedUser User
@@ -42,7 +41,7 @@ func (u SqliteUserStore) Insert(username, email, status string) (*User, error) {
 		&insertedUser.Username,
 		&insertedUser.Email,
 		&insertedUser.Status,
-		// &insertedUser.CreatedAt,
+		&insertedUser.CreatedAt,
 	); err != nil {
 		return nil, err
 	}

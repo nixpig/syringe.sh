@@ -19,7 +19,7 @@ func NewHttpHandlers(userService user.UserService) HttpHandlers {
 func (h *HttpHandlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 	switch method := r.Method; method {
 	case http.MethodPost:
-		var req user.RegisterUserRequestJsonDto
+		var req user.RegisterUserRequestDto
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			slog.Error("decode create user request", "err", err)
