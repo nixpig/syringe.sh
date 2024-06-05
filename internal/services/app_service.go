@@ -2,6 +2,7 @@ package services
 
 import (
 	"github.com/go-playground/validator/v10"
+	"github.com/nixpig/syringe.sh/server/internal/stores"
 )
 
 type RegisterUserRequestDto struct {
@@ -10,43 +11,57 @@ type RegisterUserRequestDto struct {
 	PublicKey string `json:"public_key" validate:"required"`
 }
 
-type UserDetailsResponseDto struct {
+type RegisterUserResponseDto struct {
 	Id        int    `json:"id"`
 	Username  string `json:"username"`
 	Email     string `json:"email"`
 	CreatedAt string `json:"created_at"`
+	PublicKey string `json:"public_key"`
 }
 
-type UserService interface {
-	Create(user RegisterUserRequestDto) (*UserDetailsResponseDto, error)
+type AppService interface {
+	RegisterUser(user RegisterUserRequestDto) (*RegisterUserResponseDto, error)
 }
 
-type UserServiceImpl struct {
-	store    UserStore
+type AppServiceImpl struct {
+	store    stores.AppStore
 	validate *validator.Validate
 }
 
-func NewJsonUserService(store UserStore, validate *validator.Validate) UserServiceImpl {
-	return UserServiceImpl{
+func NewAppServiceImpl(store stores.AppStore, validate *validator.Validate) AppServiceImpl {
+	return AppServiceImpl{
 		store:    store,
 		validate: validate,
 	}
 }
 
-func (u UserServiceImpl) Create(user RegisterUserRequestDto) (*UserDetailsResponseDto, error) {
-	if err := u.validate.Struct(user); err != nil {
+func (a AppServiceImpl) RegisterUser(user RegisterUserRequestDto) (*RegisterUserResponseDto, error) {
+	if err := a.validate.Struct(user); err != nil {
 		return nil, err
 	}
 
-	insertedUser, err := u.store.Insert(user.Username, user.Email, user.PublicKey)
+	insertedUser, err := a.store.InsertUser(
+		user.Username,
+		user.Email,
+		"active",
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &UserDetailsResponseDto{
+	insertedKey, err := a.store.InsertKey(
+		insertedUser.Id,
+		user.PublicKey,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RegisterUserResponseDto{
 		Id:        insertedUser.Id,
 		Username:  insertedUser.Username,
 		Email:     insertedUser.Email,
 		CreatedAt: insertedUser.CreatedAt,
+		PublicKey: insertedKey.PublicKey,
 	}, nil
 }

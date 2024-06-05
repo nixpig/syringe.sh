@@ -1,71 +1,43 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"github.com/nixpig/syringe.sh/server/internal/database"
 	"github.com/nixpig/syringe.sh/server/internal/screens"
+	"github.com/nixpig/syringe.sh/server/internal/services"
+	"github.com/nixpig/syringe.sh/server/internal/stores"
 )
-
-var DB *sql.DB
 
 func main() {
 	if err := godotenv.Load(".env"); err != nil {
-		fmt.Fprintf(os.Stdout, "unable to load env:\n%s", err)
+		fmt.Fprintf(os.Stdout, "unable to load '.env' file:\n%s", err)
 	}
 
-	databaseUrl := os.Getenv("TURSO_DATABASE_URL")
-	databaseToken := os.Getenv("TURSO_AUTH_TOKEN")
-
-	fmt.Println("databaseUrl: ", databaseUrl)
-	fmt.Println("databaseToken: ", databaseToken)
-
-	databaseConnectionString := databaseUrl + "?authToken=" + databaseToken
-
-	DB, err := database.Connection(databaseConnectionString)
-
+	db, err := database.Connection(
+		os.Getenv("DATABASE_URL"),
+		os.Getenv("DATABASE_TOKEN"),
+	)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to connect to database: %s\n%s", databaseConnectionString, err)
+		fmt.Fprintf(os.Stderr, "failed to connect to database:\n%s", err)
 		os.Exit(1)
 	}
 
-	// if err := database.MigrateUserDb(DB); err != nil {
-	// 	fmt.Fprintf(os.Stderr, "failed to create tables: \n%s", err)
-	// }
+	defer db.Close()
 
-	defer DB.Close()
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	appStore := stores.NewSqliteAppStore(db)
+	appService := services.NewAppServiceImpl(appStore, validate)
 
-	fmt.Println(DB.Stats())
+	registerScreen := screens.NewRegisterScreenModel(appService)
 
-	registerScreen := screens.RegisterScreen{}
-
-	p := tea.NewProgram(registerScreen.InitialModel(DB))
+	p := tea.NewProgram(registerScreen, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("error:\n%s", err)
 		os.Exit(1)
 	}
 }
-
-// func main() {
-//
-// 	mux := http.NewServeMux()
-//
-// 	userStore := user.NewSqliteUserStore(DB)
-// 	userService := user.NewJsonUserService(userStore, validator.New(validator.WithRequiredStructEnabled()))
-// 	httpHandlers := handlers.NewHttpHandlers(userService)
-//
-// 	mux.HandleFunc("POST /users/create", httpHandlers.CreateUser)
-//
-// 	fmt.Println("starting server...")
-// 	server := &http.Server{
-// 		Handler: mux,
-// 		Addr:    ":3000",
-// 	}
-// 	if err := server.ListenAndServe(); err != nil {
-// 		fmt.Println("failed to start server", err)
-// 	}
-// }

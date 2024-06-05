@@ -10,8 +10,10 @@ type DbConfig struct {
 	Location string
 }
 
-func Connection(url string) (*sql.DB, error) {
-	db, err := sql.Open("libsql", url)
+func Connection(databaseUrl, databaseToken string) (*sql.DB, error) {
+	databaseConnectionString := databaseUrl + "?authToken=" + databaseToken
+
+	db, err := sql.Open("libsql", databaseConnectionString)
 	if err != nil {
 		return nil, err
 	}

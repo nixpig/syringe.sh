@@ -3,26 +3,6 @@
 
 # `syringe.sh/server`
 
-```
-internal/
-    - database/ # package database
-        - database.go
-    - screens/ # package screens
-        - register.go
-    - stores/ # package stores
-        - stores.go
-    - models/ # package models
-        - user_model.go # etc...
-    - services/ # package services
-        - users_service.go
-        - keys_service.go
-    - handlers/ # package handlers
-        - http/
-            - http.go
-        - ssh/
-            - ssh.go
-```
-
 ```go
 f, err := tea.LogToFile("tmp/debug.log", "debug")
 if err != nil {

@@ -1,14 +1,13 @@
 package screens
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/nixpig/syringe.sh/server/internal/stores"
+	"github.com/nixpig/syringe.sh/server/internal/services"
 )
 
 var (
@@ -22,18 +21,16 @@ var (
 	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
 )
 
-type model struct {
+type RegisterScreenModel struct {
 	focusIndex int
 	inputs     []textinput.Model
-	db         *sql.DB
+	service    services.AppService
 }
 
-type RegisterScreen struct{}
-
-func (r RegisterScreen) InitialModel(db *sql.DB) model {
-	m := model{
-		inputs: make([]textinput.Model, 3),
-		db:     db,
+func NewRegisterScreenModel(service services.AppService) RegisterScreenModel {
+	m := RegisterScreenModel{
+		inputs:  make([]textinput.Model, 3),
+		service: service,
 	}
 
 	for i := range m.inputs {
@@ -61,11 +58,11 @@ func (r RegisterScreen) InitialModel(db *sql.DB) model {
 	return m
 }
 
-func (m model) Init() tea.Cmd {
+func (m RegisterScreenModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m RegisterScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -79,7 +76,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Did the user press enter while the submit button was focused?
 			// If so, exit.
 			if s == "enter" && m.focusIndex == len(m.inputs) {
-				m.submit(m.inputs[0].Value(), m.inputs[1].Value(), m.inputs[2].Value())
+				m.submit(
+					m.inputs[0].Value(),
+					m.inputs[1].Value(),
+					m.inputs[2].Value(),
+				)
+
 				return m, tea.Quit
 			}
 
@@ -120,7 +122,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) updateInputs(msg tea.Msg) tea.Cmd {
+func (m RegisterScreenModel) updateInputs(msg tea.Msg) tea.Cmd {
 	cmds := make([]tea.Cmd, len(m.inputs))
 
 	// Only text inputs with Focus() set will respond, so it's safe to simply
@@ -132,7 +134,7 @@ func (m model) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m model) View() string {
+func (m RegisterScreenModel) View() string {
 	var b strings.Builder
 
 	for i := range m.inputs {
@@ -151,26 +153,15 @@ func (m model) View() string {
 	return b.String()
 }
 
-func (m model) submit(username, sshPublicKey, email string) error {
-	var err error
-
-	appStore := stores.NewSqliteAppStore(m.db)
-
-	fmt.Println("inserting user")
-	user, err := appStore.InsertUser(username, email, "active")
+func (m RegisterScreenModel) submit(username, publicKey, email string) error {
+	_, err := m.service.RegisterUser(services.RegisterUserRequestDto{
+		Username:  username,
+		Email:     email,
+		PublicKey: publicKey,
+	})
 	if err != nil {
-		fmt.Printf("error inserting new user:\n%s", err)
 		return err
 	}
-
-	fmt.Println("inserting key")
-	_, err = appStore.InsertKey(user.Id, sshPublicKey)
-	if err != nil {
-		fmt.Printf("error inserting key:\n%s", err)
-		return err
-	}
-
-	fmt.Println("")
 
 	return nil
 }
