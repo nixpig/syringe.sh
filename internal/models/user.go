@@ -1,8 +1,4 @@
-package user
-
-import (
-	_ "github.com/go-playground/validator/v10"
-)
+package models
 
 type User struct {
 	Id        int

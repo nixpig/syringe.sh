@@ -5,21 +5,21 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/nixpig/syringe.sh/server/internal/user"
+	"github.com/nixpig/syringe.sh/server/internal/services"
 )
 
 type HttpHandlers struct {
-	userService user.UserService
+	userService services.UserService
 }
 
-func NewHttpHandlers(userService user.UserService) HttpHandlers {
+func NewHttpHandlers(userService services.UserService) HttpHandlers {
 	return HttpHandlers{userService}
 }
 
 func (h *HttpHandlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 	switch method := r.Method; method {
 	case http.MethodPost:
-		var req user.RegisterUserRequestDto
+		var req services.RegisterUserRequestDto
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			slog.Error("decode create user request", "err", err)

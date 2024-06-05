@@ -9,8 +9,10 @@ internal/
         - database.go
     - screens/ # package screens
         - register.go
-    - store/ # package store
-        - store.go
+    - stores/ # package stores
+        - stores.go
+    - models/ # package models
+        - user_model.go # etc...
     - services/ # package services
         - users_service.go
         - keys_service.go
@@ -19,4 +21,13 @@ internal/
             - http.go
         - ssh/
             - ssh.go
+```
+
+```go
+f, err := tea.LogToFile("tmp/debug.log", "debug")
+if err != nil {
+    t.Fatalf("unable to open log file:\n%s", err)
+}
+
+defer f.Close()
 ```

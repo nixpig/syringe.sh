@@ -1,4 +1,4 @@
-package register
+package screens
 
 import (
 	"database/sql"
@@ -8,8 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/nixpig/syringe.sh/server/internal/key"
-	"github.com/nixpig/syringe.sh/server/internal/user"
+	"github.com/nixpig/syringe.sh/server/internal/stores"
 )
 
 var (
@@ -29,7 +28,9 @@ type model struct {
 	db         *sql.DB
 }
 
-func InitialModel(db *sql.DB) model {
+type RegisterScreen struct{}
+
+func (r RegisterScreen) InitialModel(db *sql.DB) model {
 	m := model{
 		inputs: make([]textinput.Model, 3),
 		db:     db,
@@ -153,19 +154,17 @@ func (m model) View() string {
 func (m model) submit(username, sshPublicKey, email string) error {
 	var err error
 
-	userStore := user.NewSqliteUserStore(m.db)
+	appStore := stores.NewSqliteAppStore(m.db)
 
 	fmt.Println("inserting user")
-	user, err := userStore.Insert(username, email, "active")
+	user, err := appStore.InsertUser(username, email, "active")
 	if err != nil {
 		fmt.Printf("error inserting new user:\n%s", err)
 		return err
 	}
 
-	keyStore := key.NewSqliteKeyStore(m.db)
-
 	fmt.Println("inserting key")
-	_, err = keyStore.Insert(user.Id, sshPublicKey)
+	_, err = appStore.InsertKey(user.Id, sshPublicKey)
 	if err != nil {
 		fmt.Printf("error inserting key:\n%s", err)
 		return err

@@ -1,4 +1,4 @@
-package key
+package models
 
 type Key struct {
 	Id        int

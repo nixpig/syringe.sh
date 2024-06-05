@@ -8,7 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/joho/godotenv"
 	"github.com/nixpig/syringe.sh/server/internal/database"
-	"github.com/nixpig/syringe.sh/server/internal/register"
+	"github.com/nixpig/syringe.sh/server/internal/screens"
 )
 
 var DB *sql.DB
@@ -33,15 +33,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := database.MigrateUserDb(DB); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create tables: \n%s", err)
-	}
+	// if err := database.MigrateUserDb(DB); err != nil {
+	// 	fmt.Fprintf(os.Stderr, "failed to create tables: \n%s", err)
+	// }
 
 	defer DB.Close()
 
 	fmt.Println(DB.Stats())
 
-	p := tea.NewProgram(register.InitialModel(DB))
+	registerScreen := screens.RegisterScreen{}
+
+	p := tea.NewProgram(registerScreen.InitialModel(DB))
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("error:\n%s", err)
 		os.Exit(1)
