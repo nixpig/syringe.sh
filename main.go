@@ -33,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := database.CreateTables(DB); err != nil {
+	if err := database.MigrateUserDb(DB); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create tables: \n%s", err)
 	}
 

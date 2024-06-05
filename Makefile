@@ -23,7 +23,7 @@ audit:
 test: 
 	go run gotest.tools/gotestsum@latest ./...
 
-.PHONY: watch
+.PHONY: test_watch
 test_watch: 
 	go run gotest.tools/gotestsum@latest --watch ./...
 
@@ -36,15 +36,20 @@ coverage:
 build:
 	go build -o tmp/bin/${APP_BINARY_NAME} ${APP_PACKAGE_PATH}
 
-.PHONY: run
-run: 
-	go run github.com/cosmtrek/air@v1.43.0 \
+.PHONY: build_watch
+build_watch:
+		go run github.com/cosmtrek/air@v1.43.0 \
 		--build.cmd "make build" \
 		--build.bin "tmp/bin/${APP_BINARY_NAME}" \
 		--build.delay "100" \
 		--build.exclude_dir "" \
 		--build.include_ext "go" \
 		--misc.clean_on_exit "true"
+
+
+.PHONY: run
+run: 
+	go run ${APP_PACKAGE_PATH}
 
 .PHONY: clean
 clean:

@@ -23,20 +23,8 @@ func Connection(url string) (*sql.DB, error) {
 	return db, nil
 }
 
-func CreateTables(db *sql.DB) error {
+func MigrateUserDb(db *sql.DB) error {
 	var err error
-
-	// query := `
-	// 	create table if not exists variables_ (
-	// 		id_ integer primary key autoincrement not null,
-	// 		key_ text not null,
-	// 		value_ text not null,
-	// 		secret_ boolean,
-	// 		project_name_ text,
-	// 		environment_name_ text,
-	// 		unique (key_, project_name_, environment_name_)
-	// 	)
-	// `
 
 	dropKeysTable := `drop table if exists keys_`
 	_, err = db.Exec(dropKeysTable)
