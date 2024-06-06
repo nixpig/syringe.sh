@@ -5,28 +5,28 @@ import (
 	"errors"
 	"regexp"
 	"testing"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/nixpig/syringe.sh/server/internal/models"
 	"github.com/stretchr/testify/require"
 )
 
-func TestSqliteUserStore(t *testing.T) {
-	scenarios := map[string]func(t *testing.T, mock sqlmock.Sqlmock, store UserStore){
-		"test sqlite user store insert user (success)":    testSqliteUserStoreInsertUserSuccess,
-		"test sqlite user store insert user (scan error)": testSqliteUserStoreInsertUserScanError,
+func TestSqliteAppStore(t *testing.T) {
+	scenarios := map[string]func(t *testing.T, mock sqlmock.Sqlmock, store AppStore){
+		"test sqlite app store insert user (success)":    testSqliteAppStoreInsertUserSuccess,
+		"test sqlite app store insert user (scan error)": testSqliteAppStoreInsertUserScanError,
 
-		"test sqlite user store get user by username (success)":           testSqliteUserStoreGetUserByUsernameSuccess,
-		"test sqlite user store get user by username (success - no user)": testSqliteUserStoreGetUserByUsernameSuccessNoUser,
-		"test sqlite user store get user by username (scan error)":        testSqliteUserStoreGetUserByUsernameScanError,
+		"test sqlite app store get user by username (success)":           testSqliteAppStoreGetUserByUsernameSuccess,
+		"test sqlite app store get user by username (success - no user)": testSqliteAppStoreGetUserByUsernameSuccessNoUser,
+		"test sqlite app store get user by username (scan error)":        testSqliteAppStoreGetUserByUsernameScanError,
 
-		"test sqlite user store delete user by username (success)":         testSqliteUserStoreDeleteUserByUsernameSuccess,
-		"test sqlite user store delete user by username (query error)":     testSqliteUserStoreDeleteUserByUsernameQueryError,
-		"test sqlite user store delete user by username (rows error)":      testSqliteUserStoreDeleteUserByUsernameRowsError,
-		"test sqlite user store delete user by username (no user deleted)": testSqliteUserStoreDeleteUserByUsernameNoUserError,
+		"test sqlite app store delete user by username (success)":         testSqliteAppStoreDeleteUserByUsernameSuccess,
+		"test sqlite app store delete user by username (query error)":     testSqliteAppStoreDeleteUserByUsernameQueryError,
+		"test sqlite app store delete user by username (rows error)":      testSqliteAppStoreDeleteUserByUsernameRowsError,
+		"test sqlite app store delete user by username (no user deleted)": testSqliteAppStoreDeleteUserByUsernameNoUserError,
 
-		"test sqlite user store update user (success)":    testSqliteUserStoreUpdateUserSuccess,
-		"test sqlite user store update user (scan error)": testSqliteUserStoreUpdateUserScanError,
+		"test sqlite app store update user (success)":    testSqliteAppStoreUpdateUserSuccess,
+		"test sqlite app store update user (scan error)": testSqliteAppStoreUpdateUserScanError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -36,39 +36,39 @@ func TestSqliteUserStore(t *testing.T) {
 				t.Fatal("unable to create new mock sqlite database")
 			}
 
-			store := NewSqliteUserStore(db)
+			store := NewSqliteAppStore(db)
 
 			fn(t, mock, store)
 		})
 	}
 }
 
-func testSqliteUserStoreInsertUserSuccess(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
+func testSqliteAppStoreInsertUserSuccess(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
 	query := `
-		insert into users_ (username_, email_, status_, created_at_) 
-		values ($username, $email, $status, $createdAt) 
+		insert into users_ (username_, email_, status_) 
+		values ($username, $email, $status) 
 		returning id_, username_, email_, status_, created_at_
 	`
 
-	createdAt := time.Now().UTC()
+	createdAt := "2024-06-05 05:29:16"
 
 	mockRow := mock.
 		NewRows([]string{"id_", "username_", "email_", "status_", "created_at_"}).
-		AddRow(23, "janedoe", "jane@example.org", "p4ssw0rd", createdAt)
+		AddRow(23, "janedoe", "jane@example.org", "active", createdAt)
 
 	mock.
 		ExpectQuery(regexp.QuoteMeta(query)).
-		WithArgs("janedoe", "jane@example.org", "p4ssw0rd", sqlmock.AnyArg()).
+		WithArgs("janedoe", "jane@example.org", "active").
 		WillReturnRows(mockRow)
 
-	insertedUser, err := store.Insert("janedoe", "jane@example.org", "p4ssw0rd")
+	insertedUser, err := store.InsertUser("janedoe", "jane@example.org", "active")
 
 	require.NoError(t, err, "should not return error")
-	require.Equal(t, &User{
+	require.Equal(t, &models.User{
 		Id:        23,
 		Username:  "janedoe",
 		Email:     "jane@example.org",
-		Status:    "p4ssw0rd",
+		Status:    "active",
 		CreatedAt: createdAt,
 	}, insertedUser, "should return inserted user record")
 
@@ -77,26 +77,26 @@ func testSqliteUserStoreInsertUserSuccess(t *testing.T, mock sqlmock.Sqlmock, st
 	}
 }
 
-func testSqliteUserStoreInsertUserScanError(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
+func testSqliteAppStoreInsertUserScanError(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
 	query := `
-		insert into users_ (username_, email_, status_, created_at_) 
-		values ($username, $email, $status, $createdAt) 
+		insert into users_ (username_, email_, status_) 
+		values ($username, $email, $status) 
 		returning id_, username_, email_, status_, created_at_
 	`
 
-	createdAt := time.Now().UTC()
+	createdAt := "2024-06-05 05:29:16"
 
 	mockRow := mock.
 		NewRows([]string{"id_", "username_", "email_", "status_", "created_at_"}).
-		AddRow(23, "janedoe", "jane@example.org", "p4ssw0rd", createdAt).
+		AddRow(23, "janedoe", "jane@example.org", "active", createdAt).
 		RowError(0, errors.New("row_error"))
 
 	mock.
 		ExpectQuery(regexp.QuoteMeta(query)).
-		WithArgs("janedoe", "jane@example.org", "p4ssw0rd", sqlmock.AnyArg()).
+		WithArgs("janedoe", "jane@example.org", "active").
 		WillReturnRows(mockRow)
 
-	insertedUser, err := store.Insert("janedoe", "jane@example.org", "p4ssw0rd")
+	insertedUser, err := store.InsertUser("janedoe", "jane@example.org", "active")
 
 	require.EqualError(t, err, "row_error", "should return row error from database")
 	require.Empty(t, insertedUser, "should return empty inserted user record")
@@ -106,31 +106,31 @@ func testSqliteUserStoreInsertUserScanError(t *testing.T, mock sqlmock.Sqlmock, 
 	}
 }
 
-func testSqliteUserStoreGetUserByUsernameSuccess(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
+func testSqliteAppStoreGetUserByUsernameSuccess(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
 	query := `
 		select id_, username_, email_, status_, created_at_ 
 		from users_ 
 		where username_ = $1
 	`
-	createdAt := time.Now()
+	createdAt := "2024-06-05 05:29:16"
 
 	mockRow := mock.
 		NewRows([]string{"id_", "username_", "email_", "status_", "created_at_"}).
-		AddRow(23, "janedoe", "jane@example.org", "p4ssw0rd", createdAt)
+		AddRow(23, "janedoe", "jane@example.org", "active", createdAt)
 
 	mock.
 		ExpectQuery(regexp.QuoteMeta(query)).
 		WithArgs("janedoe").
 		WillReturnRows(mockRow)
 
-	user, err := store.GetByUsername("janedoe")
+	user, err := store.GetUserByUsername("janedoe")
 
 	require.NoError(t, err, "should not return error")
-	require.Equal(t, &User{
+	require.Equal(t, &models.User{
 		Id:        23,
 		Username:  "janedoe",
 		Email:     "jane@example.org",
-		Status:    "p4ssw0rd",
+		Status:    "active",
 		CreatedAt: createdAt,
 	}, user, "should return user record")
 
@@ -139,7 +139,7 @@ func testSqliteUserStoreGetUserByUsernameSuccess(t *testing.T, mock sqlmock.Sqlm
 	}
 }
 
-func testSqliteUserStoreGetUserByUsernameSuccessNoUser(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
+func testSqliteAppStoreGetUserByUsernameSuccessNoUser(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
 	query := `
 		select id_, username_, email_, status_, created_at_ 
 		from users_ 
@@ -154,7 +154,7 @@ func testSqliteUserStoreGetUserByUsernameSuccessNoUser(t *testing.T, mock sqlmoc
 		WithArgs("janedoe").
 		WillReturnRows(mockRow)
 
-	user, err := store.GetByUsername("janedoe")
+	user, err := store.GetUserByUsername("janedoe")
 
 	require.ErrorIs(t, err, sql.ErrNoRows, "should return no rows error")
 	require.Empty(t, user, "should return empty user record")
@@ -165,18 +165,18 @@ func testSqliteUserStoreGetUserByUsernameSuccessNoUser(t *testing.T, mock sqlmoc
 
 }
 
-func testSqliteUserStoreGetUserByUsernameScanError(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
+func testSqliteAppStoreGetUserByUsernameScanError(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
 	query := `
 		select id_, username_, email_, status_, created_at_ 
 		from users_ 
 		where username_ = $1
 	`
 
-	createdAt := time.Now()
+	createdAt := "2024-06-05 05:29:16"
 
 	mockRows := mock.
 		NewRows([]string{"id_", "username_", "email_", "status_", "created_at_"}).
-		AddRow(23, "janedoe", "jane@example.org", "p4ssw0rd", createdAt).
+		AddRow(23, "janedoe", "jane@example.org", "active", createdAt).
 		RowError(0, errors.New("row_error"))
 
 	mock.
@@ -184,7 +184,7 @@ func testSqliteUserStoreGetUserByUsernameScanError(t *testing.T, mock sqlmock.Sq
 		WithArgs("janedoe").
 		WillReturnRows(mockRows)
 
-	user, err := store.GetByUsername("janedoe")
+	user, err := store.GetUserByUsername("janedoe")
 
 	require.Empty(t, user, "should return empty user result")
 	require.EqualError(t, err, "row_error", "should return row error from database")
@@ -194,7 +194,7 @@ func testSqliteUserStoreGetUserByUsernameScanError(t *testing.T, mock sqlmock.Sq
 	}
 }
 
-func testSqliteUserStoreDeleteUserByUsernameSuccess(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
+func testSqliteAppStoreDeleteUserByUsernameSuccess(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
 	query := `delete from users_ where username_ = $1`
 
 	mockResult := sqlmock.NewResult(23, 1)
@@ -204,7 +204,7 @@ func testSqliteUserStoreDeleteUserByUsernameSuccess(t *testing.T, mock sqlmock.S
 		WithArgs("janedoe").
 		WillReturnResult(mockResult)
 
-	err := store.DeleteByUsername("janedoe")
+	err := store.DeleteUserByUsername("janedoe")
 
 	require.NoError(t, err, "should not return error")
 
@@ -213,7 +213,7 @@ func testSqliteUserStoreDeleteUserByUsernameSuccess(t *testing.T, mock sqlmock.S
 	}
 }
 
-func testSqliteUserStoreDeleteUserByUsernameQueryError(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
+func testSqliteAppStoreDeleteUserByUsernameQueryError(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
 	query := `delete from users_ where username_ = $1`
 
 	mock.
@@ -221,7 +221,7 @@ func testSqliteUserStoreDeleteUserByUsernameQueryError(t *testing.T, mock sqlmoc
 		WithArgs("janedoe").
 		WillReturnError(errors.New("query_error"))
 
-	err := store.DeleteByUsername("janedoe")
+	err := store.DeleteUserByUsername("janedoe")
 
 	require.EqualError(t, err, "query_error", "should return error from query")
 
@@ -230,7 +230,7 @@ func testSqliteUserStoreDeleteUserByUsernameQueryError(t *testing.T, mock sqlmoc
 	}
 }
 
-func testSqliteUserStoreDeleteUserByUsernameRowsError(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
+func testSqliteAppStoreDeleteUserByUsernameRowsError(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
 	query := `delete from users_ where username_ = $1`
 
 	mockRes := sqlmock.NewErrorResult(errors.New("rows_error"))
@@ -240,7 +240,7 @@ func testSqliteUserStoreDeleteUserByUsernameRowsError(t *testing.T, mock sqlmock
 		WithArgs("janedoe").
 		WillReturnResult(mockRes)
 
-	err := store.DeleteByUsername("janedoe")
+	err := store.DeleteUserByUsername("janedoe")
 
 	require.EqualError(t, err, "rows_error", "should return error from query")
 
@@ -249,7 +249,7 @@ func testSqliteUserStoreDeleteUserByUsernameRowsError(t *testing.T, mock sqlmock
 	}
 }
 
-func testSqliteUserStoreDeleteUserByUsernameNoUserError(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
+func testSqliteAppStoreDeleteUserByUsernameNoUserError(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
 	query := `delete from users_ where username_ = $1`
 
 	mockRes := sqlmock.NewResult(0, 0)
@@ -259,7 +259,7 @@ func testSqliteUserStoreDeleteUserByUsernameNoUserError(t *testing.T, mock sqlmo
 		WithArgs("janedoe").
 		WillReturnResult(mockRes)
 
-	err := store.DeleteByUsername("janedoe")
+	err := store.DeleteUserByUsername("janedoe")
 
 	require.EqualError(t, err, "no user deleted", "should return error due to zero results")
 
@@ -268,38 +268,38 @@ func testSqliteUserStoreDeleteUserByUsernameNoUserError(t *testing.T, mock sqlmo
 	}
 }
 
-func testSqliteUserStoreUpdateUserSuccess(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
+func testSqliteAppStoreUpdateUserSuccess(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
 	query := `
 		update users_ set email_ = $2, set status_ = $3
 		where username_ = $1 
 		returning id_, username_, email_, status_, created_at_
 	`
 
-	createdAt := time.Now()
+	createdAt := "2024-06-05 05:29:16"
 
 	mockRow := mock.
 		NewRows([]string{"id_", "username_", "email_", "status_", "created_at_"}).
-		AddRow(23, "janedoe", "jane@example.org", "p4ssw0rd", createdAt)
+		AddRow(23, "janedoe", "jane@example.org", "active", createdAt)
 
 	mock.
 		ExpectQuery(regexp.QuoteMeta(query)).
-		WithArgs("janedoe", "jane@example.org", "p4ssw0rd").
+		WithArgs("janedoe", "jane@example.org", "active").
 		WillReturnRows(mockRow)
 
-	user, err := store.Update(User{
+	user, err := store.UpdateUser(models.User{
 		Id:        23,
 		Username:  "janedoe",
 		Email:     "jane@example.org",
-		Status:    "p4ssw0rd",
+		Status:    "active",
 		CreatedAt: createdAt,
 	})
 
 	require.NoError(t, err, "should not return error")
-	require.Equal(t, &User{
+	require.Equal(t, &models.User{
 		Id:        23,
 		Username:  "janedoe",
 		Email:     "jane@example.org",
-		Status:    "p4ssw0rd",
+		Status:    "active",
 		CreatedAt: createdAt,
 	}, user, "should return user record")
 
@@ -308,30 +308,30 @@ func testSqliteUserStoreUpdateUserSuccess(t *testing.T, mock sqlmock.Sqlmock, st
 	}
 }
 
-func testSqliteUserStoreUpdateUserScanError(t *testing.T, mock sqlmock.Sqlmock, store UserStore) {
+func testSqliteAppStoreUpdateUserScanError(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
 	query := `
 		update users_ set email_ = $2, set status_ = $3
 		where username_ = $1 
 		returning id_, username_, email_, status_, created_at_
 	`
 
-	createdAt := time.Now()
+	createdAt := "2024-06-05 05:29:16"
 
 	mockRow := mock.
 		NewRows([]string{"id_", "username_", "email_", "status_", "created_at_"}).
-		AddRow(23, "janedoe", "jane@example.org", "p4ssw0rd", createdAt).
+		AddRow(23, "janedoe", "jane@example.org", "active", createdAt).
 		RowError(0, errors.New("row_error"))
 
 	mock.
 		ExpectQuery(regexp.QuoteMeta(query)).
-		WithArgs("janedoe", "jane@example.org", "p4ssw0rd").
+		WithArgs("janedoe", "jane@example.org", "active").
 		WillReturnRows(mockRow)
 
-	user, err := store.Update(User{
+	user, err := store.UpdateUser(models.User{
 		Id:        23,
 		Username:  "janedoe",
 		Email:     "jane@example.org",
-		Status:    "p4ssw0rd",
+		Status:    "active",
 		CreatedAt: createdAt,
 	})
 

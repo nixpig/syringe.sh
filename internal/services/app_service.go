@@ -19,8 +19,21 @@ type RegisterUserResponseDto struct {
 	PublicKey string `json:"public_key"`
 }
 
+type AddPublicKeyRequestDto struct {
+	PublicKey string `json:"public_key" validate:"required"`
+	UserId    int    `json:"user_id" validate:"required"`
+}
+
+type AddPublicKeyResponseDto struct {
+	Id        int    `json:"id"`
+	UserId    int    `json:"user_id"`
+	PublicKey string `json:"public_key"`
+	CreatedAt string `json:"created_at"`
+}
+
 type AppService interface {
 	RegisterUser(user RegisterUserRequestDto) (*RegisterUserResponseDto, error)
+	AddPublicKey(publicKey AddPublicKeyRequestDto) (*AddPublicKeyResponseDto, error)
 }
 
 type AppServiceImpl struct {
@@ -63,5 +76,23 @@ func (a AppServiceImpl) RegisterUser(user RegisterUserRequestDto) (*RegisterUser
 		Email:     insertedUser.Email,
 		CreatedAt: insertedUser.CreatedAt,
 		PublicKey: insertedKey.PublicKey,
+	}, nil
+}
+
+func (a AppServiceImpl) AddPublicKey(addKeyDetails AddPublicKeyRequestDto) (*AddPublicKeyResponseDto, error) {
+	if err := a.validate.Struct(addKeyDetails); err != nil {
+		return nil, err
+	}
+
+	addedKeyDetails, err := a.store.InsertKey(addKeyDetails.UserId, addKeyDetails.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AddPublicKeyResponseDto{
+		Id:        addedKeyDetails.Id,
+		UserId:    addedKeyDetails.UserId,
+		PublicKey: addedKeyDetails.PublicKey,
+		CreatedAt: addedKeyDetails.CreatedAt,
 	}, nil
 }
