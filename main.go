@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -15,22 +17,33 @@ import (
 )
 
 func main() {
+	slog.Info("loading environment\n")
 	if err := godotenv.Load(".env"); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to load '.env' file:\n%s", err)
+		slog.Error("failed to load '.env' file:\n%s", err)
 		os.Exit(1)
 	}
 
+	slog.Info("connecting to database\n")
 	db, err := database.Connection(
 		os.Getenv("DATABASE_URL"),
 		os.Getenv("DATABASE_TOKEN"),
 	)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to connect to database:\n%s", err)
+		slog.Error("failed to connect to database:\n%s", err)
 		os.Exit(1)
 	}
 
 	defer db.Close()
 
+	if slices.Index(os.Args, "--migrate") != -1 {
+		slog.Info("running database migration\n")
+		if err := database.MigrateAppDb(db); err != nil {
+			slog.Error("failed to run database migration:\n%s", err)
+			os.Exit(1)
+		}
+	}
+
+	slog.Info("building app components\n")
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	appStore := stores.NewSqliteAppStore(db)
 	appService := services.NewAppServiceImpl(appStore, validate)
@@ -50,8 +63,9 @@ func main() {
 		WriteTimeout: time.Second * 10,
 	}
 
+	slog.Info("starting http server")
 	if err := server.ListenAndServe(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to start server:\n%s", err)
+		slog.Error("failed to start server:\n%s", err)
 		os.Exit(1)
 	}
 

@@ -25,18 +25,19 @@ func Connection(databaseUrl, databaseToken string) (*sql.DB, error) {
 	return db, nil
 }
 
-func MigrateUserDb(db *sql.DB) error {
-	var err error
-
+func MigrateAppDb(db *sql.DB) error {
 	dropKeysTable := `drop table if exists keys_`
-	_, err = db.Exec(dropKeysTable)
-	if err != nil {
+	if _, err := db.Exec(dropKeysTable); err != nil {
+		return err
+	}
+
+	dropDatabasesTable := `drop table if exists databases_`
+	if _, err := db.Exec(dropDatabasesTable); err != nil {
 		return err
 	}
 
 	dropUsersTable := `drop table if exists users_`
-	_, err = db.Exec(dropUsersTable)
-	if err != nil {
+	if _, err := db.Exec(dropUsersTable); err != nil {
 		return err
 	}
 
@@ -61,13 +62,27 @@ func MigrateUserDb(db *sql.DB) error {
 		)
 	`
 
-	_, err = db.Exec(createUsersTable)
-	if err != nil {
+	createDatabasesTable := `
+		create table if not exists databases_ (
+			id_ integer primary key autoincrement not null,
+			name_ text not null,
+			password_ text not null,
+			user_id_ integer not null,
+			created_at_ datetime without time zone,
+
+			foreign key (user_id_) references users_(id_)
+	)
+	`
+
+	if _, err := db.Exec(createUsersTable); err != nil {
 		return err
 	}
 
-	_, err = db.Exec(createKeysTable)
-	if err != nil {
+	if _, err := db.Exec(createKeysTable); err != nil {
+		return err
+	}
+
+	if _, err := db.Exec(createDatabasesTable); err != nil {
 		return err
 	}
 

@@ -70,6 +70,8 @@ func (a AppServiceImpl) RegisterUser(user RegisterUserRequestDto) (*RegisterUser
 		return nil, err
 	}
 
+	// TODO: create database!! - hash of username salted with createdAt? Random password that gets store in app table?
+
 	return &RegisterUserResponseDto{
 		Id:        insertedUser.Id,
 		Username:  insertedUser.Username,
