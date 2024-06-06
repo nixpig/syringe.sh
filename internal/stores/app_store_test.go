@@ -27,6 +27,9 @@ func TestSqliteAppStore(t *testing.T) {
 
 		"test sqlite app store update user (success)":    testSqliteAppStoreUpdateUserSuccess,
 		"test sqlite app store update user (scan error)": testSqliteAppStoreUpdateUserScanError,
+
+		"test sqlite app store insert key (success)":    testSqliteAppStoreInsertKeySuccess,
+		"test sqlite app store insert key (scan error)": testSqliteAppStoreInsertKeyScanError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -73,7 +76,7 @@ func testSqliteAppStoreInsertUserSuccess(t *testing.T, mock sqlmock.Sqlmock, sto
 	}, insertedUser, "should return inserted user record")
 
 	if expected := mock.ExpectationsWereMet(); expected != nil {
-		t.Error("database was not called as expected")
+		t.Errorf("database was not called as expected:\n%s", expected)
 	}
 }
 
@@ -102,7 +105,7 @@ func testSqliteAppStoreInsertUserScanError(t *testing.T, mock sqlmock.Sqlmock, s
 	require.Empty(t, insertedUser, "should return empty inserted user record")
 
 	if expected := mock.ExpectationsWereMet(); expected != nil {
-		t.Errorf("database was not called as expected:\n%s", err)
+		t.Errorf("database was not called as expected:\n%s", expected)
 	}
 }
 
@@ -135,7 +138,7 @@ func testSqliteAppStoreGetUserByUsernameSuccess(t *testing.T, mock sqlmock.Sqlmo
 	}, user, "should return user record")
 
 	if expected := mock.ExpectationsWereMet(); expected != nil {
-		t.Errorf("database was not queried as expected:\n%s", err)
+		t.Errorf("database was not queried as expected:\n%s", expected)
 	}
 }
 
@@ -160,7 +163,7 @@ func testSqliteAppStoreGetUserByUsernameSuccessNoUser(t *testing.T, mock sqlmock
 	require.Empty(t, user, "should return empty user record")
 
 	if expected := mock.ExpectationsWereMet(); expected != nil {
-		t.Errorf("database was not queried as expected:\n%s", err)
+		t.Errorf("database was not queried as expected:\n%s", expected)
 	}
 
 }
@@ -304,7 +307,7 @@ func testSqliteAppStoreUpdateUserSuccess(t *testing.T, mock sqlmock.Sqlmock, sto
 	}, user, "should return user record")
 
 	if expected := mock.ExpectationsWereMet(); expected != nil {
-		t.Errorf("database was not queried as expected:\n%s", err)
+		t.Errorf("database was not queried as expected:\n%s", expected)
 	}
 }
 
@@ -339,6 +342,66 @@ func testSqliteAppStoreUpdateUserScanError(t *testing.T, mock sqlmock.Sqlmock, s
 	require.Empty(t, user, "should return user record")
 
 	if expected := mock.ExpectationsWereMet(); expected != nil {
-		t.Errorf("database was not queried as expected:\n%s", err)
+		t.Errorf("database was not queried as expected:\n%s", expected)
+	}
+}
+
+func testSqliteAppStoreInsertKeySuccess(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
+	query := `
+		insert into keys_ (user_id_, ssh_public_key_)
+		values ($userId, $publicKey)
+		returning id_, user_id_, ssh_public_key_, created_at_
+	`
+
+	createdAt := "2024-06-05 05:29:16"
+
+	mockRow := sqlmock.
+		NewRows([]string{"id_", "user_id_", "ssh_public_key_", "created_at_"}).
+		AddRow(42, 23, "some_public_key", createdAt)
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(42, "some_public_key").
+		WillReturnRows(mockRow)
+
+	insertedKeyDetails, err := store.InsertKey(42, "some_public_key")
+	require.NoError(t, err, "should not return error")
+	require.Equal(t, &models.Key{
+		Id:        42,
+		UserId:    23,
+		PublicKey: "some_public_key",
+		CreatedAt: createdAt,
+	}, insertedKeyDetails, "should return inserted key details")
+
+	if expected := mock.ExpectationsWereMet(); expected != nil {
+		t.Errorf("database was not queried as expected:\n%s", expected)
+	}
+}
+
+func testSqliteAppStoreInsertKeyScanError(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
+	query := `
+		insert into keys_ (user_id_, ssh_public_key_)
+		values ($userId, $publicKey)
+		returning id_, user_id_, ssh_public_key_, created_at_
+	`
+
+	createdAt := "2024-06-05 05:29:16"
+
+	mockRow := sqlmock.
+		NewRows([]string{"id_", "user_id_", "ssh_public_key_", "created_at_"}).
+		AddRow(42, 23, "some_public_key", createdAt).
+		RowError(0, errors.New("row_error"))
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(42, "some_public_key").
+		WillReturnRows(mockRow)
+
+	insertedKeyDetails, err := store.InsertKey(42, "some_public_key")
+	require.EqualError(t, err, "row_error", "should return row error")
+	require.Empty(t, insertedKeyDetails, "should return empty key details")
+
+	if expected := mock.ExpectationsWereMet(); expected != nil {
+		t.Errorf("database was not queried as expected:\n%s", expected)
 	}
 }
