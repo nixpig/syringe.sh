@@ -1,39 +1,63 @@
 package services
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
+	"net/http"
+	"os"
+	"strconv"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 )
 
-type RegisterUserRequestDto struct {
+type RegisterUserRequest struct {
 	Username  string `json:"username" validate:"required,min=3,max=30"`
 	Email     string `json:"email" validate:"required,email"`
 	PublicKey string `json:"public_key" validate:"required"`
 }
 
-type RegisterUserResponseDto struct {
-	Id        int    `json:"id"`
-	Username  string `json:"username"`
-	Email     string `json:"email"`
-	CreatedAt string `json:"created_at"`
-	PublicKey string `json:"public_key"`
+type RegisterUserResponse struct {
+	Id               int    `json:"id"`
+	Username         string `json:"username"`
+	Email            string `json:"email"`
+	CreatedAt        string `json:"created_at"`
+	PublicKey        string `json:"public_key"`
+	DatabaseName     string `json:"database_name"`
+	DatabasePassword string `json:"database_password"`
 }
 
-type AddPublicKeyRequestDto struct {
+type AddPublicKeyRequest struct {
 	PublicKey string `json:"public_key" validate:"required"`
 	UserId    int    `json:"user_id" validate:"required"`
 }
 
-type AddPublicKeyResponseDto struct {
+type AddPublicKeyResponse struct {
 	Id        int    `json:"id"`
 	UserId    int    `json:"user_id"`
 	PublicKey string `json:"public_key"`
 	CreatedAt string `json:"created_at"`
 }
 
+type CreateDatabaseRequest struct {
+	Name     string `json:"name" validate:"required"`
+	Password string `json:"password" validate:"required"`
+	UserId   int    `json:"user_id" validate:"required"`
+}
+
+type CreateDatabaseResponse struct {
+	Id        int    `json:"id"`
+	Name      string `json:"name"`
+	Password  string `json:"password"`
+	UserId    int    `json:"user_id"`
+	CreatedAt string `json:"created_at"`
+}
+
 type AppService interface {
-	RegisterUser(user RegisterUserRequestDto) (*RegisterUserResponseDto, error)
-	AddPublicKey(publicKey AddPublicKeyRequestDto) (*AddPublicKeyResponseDto, error)
+	RegisterUser(user RegisterUserRequest) (*RegisterUserResponse, error)
+	AddPublicKey(publicKey AddPublicKeyRequest) (*AddPublicKeyResponse, error)
+	CreateDatabase(databaseDetails CreateDatabaseRequest) (*CreateDatabaseResponse, error)
 }
 
 type AppServiceImpl struct {
@@ -48,7 +72,7 @@ func NewAppServiceImpl(store stores.AppStore, validate *validator.Validate) AppS
 	}
 }
 
-func (a AppServiceImpl) RegisterUser(user RegisterUserRequestDto) (*RegisterUserResponseDto, error) {
+func (a AppServiceImpl) RegisterUser(user RegisterUserRequest) (*RegisterUserResponse, error) {
 	if err := a.validate.Struct(user); err != nil {
 		return nil, err
 	}
@@ -62,26 +86,36 @@ func (a AppServiceImpl) RegisterUser(user RegisterUserRequestDto) (*RegisterUser
 		return nil, err
 	}
 
-	insertedKey, err := a.store.InsertKey(
-		insertedUser.Id,
-		user.PublicKey,
-	)
+	insertedKey, err := a.AddPublicKey(AddPublicKeyRequest{
+		UserId:    insertedUser.Id,
+		PublicKey: user.PublicKey,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: create database!! - hash of username salted with createdAt? Random password that gets store in app table?
+	insertedDatabase, err := a.CreateDatabase(
+		CreateDatabaseRequest{
+			Name:     insertedUser.Username + "-" + strconv.Itoa(insertedUser.Id),
+			Password: "p4ssw0rd",
+			UserId:   insertedUser.Id,
+		})
+	if err != nil {
+		return nil, err
+	}
 
-	return &RegisterUserResponseDto{
-		Id:        insertedUser.Id,
-		Username:  insertedUser.Username,
-		Email:     insertedUser.Email,
-		CreatedAt: insertedUser.CreatedAt,
-		PublicKey: insertedKey.PublicKey,
+	return &RegisterUserResponse{
+		Id:               insertedUser.Id,
+		Username:         insertedUser.Username,
+		Email:            insertedUser.Email,
+		CreatedAt:        insertedUser.CreatedAt,
+		PublicKey:        insertedKey.PublicKey,
+		DatabaseName:     insertedDatabase.Name,
+		DatabasePassword: insertedDatabase.Password,
 	}, nil
 }
 
-func (a AppServiceImpl) AddPublicKey(addKeyDetails AddPublicKeyRequestDto) (*AddPublicKeyResponseDto, error) {
+func (a AppServiceImpl) AddPublicKey(addKeyDetails AddPublicKeyRequest) (*AddPublicKeyResponse, error) {
 	if err := a.validate.Struct(addKeyDetails); err != nil {
 		return nil, err
 	}
@@ -91,10 +125,65 @@ func (a AppServiceImpl) AddPublicKey(addKeyDetails AddPublicKeyRequestDto) (*Add
 		return nil, err
 	}
 
-	return &AddPublicKeyResponseDto{
+	return &AddPublicKeyResponse{
 		Id:        addedKeyDetails.Id,
 		UserId:    addedKeyDetails.UserId,
 		PublicKey: addedKeyDetails.PublicKey,
 		CreatedAt: addedKeyDetails.CreatedAt,
+	}, nil
+}
+
+func (a AppServiceImpl) CreateDatabase(databaseDetails CreateDatabaseRequest) (*CreateDatabaseResponse, error) {
+	if err := a.validate.Struct(databaseDetails); err != nil {
+		return nil, err
+	}
+
+	apiBaseUrl := os.Getenv("API_BASE_URL")
+	databaseOrg := os.Getenv("DATABASE_ORG")
+	databaseGroup := os.Getenv("DATABASE_GROUP")
+	apiToken := os.Getenv("API_TOKEN")
+
+	createDbUrl := apiBaseUrl + "/organizations/" + databaseOrg + "/databases"
+
+	body := []byte(fmt.Sprintf(`{
+		"name": "%s",
+		"group": "%s"
+	}`, databaseDetails.Name, databaseGroup))
+
+	req, err := http.NewRequest("POST", createDbUrl, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", apiToken))
+
+	client := http.Client{}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		return nil, errors.New(fmt.Sprintf("api error: %v", res))
+	}
+
+	createdDatabaseDetails, err := a.store.InsertDatabase(
+		databaseDetails.Name,
+		databaseDetails.Password,
+		databaseDetails.UserId,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &CreateDatabaseResponse{
+		Id:        createdDatabaseDetails.Id,
+		Name:      createdDatabaseDetails.Name,
+		Password:  createdDatabaseDetails.Password,
+		UserId:    createdDatabaseDetails.UserId,
+		CreatedAt: createdDatabaseDetails.CreatedAt,
 	}, nil
 }

@@ -68,7 +68,7 @@ func (m *MockAppStore) InsertKey(userId int, publicKey string) (*models.Key, err
 	return args.Get(0).(*models.Key), args.Error(1)
 }
 
-func (m *MockAppStore) InsertDatabase(name string, password string, userId int) (*models.Database, error) {
+func (m *MockAppStore) InsertDatabase(name, password string, userId int) (*models.Database, error) {
 	args := m.Called(name, password, userId)
 
 	return args.Get(0).(*models.Database), args.Error(1)
@@ -95,14 +95,14 @@ func testAppServiceRegisterUserSuccess(t *testing.T, service AppService) {
 			CreatedAt: createdAt,
 		}, nil)
 
-	registeredUser, err := service.RegisterUser(RegisterUserRequestDto{
+	registeredUser, err := service.RegisterUser(RegisterUserRequest{
 		Username:  "janedoe",
 		Email:     "jane@example.org",
 		PublicKey: "some_public_key",
 	})
 
 	require.NoError(t, err, "should not return error")
-	require.Equal(t, &RegisterUserResponseDto{
+	require.Equal(t, &RegisterUserResponse{
 		Id:        23,
 		Username:  "janedoe",
 		Email:     "jane@example.org",
@@ -121,7 +121,7 @@ func testAppServiceRegisterUserSuccess(t *testing.T, service AppService) {
 func testAppServiceRegisterUserFieldValidationError(t *testing.T, service AppService) {
 	var err error
 
-	usernameMinLength, err := service.RegisterUser(RegisterUserRequestDto{
+	usernameMinLength, err := service.RegisterUser(RegisterUserRequest{
 		Username:  "ja",
 		Email:     "jane@example.org",
 		PublicKey: "some_public_key",
@@ -129,7 +129,7 @@ func testAppServiceRegisterUserFieldValidationError(t *testing.T, service AppSer
 	require.Empty(t, usernameMinLength)
 	require.Error(t, err, "should return validation error")
 
-	usernameMaxLength, err := service.RegisterUser(RegisterUserRequestDto{
+	usernameMaxLength, err := service.RegisterUser(RegisterUserRequest{
 		Username:  "janedoejanedoejanedoejanedoejanedoe",
 		Email:     "jane@example.org",
 		PublicKey: "some_public_key",
@@ -137,7 +137,7 @@ func testAppServiceRegisterUserFieldValidationError(t *testing.T, service AppSer
 	require.Empty(t, usernameMaxLength)
 	require.Error(t, err, "should return validation error")
 
-	emailInvalid, err := service.RegisterUser(RegisterUserRequestDto{
+	emailInvalid, err := service.RegisterUser(RegisterUserRequest{
 		Username:  "janedoe",
 		Email:     "janeexampleorg",
 		PublicKey: "some_public_key",
@@ -145,21 +145,21 @@ func testAppServiceRegisterUserFieldValidationError(t *testing.T, service AppSer
 	require.Empty(t, emailInvalid)
 	require.Error(t, err, "should return validation error")
 
-	missingUsername, err := service.RegisterUser(RegisterUserRequestDto{
+	missingUsername, err := service.RegisterUser(RegisterUserRequest{
 		Email:     "jane@example.org",
 		PublicKey: "some_public_key",
 	})
 	require.Empty(t, missingUsername)
 	require.Error(t, err, "should return validation error")
 
-	missingEmail, err := service.RegisterUser(RegisterUserRequestDto{
+	missingEmail, err := service.RegisterUser(RegisterUserRequest{
 		Username:  "janedoe",
 		PublicKey: "some_public_key",
 	})
 	require.Empty(t, missingEmail)
 	require.Error(t, err, "should return validation error")
 
-	missingPublicKey, err := service.RegisterUser(RegisterUserRequestDto{
+	missingPublicKey, err := service.RegisterUser(RegisterUserRequest{
 		Username: "janedoe",
 		Email:    "jane@example.org",
 	})
@@ -176,7 +176,7 @@ func testAppServiceRegisterUserInsertUserStoreError(t *testing.T, service AppSer
 		On("InsertUser", "janedoe", "jane@example.org", "active").
 		Return(&models.User{}, errors.New("store_insert_error"))
 
-	registeredUser, err := service.RegisterUser(RegisterUserRequestDto{
+	registeredUser, err := service.RegisterUser(RegisterUserRequest{
 		Username:  "janedoe",
 		Email:     "jane@example.org",
 		PublicKey: "some_public_key",
@@ -207,7 +207,7 @@ func testAppServiceRegisterUserInsertKeyStoreError(t *testing.T, service AppServ
 		On("InsertKey", 23, "some_public_key").
 		Return(&models.Key{}, errors.New("key_store_insert_error"))
 
-	registeredUser, err := service.RegisterUser(RegisterUserRequestDto{
+	registeredUser, err := service.RegisterUser(RegisterUserRequest{
 		Username:  "janedoe",
 		Email:     "jane@example.org",
 		PublicKey: "some_public_key",
@@ -236,13 +236,13 @@ func testAppServiceAddPublicKeySuccess(t *testing.T, service AppService) {
 			CreatedAt: createdAt,
 		}, nil)
 
-	addedPublicKey, err := service.AddPublicKey(AddPublicKeyRequestDto{
+	addedPublicKey, err := service.AddPublicKey(AddPublicKeyRequest{
 		UserId:    23,
 		PublicKey: "some_public_key",
 	})
 
 	require.NoError(t, err, "should not return error")
-	require.Equal(t, &AddPublicKeyResponseDto{
+	require.Equal(t, &AddPublicKeyResponse{
 		Id:        42,
 		UserId:    23,
 		CreatedAt: createdAt,
@@ -257,13 +257,13 @@ func testAppServiceAddPublicKeySuccess(t *testing.T, service AppService) {
 }
 
 func testAppServiceAddPublicKeyFieldValidationError(t *testing.T, service AppService) {
-	missingUserId, err := service.AddPublicKey(AddPublicKeyRequestDto{
+	missingUserId, err := service.AddPublicKey(AddPublicKeyRequest{
 		PublicKey: "some_public_key",
 	})
 	require.Empty(t, missingUserId, "should return empty result")
 	require.Error(t, err, "should return validation error")
 
-	missingPublicKey, err := service.AddPublicKey(AddPublicKeyRequestDto{
+	missingPublicKey, err := service.AddPublicKey(AddPublicKeyRequest{
 		UserId: 23,
 	})
 	require.Empty(t, missingPublicKey, "should return empty result")
@@ -275,7 +275,7 @@ func testAppServiceAddPublicKeyKeyStoreError(t *testing.T, service AppService) {
 		On("InsertKey", 23, "some_public_key").
 		Return(&models.Key{}, errors.New("key_store_error"))
 
-	addedPublicKey, err := service.AddPublicKey(AddPublicKeyRequestDto{
+	addedPublicKey, err := service.AddPublicKey(AddPublicKeyRequest{
 		UserId:    23,
 		PublicKey: "some_public_key",
 	})

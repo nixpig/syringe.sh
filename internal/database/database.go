@@ -68,7 +68,7 @@ func MigrateAppDb(db *sql.DB) error {
 			name_ text not null,
 			password_ text not null,
 			user_id_ integer not null,
-			created_at_ datetime without time zone,
+			created_at_ datetime without time zone default current_timestamp,
 
 			foreign key (user_id_) references users_(id_)
 	)

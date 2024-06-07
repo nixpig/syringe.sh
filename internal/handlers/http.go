@@ -23,7 +23,9 @@ func NewHttpHandlers(appService services.AppService, log zerolog.Logger) HttpHan
 func (h *HttpHandlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	switch method := r.Method; method {
 	case http.MethodPost:
-		var req services.RegisterUserRequestDto
+		h.log.Info().Msg("registering user")
+
+		var req services.RegisterUserRequest
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			h.log.Error().Err(err).Msg("decode create user request failed")
@@ -56,7 +58,7 @@ func (h *HttpHandlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 func (h *HttpHandlers) AddPublicKey(w http.ResponseWriter, r *http.Request) {
 	switch method := r.Method; method {
 	case http.MethodPost:
-		var req services.AddPublicKeyRequestDto
+		var req services.AddPublicKeyRequest
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			h.log.Error().Err(err).Msg("decode add public key request failed")

@@ -154,7 +154,7 @@ func (m RegisterScreenModel) View() string {
 }
 
 func (m RegisterScreenModel) submit(username, publicKey, email string) error {
-	_, err := m.service.RegisterUser(services.RegisterUserRequestDto{
+	_, err := m.service.RegisterUser(services.RegisterUserRequest{
 		Username:  username,
 		Email:     email,
 		PublicKey: publicKey,
