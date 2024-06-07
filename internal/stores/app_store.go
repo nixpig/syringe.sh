@@ -19,7 +19,7 @@ type KeyStore interface {
 }
 
 type DatabaseStore interface {
-	InsertDatabase(name, password string, userId int) (*models.Database, error)
+	InsertDatabase(name string, userId int) (*models.Database, error)
 }
 
 type AppStore interface {
@@ -160,17 +160,16 @@ func (s SqliteAppStore) InsertKey(userId int, publicKey string) (*models.Key, er
 	return &insertedKey, nil
 }
 
-func (s SqliteAppStore) InsertDatabase(name, password string, userId int) (*models.Database, error) {
+func (s SqliteAppStore) InsertDatabase(name string, userId int) (*models.Database, error) {
 	query := `
-		insert into databases_ (name_, password_, user_id_)
-		values($name, $password, $userId)
-		returning id_, name_, password_, user_id_, created_at_
+		insert into databases_ (name_, user_id_)
+		values($name,  $userId)
+		returning id_, name_, user_id_, created_at_
 	`
 
 	row := s.db.QueryRow(
 		query,
 		sql.Named("name", name),
-		sql.Named("password", password),
 		sql.Named("userId", userId),
 	)
 
@@ -179,7 +178,6 @@ func (s SqliteAppStore) InsertDatabase(name, password string, userId int) (*mode
 	if err := row.Scan(
 		&insertedDatabase.Id,
 		&insertedDatabase.Name,
-		&insertedDatabase.Password,
 		&insertedDatabase.UserId,
 		&insertedDatabase.CreatedAt,
 	); err != nil {

@@ -411,28 +411,27 @@ func testSqliteAppStoreInsertKeyScanError(t *testing.T, mock sqlmock.Sqlmock, st
 
 func testSqliteAppStoreInsertDatabaseSuccess(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
 	query := `
-		insert into databases_ (name_, password_, user_id_)
-		values($name, $password, $userId)
-		returning id_, name_, password_, user_id_, created_at_
+		insert into databases_ (name_, user_id_)
+		values($name, $userId)
+		returning id_, name_, user_id_, created_at_
 	`
 
 	createdAt := "2024-06-05 05:29:16"
 
 	mockRow := sqlmock.
-		NewRows([]string{"id_", "name_", "password_", "user_id_", "created_at_"}).
-		AddRow(23, "dbname", "dbp4ssw0rd", 42, createdAt)
+		NewRows([]string{"id_", "name_", "user_id_", "created_at_"}).
+		AddRow(23, "dbname", 42, createdAt)
 
 	mock.
 		ExpectQuery(regexp.QuoteMeta(query)).
-		WithArgs("dbname", "dbp4ssw0rd", 42).
+		WithArgs("dbname", 42).
 		WillReturnRows(mockRow)
 
-	insertedDatabaseDetails, err := store.InsertDatabase("dbname", "dbp4ssw0rd", 42)
+	insertedDatabaseDetails, err := store.InsertDatabase("dbname", 42)
 	require.NoError(t, err, "should not return row error")
 	require.Equal(t, &models.Database{
 		Id:        23,
 		Name:      "dbname",
-		Password:  "dbp4ssw0rd",
 		UserId:    42,
 		CreatedAt: createdAt,
 	}, insertedDatabaseDetails, "should return created database details")
@@ -444,24 +443,24 @@ func testSqliteAppStoreInsertDatabaseSuccess(t *testing.T, mock sqlmock.Sqlmock,
 
 func testSqliteAppStoreInsertDatabaseScanError(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
 	query := `
-		insert into databases_ (name_, password_, user_id_)
-		values($name, $password, $userId)
-		returning id_, name_, password_, user_id_, created_at_
+		insert into databases_ (name_, user_id_)
+		values($name,  $userId)
+		returning id_, name_, user_id_, created_at_
 	`
 
 	createdAt := "2024-06-05 05:29:16"
 
 	mockRow := sqlmock.
-		NewRows([]string{"id_", "name_", "password_", "user_id_", "created_at_"}).
-		AddRow(23, "dbname", "dbp4ssw0rd", 42, createdAt).
+		NewRows([]string{"id_", "name_", "user_id_", "created_at_"}).
+		AddRow(23, "dbname", 42, createdAt).
 		RowError(0, errors.New("row_error"))
 
 	mock.
 		ExpectQuery(regexp.QuoteMeta(query)).
-		WithArgs("dbname", "dbp4ssw0rd", 42).
+		WithArgs("dbname", 42).
 		WillReturnRows(mockRow)
 
-	insertedDatabaseDetails, err := store.InsertDatabase("dbname", "dbp4ssw0rd", 42)
+	insertedDatabaseDetails, err := store.InsertDatabase("dbname", 42)
 	require.EqualError(t, err, "row_error", "should return row error")
 	require.Empty(t, insertedDatabaseDetails, "should return empty database details")
 

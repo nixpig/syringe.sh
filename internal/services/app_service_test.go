@@ -68,8 +68,8 @@ func (m *MockAppStore) InsertKey(userId int, publicKey string) (*models.Key, err
 	return args.Get(0).(*models.Key), args.Error(1)
 }
 
-func (m *MockAppStore) InsertDatabase(name, password string, userId int) (*models.Database, error) {
-	args := m.Called(name, password, userId)
+func (m *MockAppStore) InsertDatabase(name string, userId int) (*models.Database, error) {
+	args := m.Called(name, userId)
 
 	return args.Get(0).(*models.Database), args.Error(1)
 }

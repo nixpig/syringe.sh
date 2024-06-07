@@ -19,13 +19,12 @@ type RegisterUserRequest struct {
 }
 
 type RegisterUserResponse struct {
-	Id               int    `json:"id"`
-	Username         string `json:"username"`
-	Email            string `json:"email"`
-	CreatedAt        string `json:"created_at"`
-	PublicKey        string `json:"public_key"`
-	DatabaseName     string `json:"database_name"`
-	DatabasePassword string `json:"database_password"`
+	Id           int    `json:"id"`
+	Username     string `json:"username"`
+	Email        string `json:"email"`
+	CreatedAt    string `json:"created_at"`
+	PublicKey    string `json:"public_key"`
+	DatabaseName string `json:"database_name"`
 }
 
 type AddPublicKeyRequest struct {
@@ -41,15 +40,13 @@ type AddPublicKeyResponse struct {
 }
 
 type CreateDatabaseRequest struct {
-	Name     string `json:"name" validate:"required"`
-	Password string `json:"password" validate:"required"`
-	UserId   int    `json:"user_id" validate:"required"`
+	Name   string `json:"name" validate:"required"`
+	UserId int    `json:"user_id" validate:"required"`
 }
 
 type CreateDatabaseResponse struct {
 	Id        int    `json:"id"`
 	Name      string `json:"name"`
-	Password  string `json:"password"`
 	UserId    int    `json:"user_id"`
 	CreatedAt string `json:"created_at"`
 }
@@ -96,22 +93,20 @@ func (a AppServiceImpl) RegisterUser(user RegisterUserRequest) (*RegisterUserRes
 
 	insertedDatabase, err := a.CreateDatabase(
 		CreateDatabaseRequest{
-			Name:     insertedUser.Username + "-" + strconv.Itoa(insertedUser.Id),
-			Password: "p4ssw0rd",
-			UserId:   insertedUser.Id,
+			Name:   insertedUser.Username + "-" + strconv.Itoa(insertedUser.Id),
+			UserId: insertedUser.Id,
 		})
 	if err != nil {
 		return nil, err
 	}
 
 	return &RegisterUserResponse{
-		Id:               insertedUser.Id,
-		Username:         insertedUser.Username,
-		Email:            insertedUser.Email,
-		CreatedAt:        insertedUser.CreatedAt,
-		PublicKey:        insertedKey.PublicKey,
-		DatabaseName:     insertedDatabase.Name,
-		DatabasePassword: insertedDatabase.Password,
+		Id:           insertedUser.Id,
+		Username:     insertedUser.Username,
+		Email:        insertedUser.Email,
+		CreatedAt:    insertedUser.CreatedAt,
+		PublicKey:    insertedKey.PublicKey,
+		DatabaseName: insertedDatabase.Name,
 	}, nil
 }
 
@@ -171,7 +166,6 @@ func (a AppServiceImpl) CreateDatabase(databaseDetails CreateDatabaseRequest) (*
 
 	createdDatabaseDetails, err := a.store.InsertDatabase(
 		databaseDetails.Name,
-		databaseDetails.Password,
 		databaseDetails.UserId,
 	)
 
@@ -182,7 +176,6 @@ func (a AppServiceImpl) CreateDatabase(databaseDetails CreateDatabaseRequest) (*
 	return &CreateDatabaseResponse{
 		Id:        createdDatabaseDetails.Id,
 		Name:      createdDatabaseDetails.Name,
-		Password:  createdDatabaseDetails.Password,
 		UserId:    createdDatabaseDetails.UserId,
 		CreatedAt: createdDatabaseDetails.CreatedAt,
 	}, nil

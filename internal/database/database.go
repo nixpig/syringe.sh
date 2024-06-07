@@ -66,7 +66,6 @@ func MigrateAppDb(db *sql.DB) error {
 		create table if not exists databases_ (
 			id_ integer primary key autoincrement not null,
 			name_ text not null,
-			password_ text not null,
 			user_id_ integer not null,
 			created_at_ datetime without time zone default current_timestamp,
 
