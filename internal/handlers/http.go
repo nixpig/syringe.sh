@@ -2,18 +2,22 @@ package handlers
 
 import (
 	"encoding/json"
-	"log/slog"
 	"net/http"
 
 	"github.com/nixpig/syringe.sh/server/internal/services"
+	"github.com/rs/zerolog"
 )
 
 type HttpHandlers struct {
 	appService services.AppService
+	log        zerolog.Logger
 }
 
-func NewHttpHandlers(appService services.AppService) HttpHandlers {
-	return HttpHandlers{appService}
+func NewHttpHandlers(appService services.AppService, log zerolog.Logger) HttpHandlers {
+	return HttpHandlers{
+		appService: appService,
+		log:        log,
+	}
 }
 
 func (h *HttpHandlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -22,26 +26,28 @@ func (h *HttpHandlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		var req services.RegisterUserRequestDto
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			slog.Error("decode create user request failed", "err", err)
+			h.log.Error().Err(err).Msg("decode create user request failed")
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
 
 		createdUser, err := h.appService.RegisterUser(req)
 		if err != nil {
-			slog.Error("create user failed", "err", err)
+			h.log.Error().Err(err).Msg("create user failed")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
 		if err := json.NewEncoder(w).Encode(createdUser); err != nil {
-			slog.Error("decode created user failed", "err", err)
+			h.log.Error().Err(err).Msg("decode created user failed")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
+		h.log.Info().Any("createdUser", createdUser).Msg("created user")
+
 	default:
-		slog.Error("method not allowed", "method", method)
+		h.log.Error().Str("method", method).Msg("method not allowed")
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
@@ -53,26 +59,28 @@ func (h *HttpHandlers) AddPublicKey(w http.ResponseWriter, r *http.Request) {
 		var req services.AddPublicKeyRequestDto
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			slog.Error("decode add public key request failed", "err", err)
+			h.log.Error().Err(err).Msg("decode add public key request failed")
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
 
 		addedPublicKey, err := h.appService.AddPublicKey(req)
 		if err != nil {
-			slog.Error("add public key failed", "err", err)
+			h.log.Error().Err(err).Msg("add public key failed")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
 		if err := json.NewEncoder(w).Encode(addedPublicKey); err != nil {
-			slog.Error("failed to encode and return added public key details", "err", err)
+			h.log.Error().Err(err).Msg("failed to encode and return added public key details")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
+		h.log.Info().Any("addedPublicKey", addedPublicKey).Msg("added public key")
+
 	default:
-		slog.Error("method not allowed", "method", method)
+		h.log.Error().Str("method", method).Msg("method not allowed")
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}

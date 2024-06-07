@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log/slog"
 	"net/http"
 	"os"
 	"slices"
@@ -14,46 +13,54 @@ import (
 	"github.com/nixpig/syringe.sh/server/internal/handlers"
 	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
+	"github.com/rs/zerolog"
 )
 
 func main() {
-	slog.Info("loading environment\n")
+	log := zerolog.
+		New(os.Stdout).
+		Output(zerolog.ConsoleWriter{
+			Out:        os.Stdout,
+			TimeFormat: zerolog.TimeFormatUnix,
+		})
+
+	log.Info().Msg("loading environment")
 	if err := godotenv.Load(".env"); err != nil {
-		slog.Error("failed to load '.env' file:\n%s", err)
+		log.Error().Err(err).Msg("failed to load '.env' file:")
 		os.Exit(1)
 	}
 
-	slog.Info("connecting to database\n")
+	log.Info().Msg("connecting to database")
 	db, err := database.Connection(
 		os.Getenv("DATABASE_URL"),
 		os.Getenv("DATABASE_TOKEN"),
 	)
 	if err != nil {
-		slog.Error("failed to connect to database:\n%s", err)
+		log.Error().Err(err).Msg("failed to connect to database")
 		os.Exit(1)
 	}
 
 	defer db.Close()
 
 	if slices.Index(os.Args, "--migrate") != -1 {
-		slog.Info("running database migration\n")
+		log.Info().Msg("running database migration")
 		if err := database.MigrateAppDb(db); err != nil {
-			slog.Error("failed to run database migration:\n%s", err)
+			log.Error().Err(err).Msg("failed to run database migration")
 			os.Exit(1)
 		}
 	}
 
-	slog.Info("building app components\n")
+	log.Info().Msg("building app components")
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	appStore := stores.NewSqliteAppStore(db)
 	appService := services.NewAppServiceImpl(appStore, validate)
 
-	httpHandlers := handlers.NewHttpHandlers(appService)
+	httpHandlers := handlers.NewHttpHandlers(appService, log)
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("POST /users", httpHandlers.RegisterUser)
-	mux.HandleFunc("POST /keys", httpHandlers.AddPublicKey)
+	mux.HandleFunc("/users", httpHandlers.RegisterUser)
+	mux.HandleFunc("/keys", httpHandlers.AddPublicKey)
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%v", "3000"),
@@ -63,9 +70,9 @@ func main() {
 		WriteTimeout: time.Second * 10,
 	}
 
-	slog.Info("starting http server")
+	log.Info().Msg("starting http server")
 	if err := server.ListenAndServe(); err != nil {
-		slog.Error("failed to start server:\n%s", err)
+		log.Error().Err(err).Msg("failed to start server")
 		os.Exit(1)
 	}
 
