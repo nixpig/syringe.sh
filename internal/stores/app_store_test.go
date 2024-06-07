@@ -30,6 +30,9 @@ func TestSqliteAppStore(t *testing.T) {
 
 		"test sqlite app store insert key (success)":    testSqliteAppStoreInsertKeySuccess,
 		"test sqlite app store insert key (scan error)": testSqliteAppStoreInsertKeyScanError,
+
+		"test sqlite app store insert database (success)":    testSqliteAppStoreInsertDatabaseSuccess,
+		"test sqlite app store insert database (scan error)": testSqliteAppStoreInsertDatabaseScanError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -400,6 +403,67 @@ func testSqliteAppStoreInsertKeyScanError(t *testing.T, mock sqlmock.Sqlmock, st
 	insertedKeyDetails, err := store.InsertKey(42, "some_public_key")
 	require.EqualError(t, err, "row_error", "should return row error")
 	require.Empty(t, insertedKeyDetails, "should return empty key details")
+
+	if expected := mock.ExpectationsWereMet(); expected != nil {
+		t.Errorf("database was not queried as expected:\n%s", expected)
+	}
+}
+
+func testSqliteAppStoreInsertDatabaseSuccess(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
+	query := `
+		insert into databases_ (name_, password_, user_id_)
+		values($name, $password, $userId)
+		returning id_, name_, password_, user_id_, created_at_
+	`
+
+	createdAt := "2024-06-05 05:29:16"
+
+	mockRow := sqlmock.
+		NewRows([]string{"id_", "name_", "password_", "user_id_", "created_at_"}).
+		AddRow(23, "dbname", "dbp4ssw0rd", 42, createdAt)
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs("dbname", "dbp4ssw0rd", 42).
+		WillReturnRows(mockRow)
+
+	insertedDatabaseDetails, err := store.InsertDatabase("dbname", "dbp4ssw0rd", 42)
+	require.NoError(t, err, "should not return row error")
+	require.Equal(t, &models.Database{
+		Id:        23,
+		Name:      "dbname",
+		Password:  "dbp4ssw0rd",
+		UserId:    42,
+		CreatedAt: createdAt,
+	}, insertedDatabaseDetails, "should return created database details")
+
+	if expected := mock.ExpectationsWereMet(); expected != nil {
+		t.Errorf("database was not queried as expected:\n%s", expected)
+	}
+}
+
+func testSqliteAppStoreInsertDatabaseScanError(t *testing.T, mock sqlmock.Sqlmock, store AppStore) {
+	query := `
+		insert into databases_ (name_, password_, user_id_)
+		values($name, $password, $userId)
+		returning id_, name_, password_, user_id_, created_at_
+	`
+
+	createdAt := "2024-06-05 05:29:16"
+
+	mockRow := sqlmock.
+		NewRows([]string{"id_", "name_", "password_", "user_id_", "created_at_"}).
+		AddRow(23, "dbname", "dbp4ssw0rd", 42, createdAt).
+		RowError(0, errors.New("row_error"))
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs("dbname", "dbp4ssw0rd", 42).
+		WillReturnRows(mockRow)
+
+	insertedDatabaseDetails, err := store.InsertDatabase("dbname", "dbp4ssw0rd", 42)
+	require.EqualError(t, err, "row_error", "should return row error")
+	require.Empty(t, insertedDatabaseDetails, "should return empty database details")
 
 	if expected := mock.ExpectationsWereMet(); expected != nil {
 		t.Errorf("database was not queried as expected:\n%s", expected)
