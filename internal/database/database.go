@@ -62,26 +62,11 @@ func MigrateAppDb(db *sql.DB) error {
 		)
 	`
 
-	createDatabasesTable := `
-		create table if not exists databases_ (
-			id_ integer primary key autoincrement not null,
-			name_ text not null,
-			user_id_ integer not null,
-			created_at_ datetime without time zone default current_timestamp,
-
-			foreign key (user_id_) references users_(id_)
-	)
-	`
-
 	if _, err := db.Exec(createUsersTable); err != nil {
 		return err
 	}
 
 	if _, err := db.Exec(createKeysTable); err != nil {
-		return err
-	}
-
-	if _, err := db.Exec(createDatabasesTable); err != nil {
 		return err
 	}
 
