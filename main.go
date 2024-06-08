@@ -30,7 +30,7 @@ func main() {
 	}
 
 	log.Info().Msg("connecting to database")
-	db, err := database.Connection(
+	appDb, err := database.Connection(
 		os.Getenv("DATABASE_URL"),
 		os.Getenv("DATABASE_TOKEN"),
 	)
@@ -39,11 +39,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	defer db.Close()
+	defer appDb.Close()
 
 	if slices.Index(os.Args, "--migrate") != -1 {
 		log.Info().Msg("running database migration")
-		if err := database.MigrateAppDb(db); err != nil {
+		if err := database.MigrateAppDb(appDb); err != nil {
 			log.Error().Err(err).Msg("failed to run database migration")
 			os.Exit(1)
 		}
@@ -51,7 +51,7 @@ func main() {
 
 	log.Info().Msg("building app components")
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	appStore := stores.NewSqliteAppStore(db)
+	appStore := stores.NewSqliteAppStore(appDb)
 	appService := services.NewAppServiceImpl(appStore, validate, http.Client{}, services.TursoApiSettings{
 		Url:   os.Getenv("API_BASE_URL"),
 		Token: os.Getenv("API_TOKEN"),

@@ -25,13 +25,22 @@ type TursoDatabase struct {
 	Name     string `json:"Name"`
 }
 
+type TursoDatabaseResponse struct {
+	Database TursoDatabase `json:"database"`
+}
+
 type TursoDatabases struct {
 	Databases []TursoDatabase `json:"databases"`
 }
 
+type TursoToken struct {
+	Jwt string `json:"jwt"`
+}
+
 type TursoDatabaseApi interface {
-	CreateDatabase(name, group string) (*TursoDatabase, error)
+	CreateDatabase(name, group string) (*TursoDatabaseResponse, error)
 	ListDatabases() (*[]TursoDatabase, error)
+	CreateToken(name string) (*TursoToken, error)
 }
 
 func New(organization, apiToken string, httpClient http.Client) TursoApi {
@@ -43,7 +52,7 @@ func New(organization, apiToken string, httpClient http.Client) TursoApi {
 	}
 }
 
-func (t *TursoApi) CreateDatabase(name, group string) (*TursoDatabase, error) {
+func (t *TursoApi) CreateDatabase(name, group string) (*TursoDatabaseResponse, error) {
 	url := t.baseUrl + "/organizations/" + t.organization + "/databases"
 	body := []byte(fmt.Sprintf(`{
 		"name": "%s",
@@ -73,7 +82,7 @@ func (t *TursoApi) CreateDatabase(name, group string) (*TursoDatabase, error) {
 		return nil, WrapErr(res.StatusCode, apiErr.Error)
 	}
 
-	var createdDatabase TursoDatabase
+	var createdDatabase TursoDatabaseResponse
 
 	if err := json.NewDecoder(res.Body).Decode(&createdDatabase); err != nil {
 		return nil, err
@@ -105,6 +114,31 @@ func (t *TursoApi) ListDatabases() (*TursoDatabases, error) {
 	}
 
 	return &databases, nil
+}
+
+func (t *TursoApi) CreateToken(name string) (*TursoToken, error) {
+	url := t.baseUrl + "/organizations/" + t.organization + "/databases/" + name + "/auth/tokens"
+
+	req, err := http.NewRequest(http.MethodPost, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.apiToken))
+
+	res, err := t.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var token TursoToken
+
+	if err := json.NewDecoder(res.Body).Decode(&token); err != nil {
+		return nil, err
+	}
+
+	return &token, nil
 }
 
 type ErrConflict struct {
