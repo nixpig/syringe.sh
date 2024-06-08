@@ -2,9 +2,11 @@ package services
 
 import (
 	"crypto/sha1"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
+	"slices"
 
 	"github.com/charmbracelet/ssh"
 	"github.com/go-playground/validator/v10"
@@ -168,6 +170,19 @@ func (a AppServiceImpl) CreateDatabase(
 	}
 
 	api := turso.New(databaseDetails.DatabaseOrg, a.tursoApiSettings.Token, a.httpClient)
+
+	list, err := api.ListDatabases()
+	if err != nil {
+		return nil, err
+	}
+
+	exists := slices.IndexFunc(list.Databases, func(l turso.TursoDatabase) bool {
+		return l.Name == databaseDetails.Name
+	})
+
+	if exists != -1 {
+		return nil, errors.New("database already exists in returned list!!")
+	}
 
 	db, err := api.CreateDatabase(databaseDetails.Name, databaseDetails.DatabaseGroup)
 	if err != nil {

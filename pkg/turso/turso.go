@@ -25,8 +25,13 @@ type TursoDatabase struct {
 	Name     string `json:"Name"`
 }
 
+type TursoDatabases struct {
+	Databases []TursoDatabase `json:"databases"`
+}
+
 type TursoDatabaseApi interface {
-	CreateDatabase(name, group string) TursoDatabase
+	CreateDatabase(name, group string) (*TursoDatabase, error)
+	ListDatabases() (*[]TursoDatabase, error)
 }
 
 func New(organization, apiToken string, httpClient http.Client) TursoApi {
@@ -45,7 +50,7 @@ func (t *TursoApi) CreateDatabase(name, group string) (*TursoDatabase, error) {
 		"group": "%s"
 	}`, name, group))
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -75,6 +80,31 @@ func (t *TursoApi) CreateDatabase(name, group string) (*TursoDatabase, error) {
 	}
 
 	return &createdDatabase, nil
+}
+
+func (t *TursoApi) ListDatabases() (*TursoDatabases, error) {
+	url := t.baseUrl + "/organizations/" + t.organization + "/databases"
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.apiToken))
+
+	res, err := t.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var databases TursoDatabases
+
+	if err := json.NewDecoder(res.Body).Decode(&databases); err != nil {
+		return nil, err
+	}
+
+	return &databases, nil
 }
 
 type ErrConflict struct {
