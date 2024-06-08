@@ -43,18 +43,18 @@ func MigrateAppDb(db *sql.DB) error {
 
 	createUsersTable := `
 		create table if not exists users_ (
-			id_ integer primary key autoincrement not null,
-			username_ text,
-			email_ text,
+			id_ integer primary key autoincrement,
+			username_ varchar(256) not null,
+			email_ varchar(256) not null,
 			created_at_ datetime without time zone default current_timestamp,
-			status_ text
+			status_ varchar(8) not null
 		)
 	`
 
 	createKeysTable := `
 		create table if not exists keys_ (
-			id_ integer primary key autoincrement not null,
-			ssh_public_key_ text,
+			id_ integer primary key autoincrement,
+			ssh_public_key_ varchar(1024) not null,
 			user_id_ integer not null,
 			created_at_ datetime without time zone default current_timestamp,
 

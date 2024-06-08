@@ -25,11 +25,11 @@ type AppStore interface {
 }
 
 type SqliteAppStore struct {
-	db *sql.DB
+	appDb *sql.DB
 }
 
-func NewSqliteAppStore(db *sql.DB) SqliteAppStore {
-	return SqliteAppStore{db}
+func NewSqliteAppStore(appDb *sql.DB) SqliteAppStore {
+	return SqliteAppStore{appDb}
 }
 
 func (s SqliteAppStore) InsertUser(username, email, status string) (*models.User, error) {
@@ -39,7 +39,7 @@ func (s SqliteAppStore) InsertUser(username, email, status string) (*models.User
 		returning id_, username_, email_, status_, created_at_
 	`
 
-	row := s.db.QueryRow(
+	row := s.appDb.QueryRow(
 		query,
 		sql.Named("username", username),
 		sql.Named("email", email),
@@ -68,7 +68,7 @@ func (s SqliteAppStore) GetUserByUsername(username string) (*models.User, error)
 		where username_ = $1
 	`
 
-	row := s.db.QueryRow(query, username)
+	row := s.appDb.QueryRow(query, username)
 
 	var user models.User
 
@@ -88,7 +88,7 @@ func (s SqliteAppStore) GetUserByUsername(username string) (*models.User, error)
 func (s SqliteAppStore) DeleteUserByUsername(username string) error {
 	query := `delete from users_ where username_ = $1`
 
-	res, err := s.db.Exec(query, username)
+	res, err := s.appDb.Exec(query, username)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (s SqliteAppStore) UpdateUser(user models.User) (*models.User, error) {
 		returning id_, username_, email_, status_, created_at_
 	`
 
-	row := s.db.QueryRow(query, user.Username, user.Email, user.Status)
+	row := s.appDb.QueryRow(query, user.Username, user.Email, user.Status)
 
 	var updatedUser models.User
 
@@ -136,7 +136,7 @@ func (s SqliteAppStore) InsertKey(userId int, publicKey string) (*models.Key, er
 		returning id_, user_id_, ssh_public_key_, created_at_
 	`
 
-	row := s.db.QueryRow(
+	row := s.appDb.QueryRow(
 		query,
 		sql.Named("userId", userId),
 		sql.Named("publicKey", publicKey),
@@ -166,7 +166,7 @@ func (s SqliteAppStore) GetUserPublicKeys(username string) (*[]models.Key, error
 		where u.username_ = $username
 	`
 
-	rows, err := s.db.Query(
+	rows, err := s.appDb.Query(
 		query,
 		sql.Named("username", username),
 	)

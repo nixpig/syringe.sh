@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"os"
 	"slices"
+	"time"
 
 	"github.com/charmbracelet/ssh"
 	"github.com/go-playground/validator/v10"
+	"github.com/nixpig/syringe.sh/server/internal/database"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 	"github.com/nixpig/syringe.sh/server/pkg/turso"
 	gossh "golang.org/x/crypto/ssh"
@@ -50,7 +52,8 @@ type CreateDatabaseRequest struct {
 }
 
 type CreateDatabaseResponse struct {
-	Name string `json:"name"`
+	Name     string `json:"name"`
+	HostName string `json:"HostName"`
 }
 
 type UserAuthRequest struct {
@@ -86,7 +89,7 @@ func NewAppServiceImpl(
 	validate *validator.Validate,
 	httpClient http.Client,
 	tursoApiSettings TursoApiSettings,
-) AppServiceImpl {
+) AppService {
 	return AppServiceImpl{
 		store:            store,
 		validate:         validate,
@@ -176,52 +179,48 @@ func (a AppServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	exists := slices.IndexFunc(list.Databases, func(l turso.TursoDatabase) bool {
-		return l.Name == databaseDetails.Name
+	exists := slices.IndexFunc(list.Databases, func(db turso.TursoDatabase) bool {
+		return db.Name == databaseDetails.Name
 	})
 
 	if exists != -1 {
 		return nil, errors.New("database already exists in returned list!!")
 	}
 
-	db, err := api.CreateDatabase(databaseDetails.Name, databaseDetails.DatabaseGroup)
+	createdDatabaseDetails, err := api.CreateDatabase(databaseDetails.Name, databaseDetails.DatabaseGroup)
 	if err != nil {
 		return nil, err
 	}
 
-	return &CreateDatabaseResponse{Name: db.Name}, nil
+	createdToken, err := api.CreateToken(createdDatabaseDetails.Database.Name)
+	if err != nil {
+		return nil, err
+	}
 
-	// createDatabaseUrl := a.tursoApiSettings.Url + "/organizations/" + databaseDetails.DatabaseOrg + "/databases"
-	//
-	// body := []byte(fmt.Sprintf(`{
-	// 	"name": "%s",
-	// 	"group": "%s"
-	// }`, databaseDetails.Name, databaseDetails.DatabaseGroup))
-	//
-	// req, err := http.NewRequest("POST", createDatabaseUrl, bytes.NewBuffer(body))
-	// if err != nil {
-	// 	return nil, err
-	// }
-	//
-	// req.Header.Set("Content-Type", "application/json")
-	// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", a.tursoApiSettings.Token))
-	//
-	// res, err := a.httpClient.Do(req)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	//
-	// if res.StatusCode < 200 || res.StatusCode > 299 {
-	// 	return nil, errors.New(fmt.Sprintf("api error: %v", res))
-	// }
-	//
-	// var createdDatabase CreateDatabaseResponse
-	//
-	// if err := json.NewDecoder(res.Body).Decode(&createdDatabase); err != nil {
-	// 	return nil, err
-	// }
-	//
-	// return &createdDatabase, nil
+	userDb, err := database.Connection(
+		"libsql://"+createdDatabaseDetails.Database.HostName,
+		createdToken.Jwt,
+	)
+	if err != nil {
+		fmt.Println("some error in here!!")
+		return nil, err
+	}
+
+	envStore := stores.NewSqliteEnvStore(userDb)
+	envService := NewEnvServiceImpl(envStore, validator.New())
+
+	var count time.Duration
+	increment := time.Second * 30
+	timeout := time.Second * 360
+	for err := envService.CreateTables(); err != nil; err = envService.CreateTables() {
+		time.Sleep(increment)
+		count = count + increment
+		if count >= timeout {
+			break
+		}
+	}
+
+	return &CreateDatabaseResponse{Name: createdDatabaseDetails.Database.Name}, nil
 }
 
 func (a AppServiceImpl) AuthenticateUser(
