@@ -8,14 +8,16 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/charmbracelet/ssh"
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
+	gossh "golang.org/x/crypto/ssh"
 )
 
 type RegisterUserRequest struct {
-	Username  string `json:"username" validate:"required,min=3,max=30"`
-	Email     string `json:"email" validate:"required,email"`
-	PublicKey string `json:"public_key" validate:"required"`
+	Username  string        `json:"username" validate:"required,min=3,max=30"`
+	Email     string        `json:"email" validate:"required,email"`
+	PublicKey ssh.PublicKey `json:"public_key" validate:"required"`
 }
 
 type RegisterUserResponse struct {
@@ -53,6 +55,15 @@ type CreateDatabaseResponse struct {
 	CreatedAt string `json:"created_at"`
 }
 
+type UserAuthRequest struct {
+	Username  string        `json:"username" validate:"required"`
+	PublicKey ssh.PublicKey `json:"public_key" validate:"required"`
+}
+
+type UserAuthResponse struct {
+	Auth bool `json:"auth"`
+}
+
 type TursoApiSettings struct {
 	Url   string
 	Token string
@@ -62,6 +73,7 @@ type AppService interface {
 	RegisterUser(user RegisterUserRequest) (*RegisterUserResponse, error)
 	AddPublicKey(publicKey AddPublicKeyRequest) (*AddPublicKeyResponse, error)
 	CreateDatabase(databaseDetails CreateDatabaseRequest) (*CreateDatabaseResponse, error)
+	AuthenticateUser(authDetails UserAuthRequest) (*UserAuthResponse, error)
 }
 
 type AppServiceImpl struct {
@@ -85,7 +97,9 @@ func NewAppServiceImpl(
 	}
 }
 
-func (a AppServiceImpl) RegisterUser(user RegisterUserRequest) (*RegisterUserResponse, error) {
+func (a AppServiceImpl) RegisterUser(
+	user RegisterUserRequest,
+) (*RegisterUserResponse, error) {
 	if err := a.validate.Struct(user); err != nil {
 		return nil, err
 	}
@@ -101,7 +115,7 @@ func (a AppServiceImpl) RegisterUser(user RegisterUserRequest) (*RegisterUserRes
 
 	insertedKey, err := a.AddPublicKey(AddPublicKeyRequest{
 		UserId:    insertedUser.Id,
-		PublicKey: user.PublicKey,
+		PublicKey: string(gossh.MarshalAuthorizedKey(user.PublicKey)),
 	})
 	if err != nil {
 		return nil, err
@@ -128,7 +142,9 @@ func (a AppServiceImpl) RegisterUser(user RegisterUserRequest) (*RegisterUserRes
 	}, nil
 }
 
-func (a AppServiceImpl) AddPublicKey(addKeyDetails AddPublicKeyRequest) (*AddPublicKeyResponse, error) {
+func (a AppServiceImpl) AddPublicKey(
+	addKeyDetails AddPublicKeyRequest,
+) (*AddPublicKeyResponse, error) {
 	if err := a.validate.Struct(addKeyDetails); err != nil {
 		return nil, err
 	}
@@ -146,7 +162,9 @@ func (a AppServiceImpl) AddPublicKey(addKeyDetails AddPublicKeyRequest) (*AddPub
 	}, nil
 }
 
-func (a AppServiceImpl) CreateDatabase(databaseDetails CreateDatabaseRequest) (*CreateDatabaseResponse, error) {
+func (a AppServiceImpl) CreateDatabase(
+	databaseDetails CreateDatabaseRequest,
+) (*CreateDatabaseResponse, error) {
 	if err := a.validate.Struct(databaseDetails); err != nil {
 		return nil, err
 	}
@@ -190,4 +208,33 @@ func (a AppServiceImpl) CreateDatabase(databaseDetails CreateDatabaseRequest) (*
 		UserId:    createdDatabaseDetails.UserId,
 		CreatedAt: createdDatabaseDetails.CreatedAt,
 	}, nil
+}
+
+func (a AppServiceImpl) AuthenticateUser(
+	authDetails UserAuthRequest,
+) (*UserAuthResponse, error) {
+	if err := a.validate.Struct(authDetails); err != nil {
+		return nil, err
+	}
+
+	publicKeysDetails, err := a.store.GetUserPublicKeys(authDetails.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range *publicKeysDetails {
+		parsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(v.PublicKey))
+		if err != nil {
+			return nil, err
+		}
+
+		if ssh.KeysEqual(
+			authDetails.PublicKey,
+			parsed,
+		) {
+			return &UserAuthResponse{Auth: true}, nil
+		}
+	}
+
+	return &UserAuthResponse{Auth: false}, nil
 }

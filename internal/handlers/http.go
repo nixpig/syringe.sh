@@ -10,10 +10,10 @@ import (
 
 type HttpHandlers struct {
 	appService services.AppService
-	log        zerolog.Logger
+	log        *zerolog.Logger
 }
 
-func NewHttpHandlers(appService services.AppService, log zerolog.Logger) HttpHandlers {
+func NewHttpHandlers(appService services.AppService, log *zerolog.Logger) HttpHandlers {
 	return HttpHandlers{
 		appService: appService,
 		log:        log,
