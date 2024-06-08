@@ -24,7 +24,7 @@ func (h *SshHandlers) RegisterUser(username string, publicKey ssh.PublicKey) {
 	registeredUser, err := h.appService.RegisterUser(services.RegisterUserRequest{
 		Username:  username,
 		PublicKey: publicKey,
-		Email:     "register@example.org",
+		Email:     "notusedyet@example.org",
 	})
 	if err != nil {
 		h.log.Error().Err(err).Msg("failed to register with error")

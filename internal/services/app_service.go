@@ -1,16 +1,15 @@
 package services
 
 import (
-	"bytes"
-	"errors"
+	"crypto/sha1"
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/charmbracelet/ssh"
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
+	"github.com/nixpig/syringe.sh/server/pkg/turso"
 	gossh "golang.org/x/crypto/ssh"
 )
 
@@ -49,10 +48,7 @@ type CreateDatabaseRequest struct {
 }
 
 type CreateDatabaseResponse struct {
-	Id        int    `json:"id"`
-	Name      string `json:"name"`
-	UserId    int    `json:"user_id"`
-	CreatedAt string `json:"created_at"`
+	Name string `json:"name"`
 }
 
 type UserAuthRequest struct {
@@ -113,9 +109,11 @@ func (a AppServiceImpl) RegisterUser(
 		return nil, err
 	}
 
+	marshalledKey := gossh.MarshalAuthorizedKey(user.PublicKey)
+
 	insertedKey, err := a.AddPublicKey(AddPublicKeyRequest{
 		UserId:    insertedUser.Id,
-		PublicKey: string(gossh.MarshalAuthorizedKey(user.PublicKey)),
+		PublicKey: string(marshalledKey),
 	})
 	if err != nil {
 		return nil, err
@@ -123,7 +121,7 @@ func (a AppServiceImpl) RegisterUser(
 
 	insertedDatabase, err := a.CreateDatabase(
 		CreateDatabaseRequest{
-			Name:          insertedUser.Username + "-" + strconv.Itoa(insertedUser.Id),
+			Name:          fmt.Sprintf("%x", sha1.Sum(marshalledKey)),
 			UserId:        insertedUser.Id,
 			DatabaseOrg:   os.Getenv("DATABASE_ORG"),
 			DatabaseGroup: os.Getenv("DATABASE_GROUP"),
@@ -169,45 +167,46 @@ func (a AppServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	createDatabaseUrl := a.tursoApiSettings.Url + "/organizations/" + databaseDetails.DatabaseOrg + "/databases"
+	api := turso.New(databaseDetails.DatabaseOrg, a.tursoApiSettings.Token, a.httpClient)
 
-	body := []byte(fmt.Sprintf(`{
-		"name": "%s",
-		"group": "%s"
-	}`, databaseDetails.Name, databaseDetails.DatabaseGroup))
-
-	req, err := http.NewRequest("POST", createDatabaseUrl, bytes.NewBuffer(body))
+	db, err := api.CreateDatabase(databaseDetails.Name, databaseDetails.DatabaseGroup)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", a.tursoApiSettings.Token))
+	return &CreateDatabaseResponse{Name: db.Name}, nil
 
-	res, err := a.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if res.StatusCode < 200 || res.StatusCode > 299 {
-		return nil, errors.New(fmt.Sprintf("api error: %v", res))
-	}
-
-	createdDatabaseDetails, err := a.store.InsertDatabase(
-		databaseDetails.Name,
-		databaseDetails.UserId,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &CreateDatabaseResponse{
-		Id:        createdDatabaseDetails.Id,
-		Name:      createdDatabaseDetails.Name,
-		UserId:    createdDatabaseDetails.UserId,
-		CreatedAt: createdDatabaseDetails.CreatedAt,
-	}, nil
+	// createDatabaseUrl := a.tursoApiSettings.Url + "/organizations/" + databaseDetails.DatabaseOrg + "/databases"
+	//
+	// body := []byte(fmt.Sprintf(`{
+	// 	"name": "%s",
+	// 	"group": "%s"
+	// }`, databaseDetails.Name, databaseDetails.DatabaseGroup))
+	//
+	// req, err := http.NewRequest("POST", createDatabaseUrl, bytes.NewBuffer(body))
+	// if err != nil {
+	// 	return nil, err
+	// }
+	//
+	// req.Header.Set("Content-Type", "application/json")
+	// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", a.tursoApiSettings.Token))
+	//
+	// res, err := a.httpClient.Do(req)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	//
+	// if res.StatusCode < 200 || res.StatusCode > 299 {
+	// 	return nil, errors.New(fmt.Sprintf("api error: %v", res))
+	// }
+	//
+	// var createdDatabase CreateDatabaseResponse
+	//
+	// if err := json.NewDecoder(res.Body).Decode(&createdDatabase); err != nil {
+	// 	return nil, err
+	// }
+	//
+	// return &createdDatabase, nil
 }
 
 func (a AppServiceImpl) AuthenticateUser(
