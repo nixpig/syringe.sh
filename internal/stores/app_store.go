@@ -12,6 +12,7 @@ type UserStore interface {
 	GetUserByUsername(username string) (*models.User, error)
 	DeleteUserByUsername(username string) error
 	UpdateUser(user models.User) (*models.User, error)
+	GetUserPublicKeys(username string) (*[]models.Key, error)
 }
 
 type KeyStore interface {
@@ -185,4 +186,42 @@ func (s SqliteAppStore) InsertDatabase(name string, userId int) (*models.Databas
 	}
 
 	return &insertedDatabase, nil
+}
+
+func (s SqliteAppStore) GetUserPublicKeys(username string) (*[]models.Key, error) {
+	query := `
+		select k.id_, k.user_id_, k.ssh_public_key_, k.created_at_
+		from keys_ k 
+		inner join
+		users_ u
+		on k.user_id_ = u.id_
+		where u.username_ = $username
+	`
+
+	rows, err := s.db.Query(
+		query,
+		sql.Named("username", username),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var keys []models.Key
+
+	for rows.Next() {
+		var key models.Key
+
+		if err := rows.Scan(
+			&key.Id,
+			&key.UserId,
+			&key.PublicKey,
+			&key.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		keys = append(keys, key)
+	}
+
+	return &keys, nil
 }

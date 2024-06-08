@@ -1,14 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"slices"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
+	"github.com/nixpig/syringe.sh/server/cmd"
 	"github.com/nixpig/syringe.sh/server/internal/database"
 	"github.com/nixpig/syringe.sh/server/internal/handlers"
 	"github.com/nixpig/syringe.sh/server/internal/services"
@@ -58,26 +57,21 @@ func main() {
 		Token: os.Getenv("API_TOKEN"),
 	})
 
-	httpHandlers := handlers.NewHttpHandlers(appService, log)
+	sshHandlers := handlers.NewSshHandlers(appService, &log)
+	sshServer := cmd.NewSyringeSshServer(sshHandlers, &log)
 
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/users", httpHandlers.RegisterUser)
-	mux.HandleFunc("/keys", httpHandlers.AddPublicKey)
-
-	server := &http.Server{
-		Addr:         fmt.Sprintf(":%v", "3000"),
-		Handler:      (mux),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  time.Second * 10,
-		WriteTimeout: time.Second * 10,
-	}
-
-	log.Info().Msg("starting http server")
-	if err := server.ListenAndServe(); err != nil {
-		log.Error().Err(err).Msg("failed to start server")
+	if err := sshServer.Start(); err != nil {
+		log.Error().Err(err).Msg("failed to start ssh server")
 		os.Exit(1)
 	}
+
+	// httpHandlers := handlers.NewHttpHandlers(appService, &log)
+	// httpServer := cmd.NewSyringeHttpServer(httpHandlers, &log)
+	//
+	// if err := httpServer.Start(); err != nil {
+	// 	log.Error().Err(err).Msg("failed to start http server")
+	// 	os.Exit(1)
+	// }
 
 	// registerScreen := screens.NewRegisterScreenModel(appService)
 	//
