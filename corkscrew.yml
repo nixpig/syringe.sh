@@ -2,7 +2,7 @@
   host: localhost
   port: 3000
   requests:
-    - name: create_user
+    - name: register_user
       method: post
       resource: /users
       body:

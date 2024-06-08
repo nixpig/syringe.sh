@@ -40,8 +40,10 @@ type AddPublicKeyResponse struct {
 }
 
 type CreateDatabaseRequest struct {
-	Name   string `json:"name" validate:"required"`
-	UserId int    `json:"user_id" validate:"required"`
+	Name          string `json:"name" validate:"required"`
+	UserId        int    `json:"user_id" validate:"required"`
+	DatabaseGroup string `json:"database_group" validate:"required"`
+	DatabaseOrg   string `json:"database_org" validate:"required"`
 }
 
 type CreateDatabaseResponse struct {
@@ -51,6 +53,11 @@ type CreateDatabaseResponse struct {
 	CreatedAt string `json:"created_at"`
 }
 
+type TursoApiSettings struct {
+	Url   string
+	Token string
+}
+
 type AppService interface {
 	RegisterUser(user RegisterUserRequest) (*RegisterUserResponse, error)
 	AddPublicKey(publicKey AddPublicKeyRequest) (*AddPublicKeyResponse, error)
@@ -58,14 +65,23 @@ type AppService interface {
 }
 
 type AppServiceImpl struct {
-	store    stores.AppStore
-	validate *validator.Validate
+	store            stores.AppStore
+	validate         *validator.Validate
+	httpClient       http.Client
+	tursoApiSettings TursoApiSettings
 }
 
-func NewAppServiceImpl(store stores.AppStore, validate *validator.Validate) AppServiceImpl {
+func NewAppServiceImpl(
+	store stores.AppStore,
+	validate *validator.Validate,
+	httpClient http.Client,
+	tursoApiSettings TursoApiSettings,
+) AppServiceImpl {
 	return AppServiceImpl{
-		store:    store,
-		validate: validate,
+		store:            store,
+		validate:         validate,
+		httpClient:       httpClient,
+		tursoApiSettings: tursoApiSettings,
 	}
 }
 
@@ -93,8 +109,10 @@ func (a AppServiceImpl) RegisterUser(user RegisterUserRequest) (*RegisterUserRes
 
 	insertedDatabase, err := a.CreateDatabase(
 		CreateDatabaseRequest{
-			Name:   insertedUser.Username + "-" + strconv.Itoa(insertedUser.Id),
-			UserId: insertedUser.Id,
+			Name:          insertedUser.Username + "-" + strconv.Itoa(insertedUser.Id),
+			UserId:        insertedUser.Id,
+			DatabaseOrg:   os.Getenv("DATABASE_ORG"),
+			DatabaseGroup: os.Getenv("DATABASE_GROUP"),
 		})
 	if err != nil {
 		return nil, err
@@ -133,29 +151,22 @@ func (a AppServiceImpl) CreateDatabase(databaseDetails CreateDatabaseRequest) (*
 		return nil, err
 	}
 
-	apiBaseUrl := os.Getenv("API_BASE_URL")
-	databaseOrg := os.Getenv("DATABASE_ORG")
-	databaseGroup := os.Getenv("DATABASE_GROUP")
-	apiToken := os.Getenv("API_TOKEN")
-
-	createDbUrl := apiBaseUrl + "/organizations/" + databaseOrg + "/databases"
+	createDatabaseUrl := a.tursoApiSettings.Url + "/organizations/" + databaseDetails.DatabaseOrg + "/databases"
 
 	body := []byte(fmt.Sprintf(`{
 		"name": "%s",
 		"group": "%s"
-	}`, databaseDetails.Name, databaseGroup))
+	}`, databaseDetails.Name, databaseDetails.DatabaseGroup))
 
-	req, err := http.NewRequest("POST", createDbUrl, bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", createDatabaseUrl, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", apiToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", a.tursoApiSettings.Token))
 
-	client := http.Client{}
-
-	res, err := client.Do(req)
+	res, err := a.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
