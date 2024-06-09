@@ -45,6 +45,7 @@ func (s SyringeSshServer) Start() error {
 		}),
 		wish.WithMiddleware(func(next ssh.Handler) ssh.Handler {
 			return func(sess ssh.Session) {
+				wish.Println(sess, sess.Command())
 				authed := s.handlers.AuthUser(sess.User(), sess.PublicKey())
 
 				if authed {
@@ -54,6 +55,8 @@ func (s SyringeSshServer) Start() error {
 					wish.Println(sess, "Please hold on while I register you...")
 
 					s.handlers.RegisterUser(sess.User(), sess.PublicKey())
+
+					// args := sess.Command()
 				}
 
 				next(sess)

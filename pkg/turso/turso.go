@@ -8,14 +8,14 @@ import (
 	"net/http"
 )
 
-type TursoApi struct {
+type TursoClient struct {
 	organization string
-	apiToken     string
+	token        string
 	httpClient   http.Client
 	baseUrl      string
 }
 
-type TursoApiError struct {
+type TursoError struct {
 	Error string `json:"error"`
 }
 
@@ -43,16 +43,16 @@ type TursoDatabaseApi interface {
 	CreateToken(name string) (*TursoToken, error)
 }
 
-func New(organization, apiToken string, httpClient http.Client) TursoApi {
-	return TursoApi{
+func New(organization, apiToken string, httpClient http.Client) TursoClient {
+	return TursoClient{
 		organization: organization,
-		apiToken:     apiToken,
+		token:        apiToken,
 		httpClient:   httpClient,
 		baseUrl:      "https://api.turso.tech/v1",
 	}
 }
 
-func (t *TursoApi) CreateDatabase(name, group string) (*TursoDatabaseResponse, error) {
+func (t *TursoClient) CreateDatabase(name, group string) (*TursoDatabaseResponse, error) {
 	url := t.baseUrl + "/organizations/" + t.organization + "/databases"
 	body := []byte(fmt.Sprintf(`{
 		"name": "%s",
@@ -65,7 +65,7 @@ func (t *TursoApi) CreateDatabase(name, group string) (*TursoDatabaseResponse, e
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.apiToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.token))
 
 	res, err := t.httpClient.Do(req)
 	if err != nil {
@@ -73,7 +73,7 @@ func (t *TursoApi) CreateDatabase(name, group string) (*TursoDatabaseResponse, e
 	}
 
 	if res.StatusCode != 200 {
-		var apiErr TursoApiError
+		var apiErr TursoError
 
 		if err := json.NewDecoder(res.Body).Decode(&apiErr); err != nil {
 			return nil, err
@@ -91,7 +91,7 @@ func (t *TursoApi) CreateDatabase(name, group string) (*TursoDatabaseResponse, e
 	return &createdDatabase, nil
 }
 
-func (t *TursoApi) ListDatabases() (*TursoDatabases, error) {
+func (t *TursoClient) ListDatabases() (*TursoDatabases, error) {
 	url := t.baseUrl + "/organizations/" + t.organization + "/databases"
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -100,7 +100,7 @@ func (t *TursoApi) ListDatabases() (*TursoDatabases, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.apiToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.token))
 
 	res, err := t.httpClient.Do(req)
 	if err != nil {
@@ -116,7 +116,7 @@ func (t *TursoApi) ListDatabases() (*TursoDatabases, error) {
 	return &databases, nil
 }
 
-func (t *TursoApi) CreateToken(name string) (*TursoToken, error) {
+func (t *TursoClient) CreateToken(name string) (*TursoToken, error) {
 	url := t.baseUrl + "/organizations/" + t.organization + "/databases/" + name + "/auth/tokens"
 
 	req, err := http.NewRequest(http.MethodPost, url, nil)
@@ -125,7 +125,7 @@ func (t *TursoApi) CreateToken(name string) (*TursoToken, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.apiToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", t.token))
 
 	res, err := t.httpClient.Do(req)
 	if err != nil {

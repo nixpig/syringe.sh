@@ -28,7 +28,7 @@ func (h *SshHandlers) RegisterUser(username string, publicKey ssh.PublicKey) {
 	})
 	if err != nil {
 		h.log.Error().Err(err).Msg("failed to register with error")
-		os.Exit(1)
+		return
 	}
 
 	h.log.Info().Str("username", registeredUser.Username).Msg("registered user")
@@ -49,3 +49,7 @@ func (h *SshHandlers) AuthUser(
 
 	return userAuth.Auth
 }
+
+// func (h *SshHandlers) SetSecret(project, environment, key, value string) error {
+//
+// }

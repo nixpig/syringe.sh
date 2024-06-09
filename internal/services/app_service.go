@@ -202,7 +202,6 @@ func (a AppServiceImpl) CreateDatabase(
 		createdToken.Jwt,
 	)
 	if err != nil {
-		fmt.Println("some error in here!!")
 		return nil, err
 	}
 
