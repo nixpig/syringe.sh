@@ -3,14 +3,39 @@
 
 # `syringe.sh/server`
 
-## `user`
+> **⚠️ THIS PROJECT IS A WORK IN PROGRESS**
+>
+> **⚠️ SOME OR ALL OF THE FUNCTIONALITY HERE MAY NOT ACTUALLY WORK CORRECTLY**
+
+## Proposed usage
+
+`syringe` executed without a subcommand should connect to a TUI.
+
+### `inject`
+
+- `syringe inject [-p <project> -e <environment> -s <key>]`
+
+#### Examples
+
+- `syringe inject`
+- `syringe inject -p galactic_takeover -e death_star -s launch_code .`
+
+### `link`
+
+- `syringe link [-p <project> -p <environment>] <directory>`
+
+#### Examples
+
+- `syringe link -p galactic_takeover -e death_star .`
+
+### `user`
 
 Manage your user account(s).
 
-- `syringe user register`
-- `syringe user delete`
+- `syringe user register [-u <username>]`
+- `syringe user delete [-u <username>]`
 
-## `project`
+### `project`
 
 Manage your projects.
 
@@ -19,7 +44,7 @@ Manage your projects.
 - `syringe project list`
 - `syringe project rename <old name> <new name>`
 
-## `environment`
+### `environment`
 
 Manage your environments.
 
@@ -28,7 +53,7 @@ Manage your environments.
 - `syringe environment list [-p <project>]`
 - `syringe environment rename [-p <project>] <old name> <new name>`
 
-## `secret`
+### `secret`
 
 Manage your secrets.
 
@@ -37,18 +62,12 @@ Manage your secrets.
 - `syringe secret list [-p <project> -e <environment>]`
 - `syringe secret remove [-p <project> -e <environment>] <key>`
 
-## `key`
+### `key`
 
-Manage your SSH auth keys.
+Manage SSH public keys associated with your account.
 
 - `syringe key add`
 - `syringe key remove [-k <public key>]`
-
----
-
-- Register user
-- Add public key
-- Create user database
 
 ```go
 f, err := tea.LogToFile("tmp/debug.log", "debug")
