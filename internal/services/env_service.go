@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 )
@@ -41,10 +43,12 @@ func (e EnvServiceImpl) CreateTables() error {
 }
 
 func (e EnvServiceImpl) SetSecret(secret SetSecretRequest) error {
+	fmt.Println("setting secret")
 	if err := e.validate.Struct(secret); err != nil {
 		return err
 	}
 
+	fmt.Println("inserting secret...")
 	return e.store.InsertSecret(
 		secret.Project,
 		secret.Environment,

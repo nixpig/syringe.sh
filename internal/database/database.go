@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
@@ -12,6 +13,8 @@ type DbConfig struct {
 
 func Connection(databaseUrl, databaseToken string) (*sql.DB, error) {
 	databaseConnectionString := databaseUrl + "?authToken=" + databaseToken
+
+	fmt.Println("connecting to: ", databaseConnectionString)
 
 	db, err := sql.Open("libsql", databaseConnectionString)
 	if err != nil {

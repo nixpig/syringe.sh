@@ -1,8 +1,9 @@
-package cmd
+package server
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -12,14 +13,14 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/logging"
+	"github.com/nixpig/syringe.sh/server/cmd"
 	"github.com/nixpig/syringe.sh/server/internal/handlers"
 	"github.com/rs/zerolog"
 )
 
-const (
-	host = "localhost"
-	port = "23234"
-)
+type contextKey string
+
+const AUTHORISED = contextKey("AUTHORISED")
 
 type SyringeSshServer struct {
 	handlers handlers.SshHandlers
@@ -36,32 +37,38 @@ func NewSyringeSshServer(
 	}
 }
 
-func (s SyringeSshServer) Start() error {
+func (s SyringeSshServer) Start(host, port string) error {
 	server, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, port)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),
 		wish.WithPublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
 			return key.Type() == "ssh-ed25519"
 		}),
-		wish.WithMiddleware(func(next ssh.Handler) ssh.Handler {
-			return func(sess ssh.Session) {
-				wish.Println(sess, sess.Command())
-				authed := s.handlers.AuthUser(sess.User(), sess.PublicKey())
+		wish.WithMiddleware(
+			func(next ssh.Handler) ssh.Handler {
+				return func(sess ssh.Session) {
+					isAuthorised := sess.Context().Value(AUTHORISED)
+					wish.Println(sess, fmt.Sprintf("is authorised: %v", isAuthorised))
 
-				if authed {
-					wish.Println(sess, "You are authed!!")
-				} else {
-					wish.Println(sess, "Hey, I don't know who you are!")
-					wish.Println(sess, "Please hold on while I register you...")
+					err := cmd.Execute(sess, s.handlers)
+					if err != nil {
+						wish.Error(sess, "done fucked up\n", err)
+						os.Exit(1)
+					}
 
-					s.handlers.RegisterUser(sess.User(), sess.PublicKey())
-
-					// args := sess.Command()
+					next(sess)
 				}
+			},
+			func(next ssh.Handler) ssh.Handler {
+				return func(sess ssh.Session) {
+					sess.Context().SetValue(
+						AUTHORISED,
+						s.handlers.AuthUser(sess.User(), sess.PublicKey()),
+					)
 
-				next(sess)
-			}
-		},
+					next(sess)
+				}
+			},
 			logging.Middleware(),
 		),
 	)
@@ -70,9 +77,11 @@ func (s SyringeSshServer) Start() error {
 	}
 
 	done := make(chan os.Signal, 1)
+
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	s.log.Info().Msg("Starting SSH server")
+
 	go func() {
 		if err = server.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
 			s.log.Error().Err(err).Msg("Could not start server")
@@ -81,9 +90,12 @@ func (s SyringeSshServer) Start() error {
 	}()
 
 	<-done
+
 	s.log.Info().Msg("Stopping SSH server")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer func() { cancel() }()
+	defer cancel()
+
 	if err := server.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
 		s.log.Error().Err(err).Msg("Could not stop server")
 	}

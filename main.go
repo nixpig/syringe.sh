@@ -3,16 +3,20 @@ package main
 import (
 	"net/http"
 	"os"
-	"slices"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
-	"github.com/nixpig/syringe.sh/server/cmd"
 	"github.com/nixpig/syringe.sh/server/internal/database"
 	"github.com/nixpig/syringe.sh/server/internal/handlers"
+	"github.com/nixpig/syringe.sh/server/internal/server"
 	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 	"github.com/rs/zerolog"
+)
+
+const (
+	host = "localhost"
+	port = "23234"
 )
 
 func main() {
@@ -41,14 +45,6 @@ func main() {
 
 	defer appDb.Close()
 
-	if slices.Index(os.Args, "--migrate") != -1 {
-		log.Info().Msg("running database migration")
-		if err := database.MigrateAppDb(appDb); err != nil {
-			log.Error().Err(err).Msg("failed to run database migration")
-			os.Exit(1)
-		}
-	}
-
 	log.Info().Msg("building app components")
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	appStore := stores.NewSqliteAppStore(appDb)
@@ -58,26 +54,10 @@ func main() {
 	})
 
 	sshHandlers := handlers.NewSshHandlers(appService, &log)
-	sshServer := cmd.NewSyringeSshServer(sshHandlers, &log)
+	sshServer := server.NewSyringeSshServer(sshHandlers, &log)
 
-	if err := sshServer.Start(); err != nil {
+	if err := sshServer.Start(host, port); err != nil {
 		log.Error().Err(err).Msg("failed to start ssh server")
 		os.Exit(1)
 	}
-
-	// httpHandlers := handlers.NewHttpHandlers(appService, &log)
-	// httpServer := cmd.NewSyringeHttpServer(httpHandlers, &log)
-	//
-	// if err := httpServer.Start(); err != nil {
-	// 	log.Error().Err(err).Msg("failed to start http server")
-	// 	os.Exit(1)
-	// }
-
-	// registerScreen := screens.NewRegisterScreenModel(appService)
-	//
-	// p := tea.NewProgram(registerScreen, tea.WithAltScreen())
-	// if _, err := p.Run(); err != nil {
-	// 	fmt.Printf("failed to run program:\n%s", err)
-	// 	os.Exit(1)
-	// }
 }

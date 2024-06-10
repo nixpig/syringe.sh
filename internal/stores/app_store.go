@@ -3,20 +3,33 @@ package stores
 import (
 	"database/sql"
 	"errors"
-
-	"github.com/nixpig/syringe.sh/server/internal/models"
 )
 
+type User struct {
+	Id        int
+	Username  string
+	Email     string
+	CreatedAt string
+	Status    string
+}
+
+type Key struct {
+	Id        int
+	PublicKey string
+	UserId    int
+	CreatedAt string
+}
+
 type UserStore interface {
-	InsertUser(username, email, status string) (*models.User, error)
-	GetUserByUsername(username string) (*models.User, error)
+	InsertUser(username, email, status string) (*User, error)
+	GetUserByUsername(username string) (*User, error)
 	DeleteUserByUsername(username string) error
-	UpdateUser(user models.User) (*models.User, error)
-	GetUserPublicKeys(username string) (*[]models.Key, error)
+	UpdateUser(user User) (*User, error)
+	GetUserPublicKeys(username string) (*[]Key, error)
 }
 
 type KeyStore interface {
-	InsertKey(userId int, publicKey string) (*models.Key, error)
+	InsertKey(userId int, publicKey string) (*Key, error)
 }
 
 type AppStore interface {
@@ -32,7 +45,7 @@ func NewSqliteAppStore(appDb *sql.DB) SqliteAppStore {
 	return SqliteAppStore{appDb}
 }
 
-func (s SqliteAppStore) InsertUser(username, email, status string) (*models.User, error) {
+func (s SqliteAppStore) InsertUser(username, email, status string) (*User, error) {
 	query := `
 		insert into users_ (username_, email_, status_) 
 		values ($username, $email, $status) 
@@ -46,7 +59,7 @@ func (s SqliteAppStore) InsertUser(username, email, status string) (*models.User
 		sql.Named("status", status),
 	)
 
-	var insertedUser models.User
+	var insertedUser User
 
 	if err := row.Scan(
 		&insertedUser.Id,
@@ -61,7 +74,7 @@ func (s SqliteAppStore) InsertUser(username, email, status string) (*models.User
 	return &insertedUser, nil
 }
 
-func (s SqliteAppStore) GetUserByUsername(username string) (*models.User, error) {
+func (s SqliteAppStore) GetUserByUsername(username string) (*User, error) {
 	query := `
 		select id_, username_, email_, status_, created_at_ 
 		from users_ 
@@ -70,7 +83,7 @@ func (s SqliteAppStore) GetUserByUsername(username string) (*models.User, error)
 
 	row := s.appDb.QueryRow(query, username)
 
-	var user models.User
+	var user User
 
 	if err := row.Scan(
 		&user.Id,
@@ -105,7 +118,7 @@ func (s SqliteAppStore) DeleteUserByUsername(username string) error {
 	return nil
 }
 
-func (s SqliteAppStore) UpdateUser(user models.User) (*models.User, error) {
+func (s SqliteAppStore) UpdateUser(user User) (*User, error) {
 	query := `
 		update users_ set email_ = $2, set status_ = $3
 		where username_ = $1 
@@ -114,7 +127,7 @@ func (s SqliteAppStore) UpdateUser(user models.User) (*models.User, error) {
 
 	row := s.appDb.QueryRow(query, user.Username, user.Email, user.Status)
 
-	var updatedUser models.User
+	var updatedUser User
 
 	if err := row.Scan(
 		&updatedUser.Id,
@@ -129,7 +142,7 @@ func (s SqliteAppStore) UpdateUser(user models.User) (*models.User, error) {
 	return &user, nil
 }
 
-func (s SqliteAppStore) InsertKey(userId int, publicKey string) (*models.Key, error) {
+func (s SqliteAppStore) InsertKey(userId int, publicKey string) (*Key, error) {
 	query := `
 		insert into keys_ (user_id_, ssh_public_key_)
 		values ($userId, $publicKey)
@@ -142,7 +155,7 @@ func (s SqliteAppStore) InsertKey(userId int, publicKey string) (*models.Key, er
 		sql.Named("publicKey", publicKey),
 	)
 
-	var insertedKey models.Key
+	var insertedKey Key
 
 	if err := row.Scan(
 		&insertedKey.Id,
@@ -156,7 +169,7 @@ func (s SqliteAppStore) InsertKey(userId int, publicKey string) (*models.Key, er
 	return &insertedKey, nil
 }
 
-func (s SqliteAppStore) GetUserPublicKeys(username string) (*[]models.Key, error) {
+func (s SqliteAppStore) GetUserPublicKeys(username string) (*[]Key, error) {
 	query := `
 		select k.id_, k.user_id_, k.ssh_public_key_, k.created_at_
 		from keys_ k 
@@ -174,10 +187,10 @@ func (s SqliteAppStore) GetUserPublicKeys(username string) (*[]models.Key, error
 		return nil, err
 	}
 
-	var keys []models.Key
+	var keys []Key
 
 	for rows.Next() {
-		var key models.Key
+		var key Key
 
 		if err := rows.Scan(
 			&key.Id,

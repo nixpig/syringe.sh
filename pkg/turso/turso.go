@@ -116,8 +116,8 @@ func (t *TursoClient) ListDatabases() (*TursoDatabases, error) {
 	return &databases, nil
 }
 
-func (t *TursoClient) CreateToken(name string) (*TursoToken, error) {
-	url := t.baseUrl + "/organizations/" + t.organization + "/databases/" + name + "/auth/tokens"
+func (t *TursoClient) CreateToken(name, expiration string) (*TursoToken, error) {
+	url := t.baseUrl + "/organizations/" + t.organization + "/databases/" + name + "/auth/tokens?expiration=" + expiration
 
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {

@@ -77,3 +77,29 @@ if err != nil {
 
 defer f.Close()
 ```
+
+    		// x user register
+    		// user delete
+
+    		// project add
+    		// project remove
+    		// project list
+    		// project rename
+
+    		// environment add
+    		// environment remove
+    		// environment list
+    		// environment rename
+
+    		// secret set
+    		// secret get
+    		// secret list
+    		// secret remove
+
+    		// inject - inject environment variables into _current_ shell
+    		// exec - execute command with passed in environment variables
+
+    		// key add
+    		// key remove
+
+    		// root - TUI?

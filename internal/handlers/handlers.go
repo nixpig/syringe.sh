@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/charmbracelet/ssh"
@@ -20,7 +21,8 @@ func NewSshHandlers(appService services.AppService, log *zerolog.Logger) SshHand
 	}
 }
 
-func (h *SshHandlers) RegisterUser(username string, publicKey ssh.PublicKey) {
+func (h *SshHandlers) RegisterUser(username string, publicKey ssh.PublicKey) error {
+	fmt.Println("in registering handler")
 	registeredUser, err := h.appService.RegisterUser(services.RegisterUserRequest{
 		Username:  username,
 		PublicKey: publicKey,
@@ -28,10 +30,11 @@ func (h *SshHandlers) RegisterUser(username string, publicKey ssh.PublicKey) {
 	})
 	if err != nil {
 		h.log.Error().Err(err).Msg("failed to register with error")
-		return
+		return err
 	}
 
 	h.log.Info().Str("username", registeredUser.Username).Msg("registered user")
+	return nil
 }
 
 func (h *SshHandlers) AuthUser(
