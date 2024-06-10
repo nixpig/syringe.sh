@@ -44,18 +44,10 @@ func (s SqliteEnvStore) InsertSecret(project, environment, key, value string) er
 		values ($project, $environment, $key, $value)
 	`
 
-	fmt.Println("stats in store: ", s.db.Stats())
-
 	if err := s.db.Ping(); err != nil {
-		fmt.Println("failed to ping database in store")
 		return err
 	}
 
-	fmt.Println("execing...")
-	fmt.Println("project: ", project)
-	fmt.Println("environment: ", environment)
-	fmt.Println("key: ", key)
-	fmt.Println("value: ", value)
 	if _, err := s.db.Query(
 		query,
 		sql.Named("project", project),
@@ -63,11 +55,8 @@ func (s SqliteEnvStore) InsertSecret(project, environment, key, value string) er
 		sql.Named("key", key),
 		sql.Named("value", value),
 	); err != nil {
-		fmt.Println("this is the exec error: ", err)
 		return err
 	}
-
-	fmt.Println("executed!")
 
 	return nil
 }

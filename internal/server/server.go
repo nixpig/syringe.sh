@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -48,11 +47,14 @@ func (s SyringeSshServer) Start(host, port string) error {
 			func(next ssh.Handler) ssh.Handler {
 				return func(sess ssh.Session) {
 					isAuthorised := sess.Context().Value(AUTHORISED)
-					wish.Println(sess, fmt.Sprintf("is authorised: %v", isAuthorised))
+
+					if !isAuthorised.(bool) {
+						wish.Println(sess, "NOT AUTHORISED!!")
+						return
+					}
 
 					err := cmd.Execute(sess, s.handlers)
 					if err != nil {
-						wish.Error(sess, "done fucked up\n", err)
 						os.Exit(1)
 					}
 

@@ -33,18 +33,13 @@ func NewSecretCommand(
 		http.Client{},
 	)
 
-	fmt.Println(
-		os.Getenv("DATABASE_ORG"),
-		os.Getenv("API_TOKEN"),
-	)
-
 	marshalledKey := gossh.MarshalAuthorizedKey(sess.PublicKey())
 
 	hashedKey := fmt.Sprintf("%x", sha1.Sum(marshalledKey))
 
 	token, err := api.CreateToken(hashedKey, "30s")
 	if err != nil {
-		fmt.Println("failed to create token")
+		fmt.Println("failed to create token:", err)
 	}
 
 	db, err := database.Connection(
@@ -56,7 +51,6 @@ func NewSecretCommand(
 		return nil
 	}
 
-	fmt.Println("db stats: ", db.Stats())
 	envStore := stores.NewSqliteEnvStore(db)
 	envService := services.NewEnvServiceImpl(envStore, validator.New(validator.WithRequiredStructEnabled()))
 
@@ -66,7 +60,6 @@ func NewSecretCommand(
 }
 
 func NewSecretSetCmd(envService services.EnvService) *cobra.Command {
-	fmt.Println("create new command")
 	var secretSetCmd = &cobra.Command{
 		Use:     "set",
 		Aliases: []string{"s"},
@@ -80,24 +73,20 @@ func NewSecretSetCmd(envService services.EnvService) *cobra.Command {
 
 			project, err := cmd.Flags().GetString("project")
 			if err != nil {
-				fmt.Println("unable to get secret set PROJECT flag:\n", err)
 				return
 			}
 
 			environment, err := cmd.Flags().GetString("environment")
 			if err != nil {
-				fmt.Println("unable to get secret set ENVIRONMENT flag:\n", err)
 				return
 			}
 
-			fmt.Println("in the SET command")
 			if err := envService.SetSecret(services.SetSecretRequest{
 				Project:     project,
 				Environment: environment,
 				Key:         key,
 				Value:       value,
 			}); err != nil {
-				fmt.Println("failed to set secret:\n", err)
 				return
 			}
 		},

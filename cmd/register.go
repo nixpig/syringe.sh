@@ -20,12 +20,9 @@ func NewRegisterCommand(
 		Example: "syringe register",
 		Args:    cobra.ExactArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("in the REGISTER command!")
-
 			if err := appHandlers.RegisterUser(sess.User(), sess.PublicKey()); err != nil {
 				fmt.Println("FUCKKK!!!", err)
 			}
-
 		},
 	}
 }

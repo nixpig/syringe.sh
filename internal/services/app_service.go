@@ -124,7 +124,6 @@ func (a AppServiceImpl) RegisterUser(
 		return nil, err
 	}
 
-	fmt.Println("creating user database")
 	insertedDatabase, err := a.CreateDatabase(
 		CreateDatabaseRequest{
 			Name:          fmt.Sprintf("%x", sha1.Sum(marshalledKey)),
@@ -135,7 +134,6 @@ func (a AppServiceImpl) RegisterUser(
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("created user database: ", insertedDatabase)
 
 	return &RegisterUserResponse{
 		Id:           insertedUser.Id,
@@ -238,7 +236,6 @@ func (a AppServiceImpl) AuthenticateUser(
 
 	for _, v := range *publicKeysDetails {
 		parsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(v.PublicKey))
-		fmt.Println()
 		if err != nil {
 			return nil, err
 		}
