@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"github.com/charmbracelet/ssh"
-	"github.com/nixpig/syringe.sh/server/internal/handlers"
+	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/spf13/cobra"
 )
 
 func Execute(
 	sess ssh.Session,
-	handlers handlers.SshHandlers,
+	appService services.AppService,
 ) error {
 
 	rootCmd := &cobra.Command{
@@ -17,7 +17,7 @@ func Execute(
 		Long:  "A terminal-based utility to securely manage environment variables across projects and environments.",
 	}
 
-	rootCmd.AddCommand(NewRegisterCommand(sess, handlers))
+	rootCmd.AddCommand(NewRegisterCommand(sess, appService))
 	rootCmd.AddCommand(NewSecretCommand(sess))
 
 	rootCmd.SetArgs(sess.Command())

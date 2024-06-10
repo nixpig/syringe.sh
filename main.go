@@ -7,7 +7,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"github.com/nixpig/syringe.sh/server/internal/database"
-	"github.com/nixpig/syringe.sh/server/internal/handlers"
 	"github.com/nixpig/syringe.sh/server/internal/server"
 	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
@@ -53,8 +52,7 @@ func main() {
 		Token: os.Getenv("API_TOKEN"),
 	})
 
-	sshHandlers := handlers.NewSshHandlers(appService, &log)
-	sshServer := server.NewSyringeSshServer(sshHandlers, &log)
+	sshServer := server.NewSyringeSshServer(appService, &log)
 
 	if err := sshServer.Start(host, port); err != nil {
 		log.Error().Err(err).Msg("failed to start ssh server")

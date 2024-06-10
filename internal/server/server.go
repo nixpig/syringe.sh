@@ -13,7 +13,7 @@ import (
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/logging"
 	"github.com/nixpig/syringe.sh/server/cmd"
-	"github.com/nixpig/syringe.sh/server/internal/handlers"
+	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/rs/zerolog"
 )
 
@@ -22,17 +22,17 @@ type contextKey string
 const AUTHORISED = contextKey("AUTHORISED")
 
 type SyringeSshServer struct {
-	handlers handlers.SshHandlers
-	log      *zerolog.Logger
+	appService services.AppService
+	log        *zerolog.Logger
 }
 
 func NewSyringeSshServer(
-	handlers handlers.SshHandlers,
+	appService services.AppService,
 	log *zerolog.Logger,
 ) SyringeSshServer {
 	return SyringeSshServer{
-		handlers: handlers,
-		log:      log,
+		appService: appService,
+		log:        log,
 	}
 }
 
@@ -53,7 +53,7 @@ func (s SyringeSshServer) Start(host, port string) error {
 						return
 					}
 
-					err := cmd.Execute(sess, s.handlers)
+					err := cmd.Execute(sess, s.appService)
 					if err != nil {
 						os.Exit(1)
 					}
@@ -63,9 +63,17 @@ func (s SyringeSshServer) Start(host, port string) error {
 			},
 			func(next ssh.Handler) ssh.Handler {
 				return func(sess ssh.Session) {
+					isAuthorised, err := s.appService.AuthenticateUser(services.UserAuthRequest{
+						Username:  sess.User(),
+						PublicKey: sess.PublicKey(),
+					})
+					if err != nil {
+						return
+					}
+
 					sess.Context().SetValue(
 						AUTHORISED,
-						s.handlers.AuthUser(sess.User(), sess.PublicKey()),
+						isAuthorised.Auth,
 					)
 
 					next(sess)
