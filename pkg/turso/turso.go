@@ -12,7 +12,7 @@ type TursoClient struct {
 	organization string
 	token        string
 	httpClient   http.Client
-	baseUrl      string
+	baseURL      string
 }
 
 type TursoError struct {
@@ -20,7 +20,7 @@ type TursoError struct {
 }
 
 type TursoDatabase struct {
-	DbId     string `json:"DbId"`
+	DBID     string `json:"DbId"`
 	HostName string `json:"HostName"`
 	Name     string `json:"Name"`
 }
@@ -37,7 +37,7 @@ type TursoToken struct {
 	Jwt string `json:"jwt"`
 }
 
-type TursoDatabaseApi interface {
+type TursoDatabaseAPI interface {
 	CreateDatabase(name, group string) (*TursoDatabaseResponse, error)
 	ListDatabases() (*[]TursoDatabase, error)
 	CreateToken(name string) (*TursoToken, error)
@@ -48,12 +48,12 @@ func New(organization, apiToken string, httpClient http.Client) TursoClient {
 		organization: organization,
 		token:        apiToken,
 		httpClient:   httpClient,
-		baseUrl:      "https://api.turso.tech/v1",
+		baseURL:      "https://api.turso.tech/v1",
 	}
 }
 
 func (t *TursoClient) CreateDatabase(name, group string) (*TursoDatabaseResponse, error) {
-	url := t.baseUrl + "/organizations/" + t.organization + "/databases"
+	url := t.baseURL + "/organizations/" + t.organization + "/databases"
 	body := []byte(fmt.Sprintf(`{
 		"name": "%s",
 		"group": "%s"
@@ -92,7 +92,7 @@ func (t *TursoClient) CreateDatabase(name, group string) (*TursoDatabaseResponse
 }
 
 func (t *TursoClient) ListDatabases() (*TursoDatabases, error) {
-	url := t.baseUrl + "/organizations/" + t.organization + "/databases"
+	url := t.baseURL + "/organizations/" + t.organization + "/databases"
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -117,7 +117,7 @@ func (t *TursoClient) ListDatabases() (*TursoDatabases, error) {
 }
 
 func (t *TursoClient) CreateToken(name, expiration string) (*TursoToken, error) {
-	url := t.baseUrl + "/organizations/" + t.organization + "/databases/" + name + "/auth/tokens?expiration=" + expiration
+	url := t.baseURL + "/organizations/" + t.organization + "/databases/" + name + "/auth/tokens?expiration=" + expiration
 
 	req, err := http.NewRequest(http.MethodPost, url, nil)
 	if err != nil {
@@ -147,7 +147,7 @@ type ErrConflict struct {
 }
 
 func (e ErrConflict) Error() string {
-	return fmt.Sprintf(e.Err.Error())
+	return fmt.Sprint(e.Err.Error())
 }
 
 func WrapErr(statusCode int, msg string) error {

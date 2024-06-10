@@ -6,7 +6,7 @@ import (
 )
 
 type User struct {
-	Id        int
+	ID        int
 	Username  string
 	Email     string
 	CreatedAt string
@@ -14,9 +14,9 @@ type User struct {
 }
 
 type Key struct {
-	Id        int
+	ID        int
 	PublicKey string
-	UserId    int
+	UserID    int
 	CreatedAt string
 }
 
@@ -29,7 +29,7 @@ type UserStore interface {
 }
 
 type KeyStore interface {
-	InsertKey(userId int, publicKey string) (*Key, error)
+	InsertKey(userID int, publicKey string) (*Key, error)
 }
 
 type AppStore interface {
@@ -38,11 +38,11 @@ type AppStore interface {
 }
 
 type SqliteAppStore struct {
-	appDb *sql.DB
+	appDB *sql.DB
 }
 
-func NewSqliteAppStore(appDb *sql.DB) SqliteAppStore {
-	return SqliteAppStore{appDb}
+func NewSqliteAppStore(appDB *sql.DB) SqliteAppStore {
+	return SqliteAppStore{appDB}
 }
 
 func (s SqliteAppStore) InsertUser(username, email, status string) (*User, error) {
@@ -52,7 +52,7 @@ func (s SqliteAppStore) InsertUser(username, email, status string) (*User, error
 		returning id_, username_, email_, status_, created_at_
 	`
 
-	row := s.appDb.QueryRow(
+	row := s.appDB.QueryRow(
 		query,
 		sql.Named("username", username),
 		sql.Named("email", email),
@@ -62,7 +62,7 @@ func (s SqliteAppStore) InsertUser(username, email, status string) (*User, error
 	var insertedUser User
 
 	if err := row.Scan(
-		&insertedUser.Id,
+		&insertedUser.ID,
 		&insertedUser.Username,
 		&insertedUser.Email,
 		&insertedUser.Status,
@@ -81,12 +81,12 @@ func (s SqliteAppStore) GetUserByUsername(username string) (*User, error) {
 		where username_ = $1
 	`
 
-	row := s.appDb.QueryRow(query, username)
+	row := s.appDB.QueryRow(query, username)
 
 	var user User
 
 	if err := row.Scan(
-		&user.Id,
+		&user.ID,
 		&user.Username,
 		&user.Email,
 		&user.Status,
@@ -101,7 +101,7 @@ func (s SqliteAppStore) GetUserByUsername(username string) (*User, error) {
 func (s SqliteAppStore) DeleteUserByUsername(username string) error {
 	query := `delete from users_ where username_ = $1`
 
-	res, err := s.appDb.Exec(query, username)
+	res, err := s.appDB.Exec(query, username)
 	if err != nil {
 		return err
 	}
@@ -125,12 +125,12 @@ func (s SqliteAppStore) UpdateUser(user User) (*User, error) {
 		returning id_, username_, email_, status_, created_at_
 	`
 
-	row := s.appDb.QueryRow(query, user.Username, user.Email, user.Status)
+	row := s.appDB.QueryRow(query, user.Username, user.Email, user.Status)
 
 	var updatedUser User
 
 	if err := row.Scan(
-		&updatedUser.Id,
+		&updatedUser.ID,
 		&updatedUser.Username,
 		&updatedUser.Email,
 		&updatedUser.Status,
@@ -142,24 +142,24 @@ func (s SqliteAppStore) UpdateUser(user User) (*User, error) {
 	return &user, nil
 }
 
-func (s SqliteAppStore) InsertKey(userId int, publicKey string) (*Key, error) {
+func (s SqliteAppStore) InsertKey(userID int, publicKey string) (*Key, error) {
 	query := `
 		insert into keys_ (user_id_, ssh_public_key_)
-		values ($userId, $publicKey)
+		values ($userID, $publicKey)
 		returning id_, user_id_, ssh_public_key_, created_at_
 	`
 
-	row := s.appDb.QueryRow(
+	row := s.appDB.QueryRow(
 		query,
-		sql.Named("userId", userId),
+		sql.Named("userID", userID),
 		sql.Named("publicKey", publicKey),
 	)
 
 	var insertedKey Key
 
 	if err := row.Scan(
-		&insertedKey.Id,
-		&insertedKey.UserId,
+		&insertedKey.ID,
+		&insertedKey.UserID,
 		&insertedKey.PublicKey,
 		&insertedKey.CreatedAt,
 	); err != nil {
@@ -179,7 +179,7 @@ func (s SqliteAppStore) GetUserPublicKeys(username string) (*[]Key, error) {
 		where u.username_ = $username
 	`
 
-	rows, err := s.appDb.Query(
+	rows, err := s.appDB.Query(
 		query,
 		sql.Named("username", username),
 	)
@@ -193,8 +193,8 @@ func (s SqliteAppStore) GetUserPublicKeys(username string) (*[]Key, error) {
 		var key Key
 
 		if err := rows.Scan(
-			&key.Id,
-			&key.UserId,
+			&key.ID,
+			&key.UserID,
 			&key.PublicKey,
 			&key.CreatedAt,
 		); err != nil {

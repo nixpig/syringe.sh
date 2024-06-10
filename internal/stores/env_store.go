@@ -2,7 +2,6 @@ package stores
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 )
 
@@ -31,7 +30,7 @@ func (s SqliteEnvStore) CreateTables() error {
 	`
 
 	if _, err := s.db.Exec(query); err != nil {
-		return errors.New(fmt.Sprintf("failed to exec: %s", err))
+		return fmt.Errorf(fmt.Sprintf("failed to exec: %s", err))
 	}
 
 	return nil

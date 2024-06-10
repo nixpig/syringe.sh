@@ -6,12 +6,12 @@ import (
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
-type DbConfig struct {
+type DBConfig struct {
 	Location string
 }
 
-func Connection(databaseUrl, databaseToken string) (*sql.DB, error) {
-	databaseConnectionString := databaseUrl + "?authToken=" + databaseToken
+func Connection(databaseURL, databaseToken string) (*sql.DB, error) {
+	databaseConnectionString := databaseURL + "?authToken=" + databaseToken
 
 	db, err := sql.Open("libsql", databaseConnectionString)
 	if err != nil {
@@ -25,7 +25,7 @@ func Connection(databaseUrl, databaseToken string) (*sql.DB, error) {
 	return db, nil
 }
 
-func MigrateAppDb(db *sql.DB) error {
+func MigrateAppDB(db *sql.DB) error {
 	dropKeysTable := `drop table if exists keys_`
 	if _, err := db.Exec(dropKeysTable); err != nil {
 		return err

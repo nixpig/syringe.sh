@@ -24,7 +24,7 @@ type RegisterUserRequest struct {
 }
 
 type RegisterUserResponse struct {
-	Id           int    `json:"id"`
+	ID           int    `json:"id"`
 	Username     string `json:"username"`
 	Email        string `json:"email"`
 	CreatedAt    string `json:"created_at"`
@@ -34,19 +34,19 @@ type RegisterUserResponse struct {
 
 type AddPublicKeyRequest struct {
 	PublicKey string `json:"public_key" validate:"required"`
-	UserId    int    `json:"user_id" validate:"required"`
+	UserID    int    `json:"user_id" validate:"required"`
 }
 
 type AddPublicKeyResponse struct {
-	Id        int    `json:"id"`
-	UserId    int    `json:"user_id"`
+	ID        int    `json:"id"`
+	UserID    int    `json:"user_id"`
 	PublicKey string `json:"public_key"`
 	CreatedAt string `json:"created_at"`
 }
 
 type CreateDatabaseRequest struct {
 	Name          string `json:"name" validate:"required"`
-	UserId        int    `json:"user_id" validate:"required"`
+	UserID        int    `json:"user_id" validate:"required"`
 	DatabaseGroup string `json:"database_group" validate:"required"`
 	DatabaseOrg   string `json:"database_org" validate:"required"`
 }
@@ -65,8 +65,8 @@ type UserAuthResponse struct {
 	Auth bool `json:"auth"`
 }
 
-type TursoApiSettings struct {
-	Url   string
+type TursoAPISettings struct {
+	URL   string
 	Token string
 }
 
@@ -81,20 +81,20 @@ type AppServiceImpl struct {
 	store            stores.AppStore
 	validate         *validator.Validate
 	httpClient       http.Client
-	tursoApiSettings TursoApiSettings
+	tursoAPISettings TursoAPISettings
 }
 
 func NewAppServiceImpl(
 	store stores.AppStore,
 	validate *validator.Validate,
 	httpClient http.Client,
-	tursoApiSettings TursoApiSettings,
+	tursoAPISettings TursoAPISettings,
 ) AppService {
 	return AppServiceImpl{
 		store:            store,
 		validate:         validate,
 		httpClient:       httpClient,
-		tursoApiSettings: tursoApiSettings,
+		tursoAPISettings: tursoAPISettings,
 	}
 }
 
@@ -117,7 +117,7 @@ func (a AppServiceImpl) RegisterUser(
 	marshalledKey := gossh.MarshalAuthorizedKey(user.PublicKey)
 
 	insertedKey, err := a.AddPublicKey(AddPublicKeyRequest{
-		UserId:    insertedUser.Id,
+		UserID:    insertedUser.ID,
 		PublicKey: string(marshalledKey),
 	})
 	if err != nil {
@@ -127,7 +127,7 @@ func (a AppServiceImpl) RegisterUser(
 	insertedDatabase, err := a.CreateDatabase(
 		CreateDatabaseRequest{
 			Name:          fmt.Sprintf("%x", sha1.Sum(marshalledKey)),
-			UserId:        insertedUser.Id,
+			UserID:        insertedUser.ID,
 			DatabaseOrg:   os.Getenv("DATABASE_ORG"),
 			DatabaseGroup: os.Getenv("DATABASE_GROUP"),
 		})
@@ -136,7 +136,7 @@ func (a AppServiceImpl) RegisterUser(
 	}
 
 	return &RegisterUserResponse{
-		Id:           insertedUser.Id,
+		ID:           insertedUser.ID,
 		Username:     insertedUser.Username,
 		Email:        insertedUser.Email,
 		CreatedAt:    insertedUser.CreatedAt,
@@ -152,14 +152,14 @@ func (a AppServiceImpl) AddPublicKey(
 		return nil, err
 	}
 
-	addedKeyDetails, err := a.store.InsertKey(addKeyDetails.UserId, addKeyDetails.PublicKey)
+	addedKeyDetails, err := a.store.InsertKey(addKeyDetails.UserID, addKeyDetails.PublicKey)
 	if err != nil {
 		return nil, err
 	}
 
 	return &AddPublicKeyResponse{
-		Id:        addedKeyDetails.Id,
-		UserId:    addedKeyDetails.UserId,
+		ID:        addedKeyDetails.ID,
+		UserID:    addedKeyDetails.UserID,
 		PublicKey: addedKeyDetails.PublicKey,
 		CreatedAt: addedKeyDetails.CreatedAt,
 	}, nil
@@ -172,7 +172,7 @@ func (a AppServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	api := turso.New(databaseDetails.DatabaseOrg, a.tursoApiSettings.Token, a.httpClient)
+	api := turso.New(databaseDetails.DatabaseOrg, a.tursoAPISettings.Token, a.httpClient)
 
 	list, err := api.ListDatabases()
 	if err != nil {
@@ -184,7 +184,7 @@ func (a AppServiceImpl) CreateDatabase(
 	})
 
 	if exists != -1 {
-		return nil, errors.New("database already exists in returned list!!")
+		return nil, errors.New("database already exists in returned list")
 	}
 
 	createdDatabaseDetails, err := api.CreateDatabase(databaseDetails.Name, databaseDetails.DatabaseGroup)
@@ -197,7 +197,7 @@ func (a AppServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	userDb, err := database.Connection(
+	userDB, err := database.Connection(
 		"libsql://"+createdDatabaseDetails.Database.HostName,
 		createdToken.Jwt,
 	)
@@ -205,7 +205,7 @@ func (a AppServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	envStore := stores.NewSqliteEnvStore(userDb)
+	envStore := stores.NewSqliteEnvStore(userDB)
 	envService := NewEnvServiceImpl(envStore, validator.New())
 
 	var count time.Duration

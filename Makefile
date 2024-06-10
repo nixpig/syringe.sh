@@ -17,7 +17,6 @@ audit:
 	go vet ./...
 	go run honnef.co/go/tools/cmd/staticcheck@latest -checks=all,-ST1000,-U1000 ./...
 	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
-	go test -race -buildvcs -vet=off ./...
 
 .PHONY: test
 test: 
@@ -54,7 +53,7 @@ run:
 .PHONY: clean
 clean:
 	rm -rf tmp
-	rm *.out
+	rm -f *.out
 
 .PHONY: env
 env: 

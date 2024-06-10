@@ -21,22 +21,22 @@ type contextKey string
 
 const AUTHORISED = contextKey("AUTHORISED")
 
-type SyringeSshServer struct {
+type SyringeSSHServer struct {
 	appService services.AppService
 	log        *zerolog.Logger
 }
 
-func NewSyringeSshServer(
+func NewSyringeSSHServer(
 	appService services.AppService,
 	log *zerolog.Logger,
-) SyringeSshServer {
-	return SyringeSshServer{
+) SyringeSSHServer {
+	return SyringeSSHServer{
 		appService: appService,
 		log:        log,
 	}
 }
 
-func (s SyringeSshServer) Start(host, port string) error {
+func (s SyringeSSHServer) Start(host, port string) error {
 	server, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, port)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),

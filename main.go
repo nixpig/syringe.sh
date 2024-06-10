@@ -33,7 +33,7 @@ func main() {
 	}
 
 	log.Info().Msg("connecting to database")
-	appDb, err := database.Connection(
+	appDB, err := database.Connection(
 		os.Getenv("DATABASE_URL"),
 		os.Getenv("DATABASE_TOKEN"),
 	)
@@ -42,17 +42,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	defer appDb.Close()
+	defer appDB.Close()
 
 	log.Info().Msg("building app components")
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	appStore := stores.NewSqliteAppStore(appDb)
-	appService := services.NewAppServiceImpl(appStore, validate, http.Client{}, services.TursoApiSettings{
-		Url:   os.Getenv("API_BASE_URL"),
+	appStore := stores.NewSqliteAppStore(appDB)
+	appService := services.NewAppServiceImpl(appStore, validate, http.Client{}, services.TursoAPISettings{
+		URL:   os.Getenv("API_BASE_URL"),
 		Token: os.Getenv("API_TOKEN"),
 	})
 
-	sshServer := server.NewSyringeSshServer(appService, &log)
+	sshServer := server.NewSyringeSSHServer(appService, &log)
 
 	if err := sshServer.Start(host, port); err != nil {
 		log.Error().Err(err).Msg("failed to start ssh server")
