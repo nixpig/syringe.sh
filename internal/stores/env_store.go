@@ -44,11 +44,7 @@ func (s SqliteEnvStore) InsertSecret(project, environment, key, value string) er
 		values ($project, $environment, $key, $value)
 	`
 
-	if err := s.db.Ping(); err != nil {
-		return err
-	}
-
-	if _, err := s.db.Query(
+	if _, err := s.db.Exec(
 		query,
 		sql.Named("project", project),
 		sql.Named("environment", environment),
