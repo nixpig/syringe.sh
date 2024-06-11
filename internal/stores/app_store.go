@@ -20,21 +20,13 @@ type Key struct {
 	CreatedAt string
 }
 
-type UserStore interface {
+type AppStore interface {
 	InsertUser(username, email, status string) (*User, error)
 	GetUserByUsername(username string) (*User, error)
 	DeleteUserByUsername(username string) error
 	UpdateUser(user User) (*User, error)
 	GetUserPublicKeys(username string) (*[]Key, error)
-}
-
-type KeyStore interface {
 	InsertKey(userID int, publicKey string) (*Key, error)
-}
-
-type AppStore interface {
-	UserStore
-	KeyStore
 }
 
 type SqliteAppStore struct {

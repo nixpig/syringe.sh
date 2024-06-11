@@ -47,12 +47,12 @@ func main() {
 	log.Info().Msg("building app components")
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	appStore := stores.NewSqliteAppStore(appDB)
-	appService := services.NewAppServiceImpl(appStore, validate, http.Client{}, services.TursoAPISettings{
+	appService := services.NewApp(appStore, validate, http.Client{}, services.TursoAPISettings{
 		URL:   os.Getenv("API_BASE_URL"),
 		Token: os.Getenv("API_TOKEN"),
 	})
 
-	sshServer := server.NewSyringeSSHServer(appService, &log)
+	sshServer := server.NewServer(appService, &log)
 
 	if err := sshServer.Start(host, port); err != nil {
 		log.Error().Err(err).Msg("failed to start ssh server")

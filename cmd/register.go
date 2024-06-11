@@ -17,15 +17,17 @@ func NewRegisterCommand(
 		Long:    "Register a new user",
 		Example: "syringe register",
 		Args:    cobra.ExactArgs(0),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			_, err := appService.RegisterUser(services.RegisterUserRequest{
 				Username:  sess.User(),
 				Email:     "not_used_yet@example.org",
 				PublicKey: sess.PublicKey(),
 			})
 			if err != nil {
-				return
+				return err
 			}
+
+			return nil
 		},
 	}
 }

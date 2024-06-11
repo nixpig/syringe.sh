@@ -77,20 +77,20 @@ type AppService interface {
 	AuthenticateUser(authDetails UserAuthRequest) (*UserAuthResponse, error)
 }
 
-type AppServiceImpl struct {
+type App struct {
 	store            stores.AppStore
 	validate         *validator.Validate
 	httpClient       http.Client
 	tursoAPISettings TursoAPISettings
 }
 
-func NewAppServiceImpl(
+func NewApp(
 	store stores.AppStore,
 	validate *validator.Validate,
 	httpClient http.Client,
 	tursoAPISettings TursoAPISettings,
-) AppService {
-	return AppServiceImpl{
+) App {
+	return App{
 		store:            store,
 		validate:         validate,
 		httpClient:       httpClient,
@@ -98,7 +98,7 @@ func NewAppServiceImpl(
 	}
 }
 
-func (a AppServiceImpl) RegisterUser(
+func (a App) RegisterUser(
 	user RegisterUserRequest,
 ) (*RegisterUserResponse, error) {
 	if err := a.validate.Struct(user); err != nil {
@@ -145,7 +145,7 @@ func (a AppServiceImpl) RegisterUser(
 	}, nil
 }
 
-func (a AppServiceImpl) AddPublicKey(
+func (a App) AddPublicKey(
 	addKeyDetails AddPublicKeyRequest,
 ) (*AddPublicKeyResponse, error) {
 	if err := a.validate.Struct(addKeyDetails); err != nil {
@@ -165,7 +165,7 @@ func (a AppServiceImpl) AddPublicKey(
 	}, nil
 }
 
-func (a AppServiceImpl) CreateDatabase(
+func (a App) CreateDatabase(
 	databaseDetails CreateDatabaseRequest,
 ) (*CreateDatabaseResponse, error) {
 	if err := a.validate.Struct(databaseDetails); err != nil {
@@ -206,7 +206,7 @@ func (a AppServiceImpl) CreateDatabase(
 	}
 
 	envStore := stores.NewSqliteEnvStore(userDB)
-	envService := NewEnvServiceImpl(envStore, validator.New())
+	envService := NewUserServiceImpl(envStore, validator.New())
 
 	var count time.Duration
 	increment := time.Second * 30
@@ -222,7 +222,7 @@ func (a AppServiceImpl) CreateDatabase(
 	return &CreateDatabaseResponse{Name: createdDatabaseDetails.Database.Name}, nil
 }
 
-func (a AppServiceImpl) AuthenticateUser(
+func (a App) AuthenticateUser(
 	authDetails UserAuthRequest,
 ) (*UserAuthResponse, error) {
 	if err := a.validate.Struct(authDetails); err != nil {

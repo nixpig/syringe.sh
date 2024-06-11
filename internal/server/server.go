@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -17,26 +18,26 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type contextKey string
+type ContextKey string
 
-const AUTHORISED = contextKey("AUTHORISED")
+const AUTHORISED_CTX = ContextKey("AUTHORISED")
 
-type SyringeSSHServer struct {
-	appService services.AppService
-	log        *zerolog.Logger
+type Server struct {
+	app services.AppService
+	log *zerolog.Logger
 }
 
-func NewSyringeSSHServer(
-	appService services.AppService,
+func NewServer(
+	app services.AppService,
 	log *zerolog.Logger,
-) SyringeSSHServer {
-	return SyringeSSHServer{
-		appService: appService,
-		log:        log,
+) Server {
+	return Server{
+		app: app,
+		log: log,
 	}
 }
 
-func (s SyringeSSHServer) Start(host, port string) error {
+func (s Server) Start(host, port string) error {
 	server, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, port)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),
@@ -44,37 +45,28 @@ func (s SyringeSSHServer) Start(host, port string) error {
 			return key.Type() == "ssh-ed25519"
 		}),
 		wish.WithMiddleware(
+			// exec cobra
 			func(next ssh.Handler) ssh.Handler {
 				return func(sess ssh.Session) {
-					isAuthorised := sess.Context().Value(AUTHORISED)
-
-					if !isAuthorised.(bool) {
-						wish.Println(sess, "NOT AUTHORISED!!")
-						return
-					}
-
-					err := cmd.Execute(sess, s.appService)
-					if err != nil {
+					if err := cmd.Execute(sess, s.app); err != nil {
+						fmt.Println("error from cmd")
 						os.Exit(1)
 					}
 
 					next(sess)
 				}
 			},
+			// authenticate user
 			func(next ssh.Handler) ssh.Handler {
 				return func(sess ssh.Session) {
-					isAuthorised, err := s.appService.AuthenticateUser(services.UserAuthRequest{
+					if _, err := s.app.AuthenticateUser(services.UserAuthRequest{
 						Username:  sess.User(),
 						PublicKey: sess.PublicKey(),
-					})
-					if err != nil {
+					}); err != nil {
+						wish.Println(sess, "NOT AUTHORISED!!")
+						wish.Println(sess, "prompt to register and call 'register' command if answer is 'Y', else return/exit")
 						return
 					}
-
-					sess.Context().SetValue(
-						AUTHORISED,
-						isAuthorised.Auth,
-					)
 
 					next(sess)
 				}
