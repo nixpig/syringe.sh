@@ -1,10 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
-	"github.com/charmbracelet/ssh"
-	"github.com/charmbracelet/wish"
 	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/spf13/cobra"
 )
@@ -46,7 +42,7 @@ func setCommand() *cobra.Command {
 				return err
 			}
 
-			envService := cmd.Context().Value("ENV_SERVICE").(services.UserService)
+			envService := cmd.Context().Value("ENV_SERVICE").(services.SecretService)
 
 			if err := envService.SetSecret(services.SetSecretRequest{
 				Project:     project,
@@ -89,7 +85,7 @@ func getCommand() *cobra.Command {
 				return err
 			}
 
-			envService := cmd.Context().Value("ENV_SERVICE").(services.UserService)
+			envService := cmd.Context().Value("ENV_SERVICE").(services.SecretService)
 
 			secret, err := envService.GetSecret(services.GetSecretRequest{
 				Project:     project,
@@ -100,10 +96,7 @@ func getCommand() *cobra.Command {
 				return err
 			}
 
-			sess := cmd.Context().Value("SESS").(ssh.Session)
-
-			fmt.Println("SECRET:\n", secret)
-			wish.Println(sess, "SECRET", secret)
+			cmd.Print("cobra secret: ", secret)
 
 			return nil
 		},

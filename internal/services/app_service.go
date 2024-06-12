@@ -206,7 +206,7 @@ func (a App) CreateDatabase(
 	}
 
 	envStore := stores.NewSqliteEnvStore(userDB)
-	envService := NewUserServiceImpl(envStore, validator.New())
+	envService := NewSecretServiceImpl(envStore, validator.New())
 
 	var count time.Duration
 	increment := time.Second * 30

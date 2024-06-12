@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
-	"github.com/charmbracelet/wish/logging"
 	"github.com/nixpig/syringe.sh/server/cmd"
 	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/rs/zerolog"
@@ -23,17 +21,17 @@ type ContextKey string
 const AUTHORISED_CTX = ContextKey("AUTHORISED")
 
 type Server struct {
-	app services.AppService
-	log *zerolog.Logger
+	app    services.AppService
+	logger *zerolog.Logger
 }
 
 func NewServer(
 	app services.AppService,
-	log *zerolog.Logger,
+	logger *zerolog.Logger,
 ) Server {
 	return Server{
-		app: app,
-		log: log,
+		app:    app,
+		logger: logger,
 	}
 }
 
@@ -49,8 +47,9 @@ func (s Server) Start(host, port string) error {
 			func(next ssh.Handler) ssh.Handler {
 				return func(sess ssh.Session) {
 					if err := cmd.Execute(sess, s.app); err != nil {
-						fmt.Println("error from cmd")
-						os.Exit(1)
+						s.logger.Err(err).
+							Str("session", sess.Context().SessionID()).
+							Msg("failed to execute command")
 					}
 
 					next(sess)
@@ -63,15 +62,30 @@ func (s Server) Start(host, port string) error {
 						Username:  sess.User(),
 						PublicKey: sess.PublicKey(),
 					}); err != nil {
-						wish.Println(sess, "NOT AUTHORISED!!")
-						wish.Println(sess, "prompt to register and call 'register' command if answer is 'Y', else return/exit")
+						s.logger.Warn().Msg("user not logged in")
+						s.logger.Warn().Msg("prompt to register and call 'register' command if answer is 'Y', else return/exit")
 						return
 					}
-
 					next(sess)
 				}
 			},
-			logging.Middleware(),
+			func(next ssh.Handler) ssh.Handler {
+				return func(sess ssh.Session) {
+					s.logger.Info().
+						Str("session", sess.Context().SessionID()).
+						Str("user", sess.User()).
+						Str("address", sess.RemoteAddr().String()).
+						Bool("publickey", sess.PublicKey() != nil).
+						Str("client", sess.Context().ClientVersion()).
+						Msg("connect")
+
+					next(sess)
+
+					s.logger.Info().
+						Str("session", sess.Context().SessionID()).
+						Msg("disconnect")
+				}
+			},
 		),
 	)
 	if err != nil {
@@ -82,24 +96,28 @@ func (s Server) Start(host, port string) error {
 
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	s.log.Info().Msg("Starting SSH server")
+	s.logger.Info().
+		Str("host", host).
+		Str("port", port).
+		Msg("starting server")
 
 	go func() {
 		if err = server.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
-			s.log.Error().Err(err).Msg("Could not start server")
+			s.logger.Error().Err(err).Msg("failed to start server")
 			done <- nil
 		}
 	}()
 
 	<-done
 
-	s.log.Info().Msg("Stopping SSH server")
+	s.logger.Info().Msg("stopping server")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
-		s.log.Error().Err(err).Msg("Could not stop server")
+		s.logger.Error().Err(err).Msg("failed to stop server")
+		return err
 	}
 
 	return nil

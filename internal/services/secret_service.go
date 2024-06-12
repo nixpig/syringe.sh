@@ -26,28 +26,28 @@ type GetSecretResponse struct {
 	Value       string
 }
 
-type UserService interface {
+type SecretService interface {
 	CreateTables() error
 	SetSecret(secret SetSecretRequest) error
 	GetSecret(request GetSecretRequest) (*GetSecretResponse, error)
 }
 
-type UserServiceImpl struct {
-	store    stores.UserStore
+type SecretServiceImpl struct {
+	store    stores.SecretStore
 	validate *validator.Validate
 }
 
-func NewUserServiceImpl(
-	store stores.UserStore,
+func NewSecretServiceImpl(
+	store stores.SecretStore,
 	validate *validator.Validate,
-) UserService {
-	return UserServiceImpl{
+) SecretService {
+	return SecretServiceImpl{
 		store:    store,
 		validate: validate,
 	}
 }
 
-func (e UserServiceImpl) CreateTables() error {
+func (e SecretServiceImpl) CreateTables() error {
 	if err := e.store.CreateTables(); err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (e UserServiceImpl) CreateTables() error {
 	return nil
 }
 
-func (e UserServiceImpl) SetSecret(secret SetSecretRequest) error {
+func (e SecretServiceImpl) SetSecret(secret SetSecretRequest) error {
 	if err := e.validate.Struct(secret); err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func (e UserServiceImpl) SetSecret(secret SetSecretRequest) error {
 	)
 }
 
-func (e UserServiceImpl) GetSecret(request GetSecretRequest) (*GetSecretResponse, error) {
+func (e SecretServiceImpl) GetSecret(request GetSecretRequest) (*GetSecretResponse, error) {
 	if err := e.validate.Struct(request); err != nil {
 		return nil, err
 	}

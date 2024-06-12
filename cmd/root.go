@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"crypto/sha1"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
@@ -26,8 +27,8 @@ func Execute(
 		Use:                "syringe",
 		Short:              "A terminal-based utility to securely manage environment variables across projects and environments.",
 		Long:               "A terminal-based utility to securely manage environment variables across projects and environments.",
-		PersistentPreRunE:  initUserContext(sess),
-		PersistentPostRunE: closeUserContext(sess),
+		PersistentPreRunE:  initRootContext(sess),
+		PersistentPostRunE: closeRootContext(sess),
 	}
 
 	rootCmd.AddCommand(NewRegisterCommand(sess, appService))
@@ -46,11 +47,12 @@ func Execute(
 	return nil
 }
 
-func initUserContext(sess ssh.Session) func(cmd *cobra.Command, args []string) error {
+func initRootContext(sess ssh.Session) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		// add ssh sess to cobra cmd context
-		ctx = context.WithValue(ctx, "SESS", sess)
+		// REVIEW: is this even used??
+		ctx = context.WithValue(ctx, "sess", sess)
 
 		// add user database to cobra cmd context
 		api := turso.New(
@@ -77,8 +79,10 @@ func initUserContext(sess ssh.Session) func(cmd *cobra.Command, args []string) e
 			return nil
 		}
 
+		ctx = context.WithValue(ctx, "DB_CONN", db)
+
 		envStore := stores.NewSqliteEnvStore(db)
-		envService := services.NewUserServiceImpl(envStore, validator.New(validator.WithRequiredStructEnabled()))
+		envService := services.NewSecretServiceImpl(envStore, validator.New(validator.WithRequiredStructEnabled()))
 
 		ctx = context.WithValue(ctx, "ENV_SERVICE", envService)
 
@@ -88,8 +92,14 @@ func initUserContext(sess ssh.Session) func(cmd *cobra.Command, args []string) e
 	}
 }
 
-func closeUserContext(sess ssh.Session) func(cmd *cobra.Command, args []string) error {
+func closeRootContext(sess ssh.Session) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		db := cmd.Context().Value("DB_CONN").(*sql.DB)
+
+		if err := db.Close(); err != nil {
+			fmt.Println("error closing db connection")
+			return err
+		}
 
 		return nil
 	}

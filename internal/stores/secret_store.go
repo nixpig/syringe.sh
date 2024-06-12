@@ -13,21 +13,21 @@ type Secret struct {
 	Value       string
 }
 
-type UserStore interface {
+type SecretStore interface {
 	CreateTables() error
 	InsertSecret(project, environment, key, value string) error
 	GetSecret(project, environment, key string) (*Secret, error)
 }
 
-type SqliteUserStore struct {
+type SqliteSecretStore struct {
 	db *sql.DB
 }
 
-func NewSqliteEnvStore(db *sql.DB) SqliteUserStore {
-	return SqliteUserStore{db}
+func NewSqliteEnvStore(db *sql.DB) SqliteSecretStore {
+	return SqliteSecretStore{db}
 }
 
-func (s SqliteUserStore) CreateTables() error {
+func (s SqliteSecretStore) CreateTables() error {
 	query := `
 		create table if not exists envs_ (
 			id_ integer primary key autoincrement,
@@ -45,7 +45,7 @@ func (s SqliteUserStore) CreateTables() error {
 	return nil
 }
 
-func (s SqliteUserStore) InsertSecret(project, environment, key, value string) error {
+func (s SqliteSecretStore) InsertSecret(project, environment, key, value string) error {
 	query := `
 		insert into envs_ 
 		(project_, environment_, key_, value_) 
@@ -65,7 +65,7 @@ func (s SqliteUserStore) InsertSecret(project, environment, key, value string) e
 	return nil
 }
 
-func (s SqliteUserStore) GetSecret(project, environment, key string) (*Secret, error) {
+func (s SqliteSecretStore) GetSecret(project, environment, key string) (*Secret, error) {
 	query := `
 		select id_, project_, environment_, key_, value_
 		from envs_

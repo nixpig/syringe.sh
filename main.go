@@ -23,8 +23,8 @@ func main() {
 		New(os.Stdout).
 		Output(zerolog.ConsoleWriter{
 			Out:        os.Stdout,
-			TimeFormat: zerolog.TimeFormatUnix,
-		})
+			TimeFormat: "2006-01-02T15:04:05.999Z07:00",
+		}).With().Timestamp().Logger()
 
 	log.Info().Msg("loading environment")
 	if err := godotenv.Load(".env"); err != nil {
