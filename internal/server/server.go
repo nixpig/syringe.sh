@@ -64,7 +64,6 @@ func (s Server) Start(host, port string) error {
 					}); err != nil {
 						s.logger.Warn().Msg("user not logged in")
 						s.logger.Warn().Msg("prompt to register and call 'register' command if answer is 'Y', else return/exit")
-						return
 					}
 					next(sess)
 				}

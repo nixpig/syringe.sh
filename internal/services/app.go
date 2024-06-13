@@ -212,6 +212,7 @@ func (a App) CreateDatabase(
 	increment := time.Second * 30
 	timeout := time.Second * 360
 	for err := envService.CreateTables(); err != nil; err = envService.CreateTables() {
+		fmt.Println("waiting for table creation...: ", err)
 		time.Sleep(increment)
 		count = count + increment
 		if count >= timeout {

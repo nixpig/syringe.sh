@@ -22,7 +22,6 @@ func Execute(
 	sess ssh.Session,
 	appService services.AppService,
 ) error {
-
 	rootCmd := &cobra.Command{
 		Use:                "syringe",
 		Short:              "A terminal-based utility to securely manage environment variables across projects and environments.",
@@ -32,6 +31,8 @@ func Execute(
 	}
 
 	rootCmd.AddCommand(NewRegisterCommand(sess, appService))
+	rootCmd.AddCommand(projectCommand(sess))
+	rootCmd.AddCommand(environmentCommand(sess))
 	rootCmd.AddCommand(secretCommand())
 
 	rootCmd.SetArgs(sess.Command())

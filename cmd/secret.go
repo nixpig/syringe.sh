@@ -14,14 +14,14 @@ func secretCommand() *cobra.Command {
 		Example: "syringe secret",
 	}
 
-	secretCmd.AddCommand(setCommand())
+	secretCmd.AddCommand(secretSetCommand())
 	secretCmd.AddCommand(getCommand())
 
 	return secretCmd
 }
 
-func setCommand() *cobra.Command {
-	setCmd := &cobra.Command{
+func secretSetCommand() *cobra.Command {
+	secretSetCmd := &cobra.Command{
 		Use:     "set",
 		Aliases: []string{"s"},
 		Short:   "set",
@@ -57,11 +57,11 @@ func setCommand() *cobra.Command {
 		},
 	}
 
-	setCmd.Flags().StringP("project", "p", "", "Project to use")
-	setCmd.Flags().StringP("environment", "e", "", "Environment to use")
-	setCmd.Flags().BoolP("secret", "s", false, "Is secret?")
+	secretSetCmd.Flags().StringP("project", "p", "", "Project to use")
+	secretSetCmd.Flags().StringP("environment", "e", "", "Environment to use")
+	secretSetCmd.Flags().BoolP("secret", "s", false, "Is secret?")
 
-	return setCmd
+	return secretSetCmd
 }
 
 func getCommand() *cobra.Command {
