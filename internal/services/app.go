@@ -213,11 +213,11 @@ func (a AppServiceImpl) CreateDatabase(
 	timeout := time.Second * 60
 	fmt.Println("creating tables...")
 	for err := envService.CreateTables(); err != nil; err = envService.CreateTables() {
-		fmt.Println(fmt.Sprintf("sleep for %d seconds", increment))
+		fmt.Printf("sleep for %d seconds\n", increment/time.Second)
 		time.Sleep(increment)
 		count = count + increment
 		if count >= timeout {
-			return nil, fmt.Errorf(fmt.Sprintf("timed out after %d trying to create tables", timeout))
+			return nil, fmt.Errorf(fmt.Sprintf("timed out after %d seconds trying to create tables", timeout/time.Second))
 		}
 	}
 

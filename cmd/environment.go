@@ -10,6 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	environmentCtxKey = contextKey("ENVIRONMENT_CTX")
+)
+
 func environmentCommand() *cobra.Command {
 	environmentCmd := &cobra.Command{
 		Use:               "environment",
@@ -42,7 +46,7 @@ func environmentAddCommand() *cobra.Command {
 				return err
 			}
 
-			environmentService := cmd.Context().Value("ENVIRONMENT_SERVICE").(services.EnvironmentService)
+			environmentService := cmd.Context().Value(environmentCtxKey).(services.EnvironmentService)
 
 			if err := environmentService.AddEnvironment(services.AddEnvironmentRequest{
 				Name:        environment,
@@ -65,12 +69,12 @@ func environmentAddCommand() *cobra.Command {
 func initEnvironmentContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	db := ctx.Value(DB_CTX).(*sql.DB)
+	db := ctx.Value(dbCtxKey).(*sql.DB)
 
 	environmentStore := stores.NewSqliteEnvironmentStore(db)
 	environmentService := services.NewEnvironmentServiceImpl(environmentStore, validator.New(validator.WithRequiredStructEnabled()))
 
-	ctx = context.WithValue(ctx, "ENVIRONMENT_SERVICE", environmentService)
+	ctx = context.WithValue(ctx, environmentCtxKey, environmentService)
 
 	cmd.SetContext(ctx)
 

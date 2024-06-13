@@ -16,10 +16,6 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type ContextKey string
-
-const AUTHORISED_CTX = ContextKey("AUTHORISED")
-
 type Server struct {
 	app    services.AppService
 	logger *zerolog.Logger

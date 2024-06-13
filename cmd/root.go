@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"crypto/sha1"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,8 +19,8 @@ import (
 type contextKey string
 
 const (
-	DB_CTX   = contextKey("DB_CTX")
-	SESS_CTX = contextKey("SESS_CTX")
+	dbCtxKey   = contextKey("DB_CTX")
+	sessCtxKey = contextKey("SESS_CTX")
 )
 
 func Execute(
@@ -28,10 +29,8 @@ func Execute(
 ) error {
 	rootCmd := &cobra.Command{
 		Use:   "syringe",
-		Short: "A terminal-based utility to securely manage environment variables across projects and environments.",
-		Long:  "A terminal-based utility to securely manage environment variables across projects and environments.",
-		// PersistentPreRunE:  initRootContext(sess),
-		// PersistentPostRunE: closeRootContext(sess),
+		Short: "Distributed environment variable management over SSH.",
+		Long:  "Distributed environment variable management over SSH.",
 	}
 
 	rootCmd.AddCommand(userCommand(sess, appService))
@@ -48,38 +47,14 @@ func Execute(
 
 	ctx := context.Background()
 
-	ctx = context.WithValue(ctx, SESS_CTX, sess)
+	ctx = context.WithValue(ctx, sessCtxKey, sess)
 
-	fmt.Println("creating new turso api")
-	// add user database to cobra cmd context
-	api := turso.New(
-		os.Getenv("DATABASE_ORG"),
-		os.Getenv("API_TOKEN"),
-		http.Client{},
-	)
-
-	marshalledKey := gossh.MarshalAuthorizedKey(sess.PublicKey())
-
-	hashedKey := fmt.Sprintf("%x", sha1.Sum(marshalledKey))
-
-	fmt.Println("creating new token")
-	token, err := api.CreateToken(hashedKey, "30s")
+	db, err := NewUserDB(sess.PublicKey())
 	if err != nil {
-		fmt.Println("failed to create token:", err)
+		return err
 	}
 
-	fmt.Println("creating new user-specific db connection")
-	db, err := database.Connection(
-		"libsql://"+hashedKey+"-"+os.Getenv("DATABASE_ORG")+".turso.io",
-		string(token.Jwt),
-	)
-	if err != nil {
-		fmt.Println("error creating database connection:\n", err)
-		return nil
-	}
-
-	fmt.Println("adding db to context")
-	ctx = context.WithValue(ctx, DB_CTX, db)
+	ctx = context.WithValue(ctx, dbCtxKey, db)
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		return err
@@ -88,25 +63,32 @@ func Execute(
 	return nil
 }
 
-// func initRootContext(sess ssh.Session) func(cmd *cobra.Command, args []string) error {
-// 	return func(cmd *cobra.Command, args []string) error {
-// 		ctx := cmd.Context()
-//
-// 		cmd.SetContext(ctx)
-//
-// 		return nil
-// 	}
-// }
-//
-// func closeRootContext(sess ssh.Session) func(cmd *cobra.Command, args []string) error {
-// 	return func(cmd *cobra.Command, args []string) error {
-// 		db := cmd.Context().Value(DB_CTX).(*sql.DB)
-//
-// 		if err := db.Close(); err != nil {
-// 			fmt.Println("error closing db connection")
-// 			return err
-// 		}
-//
-// 		return nil
-// 	}
-// }
+// TODO: really don't like this!!
+func NewUserDB(publicKey ssh.PublicKey) (*sql.DB, error) {
+	api := turso.New(
+		os.Getenv("DATABASE_ORG"),
+		os.Getenv("API_TOKEN"),
+		http.Client{},
+	)
+
+	marshalledKey := gossh.MarshalAuthorizedKey(publicKey)
+
+	hashedKey := fmt.Sprintf("%x", sha1.Sum(marshalledKey))
+	expiration := "30s"
+
+	token, err := api.CreateToken(hashedKey, expiration)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create token:\n%s", err)
+	}
+
+	fmt.Println("creating new user-specific db connection")
+	db, err := database.Connection(
+		"libsql://"+hashedKey+"-"+os.Getenv("DATABASE_ORG")+".turso.io",
+		string(token.Jwt),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error creating database connection:\n%s", err)
+	}
+
+	return db, nil
+}

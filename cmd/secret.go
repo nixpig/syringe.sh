@@ -10,6 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	secretCtxKey = contextKey("SECRET_CTX")
+)
+
 func secretCommand() *cobra.Command {
 	secretCmd := &cobra.Command{
 		Use:               "secret",
@@ -48,7 +52,7 @@ func secretSetCommand() *cobra.Command {
 				return err
 			}
 
-			secretService := cmd.Context().Value("SECRET_SERVICE").(services.SecretService)
+			secretService := cmd.Context().Value(secretCtxKey).(services.SecretService)
 
 			if err := secretService.SetSecret(services.SetSecretRequest{
 				Project:     project,
@@ -94,7 +98,7 @@ func secretGetCommand() *cobra.Command {
 				return err
 			}
 
-			secretService := cmd.Context().Value("SECRET_SERVICE").(services.SecretService)
+			secretService := cmd.Context().Value(secretCtxKey).(services.SecretService)
 
 			secret, err := secretService.GetSecret(services.GetSecretRequest{
 				Project:     project,
@@ -124,12 +128,12 @@ func secretGetCommand() *cobra.Command {
 func initSecretContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	db := ctx.Value(DB_CTX).(*sql.DB)
+	db := ctx.Value(dbCtxKey).(*sql.DB)
 
 	secretStore := stores.NewSqliteSecretStore(db)
 	secretService := services.NewSecretServiceImpl(secretStore, validator.New(validator.WithRequiredStructEnabled()))
 
-	ctx = context.WithValue(ctx, "SECRET_SERVICE", secretService)
+	ctx = context.WithValue(ctx, secretCtxKey, secretService)
 
 	cmd.SetContext(ctx)
 

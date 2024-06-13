@@ -107,11 +107,17 @@ func (s SqliteSecretStore) InsertSecret(project, environment, key, value string)
 
 func (s SqliteSecretStore) GetSecret(project, environment, key string) (*Secret, error) {
 	query := `
-		select id_, project_, environment_, key_, value_
-		from secrets_
-		where project_ = $project
-		and environment_ = $environment
-		and key_ = $key
+		select s.id_, s.key_, s.value_, p.name_, e.name_
+		from secrets_ s
+		inner join
+		environments_ e
+		on s.environment_id_ = e.id_
+		inner join
+		projects_ p
+		on p.id_ = e.project_id_
+		where p.name_ = $project
+		and e.name_ = $environment
+		and s.key_ = $key
 	`
 
 	row := s.db.QueryRow(

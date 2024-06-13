@@ -10,6 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	projectCtxKey = contextKey("PROJECT_CTX")
+)
+
 func projectCommand() *cobra.Command {
 	projectCmd := &cobra.Command{
 		Use:               "project",
@@ -36,7 +40,7 @@ func projectAddCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
 
-			projectService := cmd.Context().Value("PROJECT_SERVICE").(services.ProjectService)
+			projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
 
 			if err := projectService.AddProject(services.AddProjectRequest{
 				Name: name,
@@ -54,12 +58,12 @@ func projectAddCommand() *cobra.Command {
 func initProjectContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	db := ctx.Value(DB_CTX).(*sql.DB)
+	db := ctx.Value(dbCtxKey).(*sql.DB)
 
 	projectStore := stores.NewSqliteProjectStore(db)
 	projectService := services.NewProjectServiceImpl(projectStore, validator.New(validator.WithRequiredStructEnabled()))
 
-	ctx = context.WithValue(ctx, "PROJECT_SERVICE", projectService)
+	ctx = context.WithValue(ctx, projectCtxKey, projectService)
 
 	cmd.SetContext(ctx)
 
