@@ -6,11 +6,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewRegisterCommand(
+func userCommand(
 	sess ssh.Session,
 	appService services.AppService,
 ) *cobra.Command {
-	return &cobra.Command{
+	userCmd := &cobra.Command{
+		Use:     "user",
+		Aliases: []string{"u"},
+		Short:   "User",
+		Long:    "User",
+		Example: "syringe user",
+	}
+
+	userCmd.AddCommand(userRegisterCommand(sess, appService))
+
+	return userCmd
+}
+
+func userRegisterCommand(sess ssh.Session, appService services.AppService) *cobra.Command {
+	userRegisterCmd := &cobra.Command{
 		Use:     "register",
 		Aliases: []string{"r"},
 		Short:   "Register new user",
@@ -30,4 +44,6 @@ func NewRegisterCommand(
 			return nil
 		},
 	}
+
+	return userRegisterCmd
 }

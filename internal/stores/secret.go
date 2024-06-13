@@ -23,7 +23,7 @@ type SqliteSecretStore struct {
 	db *sql.DB
 }
 
-func NewSqliteEnvStore(db *sql.DB) SqliteSecretStore {
+func NewSqliteSecretStore(db *sql.DB) SqliteSecretStore {
 	return SqliteSecretStore{db}
 }
 

@@ -18,51 +18,51 @@ import (
 )
 
 type RegisterUserRequest struct {
-	Username  string        `json:"username" validate:"required,min=3,max=30"`
-	Email     string        `json:"email" validate:"required,email"`
-	PublicKey ssh.PublicKey `json:"public_key" validate:"required"`
+	Username  string
+	Email     string
+	PublicKey ssh.PublicKey
 }
 
 type RegisterUserResponse struct {
-	ID           int    `json:"id"`
-	Username     string `json:"username"`
-	Email        string `json:"email"`
-	CreatedAt    string `json:"created_at"`
-	PublicKey    string `json:"public_key"`
-	DatabaseName string `json:"database_name"`
+	ID           int
+	Username     string
+	Email        string
+	CreatedAt    string
+	PublicKey    string
+	DatabaseName string
 }
 
 type AddPublicKeyRequest struct {
-	PublicKey string `json:"public_key" validate:"required"`
-	UserID    int    `json:"user_id" validate:"required"`
+	PublicKey string
+	UserID    int
 }
 
 type AddPublicKeyResponse struct {
-	ID        int    `json:"id"`
-	UserID    int    `json:"user_id"`
-	PublicKey string `json:"public_key"`
-	CreatedAt string `json:"created_at"`
+	ID        int
+	UserID    int
+	PublicKey string
+	CreatedAt string
 }
 
 type CreateDatabaseRequest struct {
-	Name          string `json:"name" validate:"required"`
-	UserID        int    `json:"user_id" validate:"required"`
-	DatabaseGroup string `json:"database_group" validate:"required"`
-	DatabaseOrg   string `json:"database_org" validate:"required"`
+	Name          string
+	UserID        int
+	DatabaseGroup string
+	DatabaseOrg   string
 }
 
 type CreateDatabaseResponse struct {
-	Name     string `json:"name"`
-	HostName string `json:"HostName"`
+	Name     string
+	HostName string
 }
 
 type UserAuthRequest struct {
-	Username  string        `json:"username" validate:"required"`
-	PublicKey ssh.PublicKey `json:"public_key" validate:"required"`
+	Username  string
+	PublicKey ssh.PublicKey
 }
 
 type UserAuthResponse struct {
-	Auth bool `json:"auth"`
+	Auth bool
 }
 
 type TursoAPISettings struct {
@@ -77,20 +77,20 @@ type AppService interface {
 	AuthenticateUser(authDetails UserAuthRequest) (*UserAuthResponse, error)
 }
 
-type App struct {
+type AppServiceImpl struct {
 	store            stores.AppStore
 	validate         *validator.Validate
 	httpClient       http.Client
 	tursoAPISettings TursoAPISettings
 }
 
-func NewApp(
+func NewAppService(
 	store stores.AppStore,
 	validate *validator.Validate,
 	httpClient http.Client,
 	tursoAPISettings TursoAPISettings,
-) App {
-	return App{
+) AppServiceImpl {
+	return AppServiceImpl{
 		store:            store,
 		validate:         validate,
 		httpClient:       httpClient,
@@ -98,7 +98,7 @@ func NewApp(
 	}
 }
 
-func (a App) RegisterUser(
+func (a AppServiceImpl) RegisterUser(
 	user RegisterUserRequest,
 ) (*RegisterUserResponse, error) {
 	if err := a.validate.Struct(user); err != nil {
@@ -145,7 +145,7 @@ func (a App) RegisterUser(
 	}, nil
 }
 
-func (a App) AddPublicKey(
+func (a AppServiceImpl) AddPublicKey(
 	addKeyDetails AddPublicKeyRequest,
 ) (*AddPublicKeyResponse, error) {
 	if err := a.validate.Struct(addKeyDetails); err != nil {
@@ -165,7 +165,7 @@ func (a App) AddPublicKey(
 	}, nil
 }
 
-func (a App) CreateDatabase(
+func (a AppServiceImpl) CreateDatabase(
 	databaseDetails CreateDatabaseRequest,
 ) (*CreateDatabaseResponse, error) {
 	if err := a.validate.Struct(databaseDetails); err != nil {
@@ -205,25 +205,26 @@ func (a App) CreateDatabase(
 		return nil, err
 	}
 
-	envStore := stores.NewSqliteEnvStore(userDB)
+	envStore := stores.NewSqliteSecretStore(userDB)
 	envService := NewSecretServiceImpl(envStore, validator.New())
 
 	var count time.Duration
-	increment := time.Second * 30
-	timeout := time.Second * 360
+	increment := time.Second * 5
+	timeout := time.Second * 60
+	fmt.Println("creating tables...")
 	for err := envService.CreateTables(); err != nil; err = envService.CreateTables() {
-		fmt.Println("waiting for table creation...: ", err)
+		fmt.Println(fmt.Sprintf("sleep for %d seconds", increment))
 		time.Sleep(increment)
 		count = count + increment
 		if count >= timeout {
-			break
+			return nil, fmt.Errorf(fmt.Sprintf("timed out after %d trying to create tables", timeout))
 		}
 	}
 
 	return &CreateDatabaseResponse{Name: createdDatabaseDetails.Database.Name}, nil
 }
 
-func (a App) AuthenticateUser(
+func (a AppServiceImpl) AuthenticateUser(
 	authDetails UserAuthRequest,
 ) (*UserAuthResponse, error) {
 	if err := a.validate.Struct(authDetails); err != nil {

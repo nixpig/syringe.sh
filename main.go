@@ -47,7 +47,7 @@ func main() {
 	log.Info().Msg("building app components")
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	appStore := stores.NewSqliteAppStore(appDB)
-	appService := services.NewApp(appStore, validate, http.Client{}, services.TursoAPISettings{
+	appService := services.NewAppService(appStore, validate, http.Client{}, services.TursoAPISettings{
 		URL:   os.Getenv("API_BASE_URL"),
 		Token: os.Getenv("API_TOKEN"),
 	})

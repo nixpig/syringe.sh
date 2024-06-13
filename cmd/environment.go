@@ -2,30 +2,22 @@ package cmd
 
 import (
 	"context"
-	"crypto/sha1"
-	"fmt"
-	"net/http"
-	"os"
+	"database/sql"
 
-	"github.com/charmbracelet/ssh"
 	"github.com/go-playground/validator/v10"
-	"github.com/nixpig/syringe.sh/server/internal/database"
 	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
-	"github.com/nixpig/syringe.sh/server/pkg/turso"
 	"github.com/spf13/cobra"
-	gossh "golang.org/x/crypto/ssh"
 )
 
-func environmentCommand(sess ssh.Session) *cobra.Command {
+func environmentCommand() *cobra.Command {
 	environmentCmd := &cobra.Command{
-		Use:                "environment",
-		Aliases:            []string{"e"},
-		Short:              "Environment",
-		Long:               "Environment",
-		Example:            "syringe environment",
-		PersistentPreRunE:  initEnvironmentContext(sess),
-		PersistentPostRunE: closeEnvironmentContext(sess),
+		Use:               "environment",
+		Aliases:           []string{"e"},
+		Short:             "Environment",
+		Long:              "Environment",
+		Example:           "syringe environment",
+		PersistentPreRunE: initEnvironmentContext,
 	}
 
 	environmentCmd.AddCommand(environmentAddCommand())
@@ -65,55 +57,22 @@ func environmentAddCommand() *cobra.Command {
 
 	environmentAddCmd.Flags().StringP("project", "p", "", "Project")
 
+	environmentAddCmd.MarkFlagRequired("project")
+
 	return environmentAddCmd
 }
 
-func initEnvironmentContext(sess ssh.Session) func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
+func initEnvironmentContext(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
 
-		ctx := cmd.Context()
-		// add ssh sess to cobra cmd context
-		// REVIEW: is this even used??
-		ctx = context.WithValue(ctx, "sess", sess)
+	db := ctx.Value(DB_CTX).(*sql.DB)
 
-		// add user database to cobra cmd context
-		api := turso.New(
-			os.Getenv("DATABASE_ORG"),
-			os.Getenv("API_TOKEN"),
-			http.Client{},
-		)
+	environmentStore := stores.NewSqliteEnvironmentStore(db)
+	environmentService := services.NewEnvironmentServiceImpl(environmentStore, validator.New(validator.WithRequiredStructEnabled()))
 
-		marshalledKey := gossh.MarshalAuthorizedKey(sess.PublicKey())
+	ctx = context.WithValue(ctx, "ENVIRONMENT_SERVICE", environmentService)
 
-		hashedKey := fmt.Sprintf("%x", sha1.Sum(marshalledKey))
+	cmd.SetContext(ctx)
 
-		token, err := api.CreateToken(hashedKey, "30s")
-		if err != nil {
-			fmt.Println("failed to create token:", err)
-		}
-
-		db, err := database.Connection(
-			"libsql://"+hashedKey+"-"+os.Getenv("DATABASE_ORG")+".turso.io",
-			string(token.Jwt),
-		)
-		if err != nil {
-			fmt.Println("error creating database connection:\n", err)
-			return nil
-		}
-
-		environmentStore := stores.NewSqliteEnvironmentStore(db)
-		environmentService := services.NewEnvironmentServiceImpl(environmentStore, validator.New(validator.WithRequiredStructEnabled()))
-
-		ctx = context.WithValue(ctx, "ENVIRONMENT_SERVICE", environmentService)
-
-		cmd.SetContext(ctx)
-
-		return nil
-	}
-}
-
-func closeEnvironmentContext(sess ssh.Session) func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		return nil
-	}
+	return nil
 }

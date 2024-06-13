@@ -55,6 +55,7 @@ func (s Server) Start(host, port string) error {
 					next(sess)
 				}
 			},
+
 			// authenticate user
 			func(next ssh.Handler) ssh.Handler {
 				return func(sess ssh.Session) {
@@ -68,8 +69,10 @@ func (s Server) Start(host, port string) error {
 					next(sess)
 				}
 			},
+
 			func(next ssh.Handler) ssh.Handler {
 				return func(sess ssh.Session) {
+					// log incoming connection
 					s.logger.Info().
 						Str("session", sess.Context().SessionID()).
 						Str("user", sess.User()).
@@ -80,6 +83,7 @@ func (s Server) Start(host, port string) error {
 
 					next(sess)
 
+					// log end of connection
 					s.logger.Info().
 						Str("session", sess.Context().SessionID()).
 						Msg("disconnect")

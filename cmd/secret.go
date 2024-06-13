@@ -1,21 +1,27 @@
 package cmd
 
 import (
+	"context"
+	"database/sql"
+
+	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/services"
+	"github.com/nixpig/syringe.sh/server/internal/stores"
 	"github.com/spf13/cobra"
 )
 
 func secretCommand() *cobra.Command {
 	secretCmd := &cobra.Command{
-		Use:     "secret",
-		Aliases: []string{"s"},
-		Short:   "Secret",
-		Long:    "Secret",
-		Example: "syringe secret",
+		Use:               "secret",
+		Aliases:           []string{"s"},
+		Short:             "Secret",
+		Long:              "Secret",
+		Example:           "syringe secret",
+		PersistentPreRunE: initSecretContext,
 	}
 
 	secretCmd.AddCommand(secretSetCommand())
-	secretCmd.AddCommand(getCommand())
+	secretCmd.AddCommand(secretGetCommand())
 
 	return secretCmd
 }
@@ -42,9 +48,9 @@ func secretSetCommand() *cobra.Command {
 				return err
 			}
 
-			envService := cmd.Context().Value("ENV_SERVICE").(services.SecretService)
+			secretService := cmd.Context().Value("SECRET_SERVICE").(services.SecretService)
 
-			if err := envService.SetSecret(services.SetSecretRequest{
+			if err := secretService.SetSecret(services.SetSecretRequest{
 				Project:     project,
 				Environment: environment,
 				Key:         key,
@@ -61,11 +67,14 @@ func secretSetCommand() *cobra.Command {
 	secretSetCmd.Flags().StringP("environment", "e", "", "Environment to use")
 	secretSetCmd.Flags().BoolP("secret", "s", false, "Is secret?")
 
+	secretSetCmd.MarkFlagRequired("project")
+	secretSetCmd.MarkFlagRequired("environment")
+
 	return secretSetCmd
 }
 
-func getCommand() *cobra.Command {
-	getCmd := &cobra.Command{
+func secretGetCommand() *cobra.Command {
+	secretGetCmd := &cobra.Command{
 		Use:     "get",
 		Aliases: []string{"g"},
 		Short:   "get",
@@ -85,9 +94,9 @@ func getCommand() *cobra.Command {
 				return err
 			}
 
-			envService := cmd.Context().Value("ENV_SERVICE").(services.SecretService)
+			secretService := cmd.Context().Value("SECRET_SERVICE").(services.SecretService)
 
-			secret, err := envService.GetSecret(services.GetSecretRequest{
+			secret, err := secretService.GetSecret(services.GetSecretRequest{
 				Project:     project,
 				Environment: environment,
 				Key:         key,
@@ -102,9 +111,27 @@ func getCommand() *cobra.Command {
 		},
 	}
 
-	getCmd.Flags().StringP("project", "p", "", "Project")
-	getCmd.Flags().StringP("environment", "e", "", "Environment")
-	getCmd.Flags().BoolP("secret", "s", false, "Is secret?")
+	secretGetCmd.Flags().StringP("project", "p", "", "Project")
+	secretGetCmd.Flags().StringP("environment", "e", "", "Environment")
+	secretGetCmd.Flags().BoolP("secret", "s", false, "Is secret?")
 
-	return getCmd
+	secretGetCmd.MarkFlagRequired("project")
+	secretGetCmd.MarkFlagRequired("environment")
+
+	return secretGetCmd
+}
+
+func initSecretContext(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
+
+	db := ctx.Value(DB_CTX).(*sql.DB)
+
+	secretStore := stores.NewSqliteSecretStore(db)
+	secretService := services.NewSecretServiceImpl(secretStore, validator.New(validator.WithRequiredStructEnabled()))
+
+	ctx = context.WithValue(ctx, "SECRET_SERVICE", secretService)
+
+	cmd.SetContext(ctx)
+
+	return nil
 }
