@@ -6,11 +6,11 @@ import (
 )
 
 type Secret struct {
-	Id          int
-	Project     string
-	Environment string
+	ID          int
 	Key         string
 	Value       string
+	Project     string
+	Environment string
 }
 
 type SecretStore interface {
@@ -76,8 +76,20 @@ func (s SqliteSecretStore) CreateTables() error {
 func (s SqliteSecretStore) InsertSecret(project, environment, key, value string) error {
 	query := `
 		insert into secrets_ 
-		(project_, environment_, key_, value_) 
-		values ($project, $environment, $key, $value)
+		(key_, value_, environment_id_) 
+		values (
+			$key,
+			$value,
+			(
+				select e.id_ from 
+					environments_ e
+					inner join 
+					projects_ p 
+					on e.project_id_ = p.id_ 
+					where p.name_ = $project 
+					and e.name_ = $environment
+			)
+		)
 	`
 
 	if _, err := s.db.Exec(
@@ -112,7 +124,7 @@ func (s SqliteSecretStore) GetSecret(project, environment, key string) (*Secret,
 	var secret Secret
 
 	if err := row.Scan(
-		&secret.Id,
+		&secret.ID,
 		&secret.Project,
 		&secret.Environment,
 		&secret.Key,

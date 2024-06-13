@@ -19,7 +19,7 @@ type GetSecretRequest struct {
 }
 
 type GetSecretResponse struct {
-	Id          int
+	ID          int
 	Project     string
 	Environment string
 	Key         string
@@ -83,7 +83,7 @@ func (e SecretServiceImpl) GetSecret(request GetSecretRequest) (*GetSecretRespon
 	}
 
 	return &GetSecretResponse{
-		Id:          secret.Id,
+		ID:          secret.ID,
 		Project:     secret.Project,
 		Environment: secret.Environment,
 		Key:         secret.Key,
