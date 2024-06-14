@@ -18,9 +18,7 @@ func secretCommand() *cobra.Command {
 	secretCmd := &cobra.Command{
 		Use:               "secret",
 		Aliases:           []string{"s"},
-		Short:             "Secret",
-		Long:              "Secret",
-		Example:           "syringe secret",
+		Short:             "Manage secrets",
 		PersistentPreRunE: initSecretContext,
 	}
 
@@ -32,11 +30,10 @@ func secretCommand() *cobra.Command {
 
 func secretSetCommand() *cobra.Command {
 	secretSetCmd := &cobra.Command{
-		Use:     "set",
+		Use:     "set [flags] SECRET_KEY SECRET_VALUE",
 		Aliases: []string{"s"},
-		Short:   "set",
-		Long:    "set",
-		Example: "syringe secret set []",
+		Short:   "Set a secret",
+		Example: "syringe secret set -p my_cool_project -e local AWS_ACCESS_KEY_ID AKIAIOSFODNN7EXAMPLE",
 		Args:    cobra.MatchAll(cobra.ExactArgs(2)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key := args[0]
@@ -79,11 +76,10 @@ func secretSetCommand() *cobra.Command {
 
 func secretGetCommand() *cobra.Command {
 	secretGetCmd := &cobra.Command{
-		Use:     "get",
+		Use:     "get [flags] SECRET_KEY",
 		Aliases: []string{"g"},
-		Short:   "get",
-		Long:    "get",
-		Example: "syringe get []",
+		Short:   "Get a secret",
+		Example: "syringe get -p my_cool_project -e local AWS_ACCESS_KEY_ID",
 		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			key := args[0]
