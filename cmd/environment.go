@@ -18,9 +18,7 @@ func environmentCommand() *cobra.Command {
 	environmentCmd := &cobra.Command{
 		Use:               "environment",
 		Aliases:           []string{"e"},
-		Short:             "Environment",
-		Long:              "Environment",
-		Example:           "syringe environment",
+		Short:             "Manage environments",
 		PersistentPreRunE: initEnvironmentContext,
 	}
 
@@ -31,11 +29,10 @@ func environmentCommand() *cobra.Command {
 
 func environmentAddCommand() *cobra.Command {
 	environmentAddCmd := &cobra.Command{
-		Use:     "add",
+		Use:     "add [flags] ENVIRONMENT_NAME",
 		Aliases: []string{"a"},
-		Short:   "add",
-		Long:    "add",
-		Example: "syringe environment add []",
+		Short:   "Add an environment",
+		Example: "syringe environment add -p my_cool_project local",
 		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
