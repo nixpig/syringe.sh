@@ -10,6 +10,9 @@ type Environment struct {
 
 type EnvironmentStore interface {
 	InsertEnvironment(name string, projectName string) error
+	// delete
+	// get all (for project id/name)
+	// rename
 }
 
 type SqliteEnvironmentStore struct {

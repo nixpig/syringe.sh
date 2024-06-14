@@ -17,6 +17,8 @@ type SecretStore interface {
 	CreateTables() error
 	InsertSecret(project, environment, key, value string) error
 	GetSecret(project, environment, key string) (*Secret, error)
+	// delete
+	// get all (for project + environment)
 }
 
 type SqliteSecretStore struct {
@@ -41,7 +43,7 @@ func (s SqliteSecretStore) CreateTables() error {
 			name_ varchar(256) not null,
 			project_id_ integer not null,
 
-			foreign key (project_id_) references projects_(id_)
+			foreign key (project_id_) references projects_(id_) on delete cascade
 		)
 	`
 	secretsQuery := `
@@ -51,7 +53,7 @@ func (s SqliteSecretStore) CreateTables() error {
 			value_ text not null,
 			environment_id_ integer not null,
 
-			foreign key (environment_id_) references environments_(id_)
+			foreign key (environment_id_) references environments_(id_) on delete cascade
 		)
 	`
 

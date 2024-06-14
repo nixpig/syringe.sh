@@ -5,12 +5,11 @@ import (
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 )
 
-type AddProjectRequest struct {
-	Name string
-}
-
 type ProjectService interface {
-	AddProject(project AddProjectRequest) error
+	Add(projectName string) error
+	Remove(projectName string) error
+	Rename(originalName, newName string) error
+	List() ([]string, error)
 }
 
 func NewProjectServiceImpl(
@@ -28,14 +27,35 @@ type ProjectServiceImpl struct {
 	validate *validator.Validate
 }
 
-func (p ProjectServiceImpl) AddProject(project AddProjectRequest) error {
-	if err := p.validate.Struct(project); err != nil {
-		return err
-	}
-
-	if err := p.store.InsertProject(project.Name); err != nil {
+func (p ProjectServiceImpl) Add(projectName string) error {
+	if err := p.store.Add(projectName); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (p ProjectServiceImpl) Remove(projectName string) error {
+	if err := p.store.Remove(projectName); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p ProjectServiceImpl) Rename(originalName, newName string) error {
+	if err := p.store.Rename(originalName, newName); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p ProjectServiceImpl) List() ([]string, error) {
+	projects, err := p.store.List()
+	if err != nil {
+		return nil, err
+	}
+
+	return projects, nil
 }
