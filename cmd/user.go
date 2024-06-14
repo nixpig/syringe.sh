@@ -13,9 +13,7 @@ func userCommand(
 	userCmd := &cobra.Command{
 		Use:     "user",
 		Aliases: []string{"u"},
-		Short:   "User",
-		Long:    "User",
-		Example: "syringe user",
+		Short:   "Manage users",
 	}
 
 	userCmd.AddCommand(userRegisterCommand(sess, appService))
@@ -25,10 +23,9 @@ func userCommand(
 
 func userRegisterCommand(sess ssh.Session, appService services.AppService) *cobra.Command {
 	userRegisterCmd := &cobra.Command{
-		Use:     "register",
+		Use:     "register [flags]",
 		Aliases: []string{"r"},
 		Short:   "Register new user",
-		Long:    "Register a new user",
 		Example: "syringe register",
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {

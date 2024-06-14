@@ -18,7 +18,7 @@ func projectCommand() *cobra.Command {
 	projectCmd := &cobra.Command{
 		Use:               "project",
 		Aliases:           []string{"p"},
-		Short:             "Manage projects with syringe.sh",
+		Short:             "Manage projects",
 		PersistentPreRunE: initProjectContext,
 	}
 
@@ -117,7 +117,7 @@ func projectListCommand() *cobra.Command {
 
 			if len(projects) == 0 {
 				cmd.Println("No projects found!")
-				cmd.Println("Try adding one with `syringe project add <project_name>`")
+				cmd.Println("Try adding one with `syringe project add PROJECT_NAME`")
 				return nil
 			}
 
@@ -137,8 +137,10 @@ func initProjectContext(cmd *cobra.Command, args []string) error {
 
 	db := ctx.Value(dbCtxKey).(*sql.DB)
 
-	projectStore := stores.NewSqliteProjectStore(db)
-	projectService := services.NewProjectServiceImpl(projectStore, validator.New(validator.WithRequiredStructEnabled()))
+	projectService := services.NewProjectServiceImpl(
+		stores.NewSqliteProjectStore(db),
+		validator.New(validator.WithRequiredStructEnabled()),
+	)
 
 	ctx = context.WithValue(ctx, projectCtxKey, projectService)
 
