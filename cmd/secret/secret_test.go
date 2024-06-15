@@ -3,6 +3,7 @@ package secret_test
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 	"io"
 	"os"
 	"regexp"
@@ -17,7 +18,13 @@ import (
 
 func TestSecretCmd(t *testing.T) {
 	scenarios := map[string]func(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB){
-		"test secret set command happy path": testSecretSetCmdHappyPath,
+		"test secret set command happy path":          testSecretSetCmdHappyPath,
+		"test secret set command missing project":     testSecretSetCmdMissingProject,
+		"test secret set command missing environment": testSecretSetCmdMissingEnvironment,
+		"test secret set command too few args":        testSecretSetCmdTooFewArgs,
+		"test secret set command too many args":       testSecretSetCmdTooManyArgs,
+		"test secret set command database error":      testSecretSetCmdDatabaseError,
+		"test secret set command validation error":    testSecretSetCmdValidationError,
 
 		"test secret get command happy path": testSecretGetCmdHappyPath,
 	}
@@ -170,4 +177,173 @@ func testSecretGetCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	)
 
 	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testSecretSetCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"set",
+			"-e",
+			"staging",
+			"secret_key",
+			"secret_value",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+}
+
+func testSecretSetCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"set",
+			"-p",
+			"my_cool_project",
+			"secret_key",
+			"secret_value",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+}
+
+func testSecretSetCmdTooFewArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"set",
+			"-p",
+			"my_cool_project",
+			"secret_key",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+}
+
+func testSecretSetCmdTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"set",
+			"-p",
+			"my_cool_project",
+			"secret_key",
+			"secret_value",
+			"foo",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+}
+
+func testSecretSetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	query := `
+		insert into secrets_ 
+		(key_, value_, environment_id_) 
+		values (
+			$key,
+			$value,
+			(
+				select e.id_ from 
+					environments_ e
+					inner join 
+					projects_ p 
+					on e.project_id_ = p.id_ 
+					where p.name_ = $project 
+					and e.name_ = $environment
+			)
+		)
+	`
+
+	mock.ExpectExec(regexp.QuoteMeta(query)).
+		WithArgs(
+			"my_cool_project",
+			"staging",
+			"secret_key",
+			"secret_value",
+		).
+		WillReturnError(errors.New("database_error"))
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"set",
+			"-p",
+			"my_cool_project",
+			"-e",
+			"staging",
+			"secret_key",
+			"secret_value",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testSecretSetCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"set",
+			"-p",
+			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+			"secret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_key",
+			"secret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_value",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
 }
