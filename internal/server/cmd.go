@@ -3,6 +3,11 @@ package server
 import (
 	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/server/cmd"
+	"github.com/nixpig/syringe.sh/server/cmd/environment"
+	"github.com/nixpig/syringe.sh/server/cmd/project"
+	"github.com/nixpig/syringe.sh/server/cmd/secret"
+	"github.com/nixpig/syringe.sh/server/cmd/user"
+	"github.com/spf13/cobra"
 )
 
 func cobraHandler(s Server) func(next ssh.Handler) ssh.Handler {
@@ -20,7 +25,12 @@ func cobraHandler(s Server) func(next ssh.Handler) ssh.Handler {
 			defer db.Close()
 
 			if err := cmd.Execute(
-				sess.PublicKey(),
+				[]*cobra.Command{
+					user.UserCommand(),
+					project.ProjectCommand(),
+					environment.EnvironmentCommand(),
+					secret.SecretCommand(),
+				},
 				sess.Command(),
 				sess,
 				sess,

@@ -3,6 +3,7 @@ package project
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/services"
@@ -147,7 +148,10 @@ func projectListRunE(cmd *cobra.Command, args []string) error {
 func initProjectContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	db := ctx.Value(dbCtxKey).(*sql.DB)
+	db, ok := ctx.Value(dbCtxKey).(*sql.DB)
+	if !ok {
+		return fmt.Errorf("unable to get database from context")
+	}
 
 	projectService := services.NewProjectServiceImpl(
 		stores.NewSqliteProjectStore(db),

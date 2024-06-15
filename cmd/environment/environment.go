@@ -3,6 +3,7 @@ package environment
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/services"
@@ -69,7 +70,10 @@ func environmentAddRunE(cmd *cobra.Command, args []string) error {
 func initEnvironmentContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	db := ctx.Value(dbCtxKey).(*sql.DB)
+	db, ok := ctx.Value(dbCtxKey).(*sql.DB)
+	if !ok {
+		return fmt.Errorf("unable to get database from context")
+	}
 
 	environmentStore := stores.NewSqliteEnvironmentStore(db)
 	environmentService := services.NewEnvironmentServiceImpl(environmentStore, validator.New(validator.WithRequiredStructEnabled()))
