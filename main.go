@@ -13,11 +13,6 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const (
-	host = "localhost"
-	port = "23234"
-)
-
 func main() {
 	log := zerolog.
 		New(os.Stdout).
@@ -54,7 +49,10 @@ func main() {
 
 	sshServer := server.NewServer(appService, &log)
 
-	if err := sshServer.Start(host, port); err != nil {
+	if err := sshServer.Start(
+		os.Getenv("APP_HOST"),
+		os.Getenv("APP_PORT"),
+	); err != nil {
 		log.Error().Err(err).Msg("failed to start ssh server")
 		os.Exit(1)
 	}
