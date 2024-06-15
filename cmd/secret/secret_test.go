@@ -26,7 +26,12 @@ func TestSecretCmd(t *testing.T) {
 		"test secret set command database error":      testSecretSetCmdDatabaseError,
 		"test secret set command validation error":    testSecretSetCmdValidationError,
 
-		"test secret get command happy path": testSecretGetCmdHappyPath,
+		"test secret get command happy path":          testSecretGetCmdHappyPath,
+		"test secret get command missing project":     testSecretGetCmdMissingProject,
+		"test secret get command missing environment": testSecretGetCmdMissingEnvironment,
+		"test secret get command missing key":         testSecretGetCmdMissingKey,
+		"test secret get command database error":      testSecretGetCmdDatabaseError,
+		"test secret get command validation error":    testSecretGetCmdValidationError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -100,78 +105,6 @@ func testSecretSetCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	require.Equal(
 		t,
 		"",
-		string(out),
-		"should not output anything",
-	)
-
-	require.NoError(t, mock.ExpectationsWereMet())
-}
-
-func testSecretGetCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
-	cmdIn := bytes.NewReader([]byte{})
-	cmdOut := bytes.NewBufferString("")
-
-	query := `
-		select s.id_, s.key_, s.value_, p.name_, e.name_
-		from secrets_ s
-		inner join
-		environments_ e
-		on s.environment_id_ = e.id_
-		inner join
-		projects_ p
-		on p.id_ = e.project_id_
-		where p.name_ = $project
-		and e.name_ = $environment
-		and s.key_ = $key
-	`
-
-	mock.ExpectQuery(regexp.QuoteMeta(query)).
-		WithArgs(
-			"my_cool_project",
-			"staging",
-			"secret_key",
-		).
-		WillReturnRows(mock.NewRows([]string{
-			"id_",
-			"key_",
-			"value_",
-			"project_name_",
-			"environment_name_",
-		}).AddRow(
-			23,
-			"secret_key",
-			"secret_value",
-			"my_cool_project",
-			"staging",
-		))
-
-	err := cmd.Execute(
-		[]*cobra.Command{secret.SecretCommand()},
-		[]string{
-			"secret",
-			"get",
-			"-p",
-			"my_cool_project",
-			"-e",
-			"staging",
-			"secret_key",
-		},
-		cmdIn,
-		cmdOut,
-		os.Stderr,
-		db,
-	)
-
-	require.NoError(t, err)
-
-	out, err := io.ReadAll(cmdOut)
-	if err != nil {
-		t.Errorf("failed to read from out")
-	}
-
-	require.Equal(
-		t,
-		"&{23 secret_key secret_value my_cool_project staging}",
 		string(out),
 		"should not output anything",
 	)
@@ -336,6 +269,8 @@ func testSecretSetCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql
 			"set",
 			"-p",
 			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+			"-e",
+			"stagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstaging",
 			"secret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_key",
 			"secret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_value",
 		},
@@ -346,4 +281,217 @@ func testSecretSetCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql
 	)
 
 	require.Error(t, err)
+}
+
+func testSecretGetCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	query := `
+		select s.id_, s.key_, s.value_, p.name_, e.name_
+		from secrets_ s
+		inner join
+		environments_ e
+		on s.environment_id_ = e.id_
+		inner join
+		projects_ p
+		on p.id_ = e.project_id_
+		where p.name_ = $project
+		and e.name_ = $environment
+		and s.key_ = $key
+	`
+
+	mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(
+			"my_cool_project",
+			"staging",
+			"secret_key",
+		).
+		WillReturnRows(mock.NewRows([]string{
+			"id_",
+			"key_",
+			"value_",
+			"project_name_",
+			"environment_name_",
+		}).AddRow(
+			23,
+			"secret_key",
+			"secret_value",
+			"my_cool_project",
+			"staging",
+		))
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"get",
+			"-p",
+			"my_cool_project",
+			"-e",
+			"staging",
+			"secret_key",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.NoError(t, err)
+
+	out, err := io.ReadAll(cmdOut)
+	if err != nil {
+		t.Errorf("failed to read from out")
+	}
+
+	require.Equal(
+		t,
+		"&{23 secret_key secret_value my_cool_project staging}",
+		string(out),
+		"should not output anything",
+	)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testSecretGetCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"get",
+			"-e",
+			"staging",
+			"secret_key",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+}
+
+func testSecretGetCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"get",
+			"-p",
+			"my_cool_project",
+			"secret_key",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+}
+
+func testSecretGetCmdMissingKey(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"get",
+			"-p",
+			"my_cool_project",
+			"-e",
+			"staging",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+}
+
+func testSecretGetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	query := `
+		select s.id_, s.key_, s.value_, p.name_, e.name_
+		from secrets_ s
+		inner join
+		environments_ e
+		on s.environment_id_ = e.id_
+		inner join
+		projects_ p
+		on p.id_ = e.project_id_
+		where p.name_ = $project
+		and e.name_ = $environment
+		and s.key_ = $key
+	`
+
+	mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(
+			"my_cool_project",
+			"staging",
+			"secret_key",
+		).
+		WillReturnError(errors.New("database_error"))
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"get",
+			"-p",
+			"my_cool_project",
+			"-e",
+			"staging",
+			"secret_key",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testSecretGetCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"get",
+			"-p",
+			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+			"-e",
+			"stagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstaging",
+			"secret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_key",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+
+	require.NoError(t, mock.ExpectationsWereMet())
 }
