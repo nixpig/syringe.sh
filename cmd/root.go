@@ -2,18 +2,11 @@ package cmd
 
 import (
 	"context"
-	"crypto/sha1"
 	"database/sql"
-	"fmt"
 	"io"
-	"net/http"
-	"os"
 
 	"github.com/charmbracelet/ssh"
-	"github.com/nixpig/syringe.sh/server/internal/database"
-	"github.com/nixpig/syringe.sh/server/pkg/turso"
 	"github.com/spf13/cobra"
-	gossh "golang.org/x/crypto/ssh"
 )
 
 type contextKey string
@@ -29,6 +22,7 @@ func Execute(
 	cmdIn io.Reader,
 	cmdOut io.Writer,
 	cmdErr io.ReadWriter,
+	db *sql.DB,
 ) error {
 	rootCmd := &cobra.Command{
 		Use:   "syringe",
@@ -53,13 +47,6 @@ func Execute(
 
 	ctx := context.Background()
 
-	db, err := NewUserDBConnection(publicKey)
-	if err != nil {
-		return err
-	}
-
-	defer db.Close()
-
 	ctx = context.WithValue(ctx, dbCtxKey, db)
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
@@ -67,36 +54,6 @@ func Execute(
 	}
 
 	return nil
-}
-
-// TODO: really don't like this!!
-func NewUserDBConnection(publicKey ssh.PublicKey) (*sql.DB, error) {
-	api := turso.New(
-		os.Getenv("DATABASE_ORG"),
-		os.Getenv("API_TOKEN"),
-		http.Client{},
-	)
-
-	marshalledKey := gossh.MarshalAuthorizedKey(publicKey)
-
-	hashedKey := fmt.Sprintf("%x", sha1.Sum(marshalledKey))
-	expiration := "30s"
-
-	token, err := api.CreateToken(hashedKey, expiration)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create token:\n%s", err)
-	}
-
-	fmt.Println("creating new user-specific db connection")
-	db, err := database.Connection(
-		"libsql://"+hashedKey+"-"+os.Getenv("DATABASE_ORG")+".turso.io",
-		string(token.Jwt),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error creating database connection:\n%s", err)
-	}
-
-	return db, nil
 }
 
 func walk(c *cobra.Command, f func(*cobra.Command)) {

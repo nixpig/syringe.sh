@@ -2,8 +2,12 @@ package server
 
 import (
 	"context"
+	"crypto/sha1"
+	"database/sql"
 	"errors"
+	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,9 +15,11 @@ import (
 
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
-	"github.com/nixpig/syringe.sh/server/cmd"
+	"github.com/nixpig/syringe.sh/server/internal/database"
 	"github.com/nixpig/syringe.sh/server/internal/services"
+	"github.com/nixpig/syringe.sh/server/pkg/turso"
 	"github.com/rs/zerolog"
+	gossh "golang.org/x/crypto/ssh"
 )
 
 type Server struct {
@@ -39,72 +45,9 @@ func (s Server) Start(host, port string) error {
 			return key.Type() == "ssh-ed25519"
 		}),
 		wish.WithMiddleware(
-			// exec cobra
-			func(next ssh.Handler) ssh.Handler {
-				return func(sess ssh.Session) {
-					if err := cmd.Execute(
-						sess.PublicKey(),
-						sess.Command(),
-						os.Stdin,
-						sess,
-						sess.Stderr(),
-					); err != nil {
-						s.logger.Err(err).
-							Str("session", sess.Context().SessionID()).
-							Msg("failed to execute command")
-					}
-
-					next(sess)
-				}
-			},
-
-			// authenticate/register user
-			func(next ssh.Handler) ssh.Handler {
-				return func(sess ssh.Session) {
-					if user, err := s.app.AuthenticateUser(services.UserAuthRequest{
-						Username:  sess.User(),
-						PublicKey: sess.PublicKey(),
-					}); err != nil || !user.Auth {
-						s.logger.Warn().Msg("user not logged in")
-						s.logger.Warn().Msg("prompt to register and call 'register' command if answer is 'Y', else return/exit")
-
-						s.logger.Warn().Msg("auto-registering for now...")
-
-						_, err := s.app.RegisterUser(services.RegisterUserRequest{
-							Username:  sess.User(),
-							Email:     "not_used_yet@example.org",
-							PublicKey: sess.PublicKey(),
-						})
-						if err != nil {
-							// todo: what to do here for error?
-							return
-						}
-
-					}
-
-					next(sess)
-				}
-			},
-
-			func(next ssh.Handler) ssh.Handler {
-				return func(sess ssh.Session) {
-					// log incoming connection
-					s.logger.Info().
-						Str("session", sess.Context().SessionID()).
-						Str("user", sess.User()).
-						Str("address", sess.RemoteAddr().String()).
-						Bool("publickey", sess.PublicKey() != nil).
-						Str("client", sess.Context().ClientVersion()).
-						Msg("connect")
-
-					next(sess)
-
-					// log end of connection
-					s.logger.Info().
-						Str("session", sess.Context().SessionID()).
-						Msg("disconnect")
-				}
-			},
+			cobraHandler(s),
+			authAndRegisterHandler(s),
+			loggingHandler(s),
 		),
 	)
 	if err != nil {
@@ -140,4 +83,34 @@ func (s Server) Start(host, port string) error {
 	}
 
 	return nil
+}
+
+// TODO: really don't like this!!
+func newUserDBConnection(publicKey ssh.PublicKey) (*sql.DB, error) {
+	api := turso.New(
+		os.Getenv("DATABASE_ORG"),
+		os.Getenv("API_TOKEN"),
+		http.Client{},
+	)
+
+	marshalledKey := gossh.MarshalAuthorizedKey(publicKey)
+
+	hashedKey := fmt.Sprintf("%x", sha1.Sum(marshalledKey))
+	expiration := "30s"
+
+	token, err := api.CreateToken(hashedKey, expiration)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create token:\n%s", err)
+	}
+
+	fmt.Println("creating new user-specific db connection")
+	db, err := database.Connection(
+		"libsql://"+hashedKey+"-"+os.Getenv("DATABASE_ORG")+".turso.io",
+		string(token.Jwt),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error creating database connection:\n%s", err)
+	}
+
+	return db, nil
 }
