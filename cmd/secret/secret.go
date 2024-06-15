@@ -67,7 +67,7 @@ func secretSetRunE(cmd *cobra.Command, args []string) error {
 
 	secretService := cmd.Context().Value(secretCtxKey).(services.SecretService)
 
-	if err := secretService.SetSecret(services.SetSecretRequest{
+	if err := secretService.Set(services.SetSecretRequest{
 		Project:     project,
 		Environment: environment,
 		Key:         key,
@@ -114,7 +114,7 @@ func secretGetRunE(cmd *cobra.Command, args []string) error {
 
 	secretService := cmd.Context().Value(secretCtxKey).(services.SecretService)
 
-	secret, err := secretService.GetSecret(services.GetSecretRequest{
+	secret, err := secretService.Get(services.GetSecretRequest{
 		Project:     project,
 		Environment: environment,
 		Key:         key,
@@ -123,7 +123,7 @@ func secretGetRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cmd.Print("cobra secret: ", secret)
+	cmd.Print(secret)
 
 	return nil
 }

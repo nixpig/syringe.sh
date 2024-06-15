@@ -15,8 +15,8 @@ type Secret struct {
 
 type SecretStore interface {
 	CreateTables() error
-	InsertSecret(project, environment, key, value string) error
-	GetSecret(project, environment, key string) (*Secret, error)
+	Set(project, environment, key, value string) error
+	Get(project, environment, key string) (*Secret, error)
 	// delete
 	// get all (for project + environment)
 }
@@ -75,7 +75,7 @@ func (s SqliteSecretStore) CreateTables() error {
 	return nil
 }
 
-func (s SqliteSecretStore) InsertSecret(project, environment, key, value string) error {
+func (s SqliteSecretStore) Set(project, environment, key, value string) error {
 	query := `
 		insert into secrets_ 
 		(key_, value_, environment_id_) 
@@ -107,7 +107,7 @@ func (s SqliteSecretStore) InsertSecret(project, environment, key, value string)
 	return nil
 }
 
-func (s SqliteSecretStore) GetSecret(project, environment, key string) (*Secret, error) {
+func (s SqliteSecretStore) Get(project, environment, key string) (*Secret, error) {
 	query := `
 		select s.id_, s.key_, s.value_, p.name_, e.name_
 		from secrets_ s

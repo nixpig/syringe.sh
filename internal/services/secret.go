@@ -28,8 +28,8 @@ type GetSecretResponse struct {
 
 type SecretService interface {
 	CreateTables() error
-	SetSecret(secret SetSecretRequest) error
-	GetSecret(request GetSecretRequest) (*GetSecretResponse, error)
+	Set(secret SetSecretRequest) error
+	Get(request GetSecretRequest) (*GetSecretResponse, error)
 }
 
 type SecretServiceImpl struct {
@@ -55,12 +55,12 @@ func (e SecretServiceImpl) CreateTables() error {
 	return nil
 }
 
-func (e SecretServiceImpl) SetSecret(secret SetSecretRequest) error {
+func (e SecretServiceImpl) Set(secret SetSecretRequest) error {
 	if err := e.validate.Struct(secret); err != nil {
 		return err
 	}
 
-	return e.store.InsertSecret(
+	return e.store.Set(
 		secret.Project,
 		secret.Environment,
 		secret.Key,
@@ -68,12 +68,12 @@ func (e SecretServiceImpl) SetSecret(secret SetSecretRequest) error {
 	)
 }
 
-func (e SecretServiceImpl) GetSecret(request GetSecretRequest) (*GetSecretResponse, error) {
+func (e SecretServiceImpl) Get(request GetSecretRequest) (*GetSecretResponse, error) {
 	if err := e.validate.Struct(request); err != nil {
 		return nil, err
 	}
 
-	secret, err := e.store.GetSecret(
+	secret, err := e.store.Get(
 		request.Project,
 		request.Environment,
 		request.Key,
