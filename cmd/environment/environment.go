@@ -57,7 +57,7 @@ func environmentAddRunE(cmd *cobra.Command, args []string) error {
 
 	environmentService := cmd.Context().Value(environmentCtxKey).(services.EnvironmentService)
 
-	if err := environmentService.AddEnvironment(services.AddEnvironmentRequest{
+	if err := environmentService.Add(services.AddEnvironmentRequest{
 		Name:        environment,
 		ProjectName: project,
 	}); err != nil {

@@ -53,7 +53,9 @@ func projectAddRunE(cmd *cobra.Command, args []string) error {
 
 	projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
 
-	if err := projectService.Add(projectName); err != nil {
+	if err := projectService.Add(services.AddProjectRequest{
+		Name: projectName,
+	}); err != nil {
 		return err
 	}
 
@@ -78,7 +80,9 @@ func projectRemoveRunE(cmd *cobra.Command, args []string) error {
 
 	projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
 
-	if err := projectService.Remove(projectName); err != nil {
+	if err := projectService.Remove(services.RemoveProjectRequest{
+		Name: projectName,
+	}); err != nil {
 		return err
 	}
 
@@ -99,12 +103,15 @@ func projectRenameCommand() *cobra.Command {
 }
 
 func projectRenameRunE(cmd *cobra.Command, args []string) error {
-	originalName := args[0]
+	name := args[0]
 	newName := args[1]
 
 	projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
 
-	if err := projectService.Rename(originalName, newName); err != nil {
+	if err := projectService.Rename(services.RenameProjectRequest{
+		Name:    name,
+		NewName: newName,
+	}); err != nil {
 		return err
 	}
 

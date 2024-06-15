@@ -5,10 +5,23 @@ import (
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 )
 
+type AddProjectRequest struct {
+	Name string `validate:"required,min=1,max=256"`
+}
+
+type RemoveProjectRequest struct {
+	Name string `validate:"required,min=1,max=256"`
+}
+
+type RenameProjectRequest struct {
+	Name    string `validate:"required,min=1,max=256"`
+	NewName string `validate:"required,min=1,max=256"`
+}
+
 type ProjectService interface {
-	Add(projectName string) error
-	Remove(projectName string) error
-	Rename(originalName, newName string) error
+	Add(project AddProjectRequest) error
+	Remove(project RemoveProjectRequest) error
+	Rename(project RenameProjectRequest) error
 	List() ([]string, error)
 }
 
@@ -27,24 +40,39 @@ type ProjectServiceImpl struct {
 	validate *validator.Validate
 }
 
-func (p ProjectServiceImpl) Add(projectName string) error {
-	if err := p.store.Add(projectName); err != nil {
+func (p ProjectServiceImpl) Add(project AddProjectRequest) error {
+	if err := p.validate.Struct(project); err != nil {
+		return err
+	}
+
+	if err := p.store.Add(project.Name); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (p ProjectServiceImpl) Remove(projectName string) error {
-	if err := p.store.Remove(projectName); err != nil {
+func (p ProjectServiceImpl) Remove(project RemoveProjectRequest) error {
+	if err := p.validate.Struct(project); err != nil {
+		return err
+	}
+
+	if err := p.store.Remove(project.Name); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (p ProjectServiceImpl) Rename(originalName, newName string) error {
-	if err := p.store.Rename(originalName, newName); err != nil {
+func (p ProjectServiceImpl) Rename(project RenameProjectRequest) error {
+	if err := p.validate.Struct(project); err != nil {
+		return err
+	}
+
+	if err := p.store.Rename(
+		project.Name,
+		project.NewName,
+	); err != nil {
 		return err
 	}
 

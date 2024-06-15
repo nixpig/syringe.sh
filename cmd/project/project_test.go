@@ -23,6 +23,7 @@ func TestProjectCmd(t *testing.T) {
 		"test project add command with no args":       testProjectAddCmdWithNoArgs,
 		"test project add command with too many args": testProjectAddCmdWithTooManyArgs,
 		"test project add command database error":     testProjectAddCmdDatabaseError,
+		"test project add command validation error":   testProjectAddCmdValidationError,
 
 		"test project remove command happy path":         testProjectRemoveCmdHappyPath,
 		"test project remove command with no args":       testProjectRemoveCmdWithNoArgs,
@@ -30,12 +31,14 @@ func TestProjectCmd(t *testing.T) {
 		"test project remove command database error":     testProjectRemoveCmdDatabaseError,
 		"test project remove command row error":          testProjectRemoveCmdRowError,
 		"test project remove command zero affected rows": testProjectRemoveCmdZeroAffectedRows,
+		"test project remove command validation error":   testProjectRemoveCmdValidationError,
 
 		"test project rename command happy path":         testProjectRenameCmdHappyPath,
 		"test project rename command with no args":       testProjectRenameCmdWithNoArgs,
 		"test project rename command with too few args":  testProjectRenameCmdWithTooFewArgs,
 		"test project rename command with too many args": testProjectRenameCmdWithTooManyArgs,
 		"test project rename command database error":     testProjectRenameCmdDatabaseError,
+		"test project rename command validation error":   testProjectRenameCmdValidationError,
 
 		"test project list command happy path":         testProjectListCmdHappyPath,
 		"test project list command database error":     testProjectListCmdDatabaseError,
@@ -472,6 +475,119 @@ func testProjectListCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *s
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "list", "foo"},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+}
+
+func testProjectAddCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	var err error
+
+	err = cmd.Execute(
+		[]*cobra.Command{project.ProjectCommand()},
+		[]string{
+			"project",
+			"add",
+			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+
+	err = cmd.Execute(
+		[]*cobra.Command{project.ProjectCommand()},
+		[]string{
+			"project",
+			"add",
+			"",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+}
+
+func testProjectRemoveCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	var err error
+
+	err = cmd.Execute(
+		[]*cobra.Command{project.ProjectCommand()},
+		[]string{
+			"project",
+			"remove",
+			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+
+	err = cmd.Execute(
+		[]*cobra.Command{project.ProjectCommand()},
+		[]string{
+			"project",
+			"remove",
+			"",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+}
+
+func testProjectRenameCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	var err error
+
+	err = cmd.Execute(
+		[]*cobra.Command{project.ProjectCommand()},
+		[]string{
+			"project",
+			"rename",
+			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+			"",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+
+	err = cmd.Execute(
+		[]*cobra.Command{project.ProjectCommand()},
+		[]string{
+			"project",
+			"rename",
+			"",
+			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+		},
 		cmdIn,
 		cmdOut,
 		os.Stderr,

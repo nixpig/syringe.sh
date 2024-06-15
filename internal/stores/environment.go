@@ -9,7 +9,7 @@ type Environment struct {
 }
 
 type EnvironmentStore interface {
-	InsertEnvironment(name string, projectName string) error
+	Add(name string, projectName string) error
 	// delete
 	// get all (for project id/name)
 	// rename
@@ -23,7 +23,7 @@ func NewSqliteEnvironmentStore(db *sql.DB) EnvironmentStore {
 	return SqliteEnvironmentStore{db}
 }
 
-func (s SqliteEnvironmentStore) InsertEnvironment(name string, projectName string) error {
+func (s SqliteEnvironmentStore) Add(name string, projectName string) error {
 	query := `
 		insert into environments_ (name_, project_id_) values (
 			$name,

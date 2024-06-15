@@ -86,7 +86,7 @@ func (s SqliteProjectStore) List() ([]string, error) {
 		var project string
 
 		if err := rows.Scan(&project); err != nil {
-			return projects, err
+			return nil, err
 		}
 
 		projects = append(projects, project)

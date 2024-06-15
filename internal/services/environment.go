@@ -6,12 +6,12 @@ import (
 )
 
 type AddEnvironmentRequest struct {
-	Name        string
-	ProjectName string
+	Name        string `validate:"required,min=1,max=256"`
+	ProjectName string `validate:"required,min=1,max=256"`
 }
 
 type EnvironmentService interface {
-	AddEnvironment(environment AddEnvironmentRequest) error
+	Add(environment AddEnvironmentRequest) error
 }
 
 func NewEnvironmentServiceImpl(
@@ -29,12 +29,12 @@ type EnvironmentServiceImpl struct {
 	validate *validator.Validate
 }
 
-func (e EnvironmentServiceImpl) AddEnvironment(environment AddEnvironmentRequest) error {
+func (e EnvironmentServiceImpl) Add(environment AddEnvironmentRequest) error {
 	if err := e.validate.Struct(environment); err != nil {
 		return err
 	}
 
-	if err := e.store.InsertEnvironment(environment.Name, environment.ProjectName); err != nil {
+	if err := e.store.Add(environment.Name, environment.ProjectName); err != nil {
 		return err
 	}
 
