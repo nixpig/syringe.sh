@@ -5,12 +5,12 @@ import (
 	"crypto/sha1"
 	"database/sql"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
 	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/server/internal/database"
-	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/nixpig/syringe.sh/server/pkg/turso"
 	"github.com/spf13/cobra"
 	gossh "golang.org/x/crypto/ssh"
@@ -24,8 +24,11 @@ const (
 )
 
 func Execute(
-	sess ssh.Session,
-	appService services.AppService,
+	publicKey ssh.PublicKey,
+	args []string,
+	cmdIn io.Reader,
+	cmdOut io.Writer,
+	cmdErr io.ReadWriter,
 ) error {
 	rootCmd := &cobra.Command{
 		Use:   "syringe",
@@ -33,16 +36,15 @@ func Execute(
 		Long:  "Distributed environment variable management over SSH.",
 	}
 
-	rootCmd.AddCommand(userCommand(sess, appService))
-
+	rootCmd.AddCommand(userCommand())
 	rootCmd.AddCommand(projectCommand())
 	rootCmd.AddCommand(environmentCommand())
 	rootCmd.AddCommand(secretCommand())
 
-	rootCmd.SetArgs(sess.Command())
-	rootCmd.SetIn(sess)
-	rootCmd.SetOut(sess)
-	rootCmd.SetErr(sess.Stderr())
+	rootCmd.SetArgs(args)
+	rootCmd.SetIn(cmdIn)
+	rootCmd.SetOut(cmdOut)
+	rootCmd.SetErr(cmdErr)
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	walk(rootCmd, func(c *cobra.Command) {
@@ -51,9 +53,7 @@ func Execute(
 
 	ctx := context.Background()
 
-	ctx = context.WithValue(ctx, sessCtxKey, sess)
-
-	db, err := NewUserDB(sess.PublicKey())
+	db, err := NewUserDBConnection(publicKey)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func Execute(
 }
 
 // TODO: really don't like this!!
-func NewUserDB(publicKey ssh.PublicKey) (*sql.DB, error) {
+func NewUserDBConnection(publicKey ssh.PublicKey) (*sql.DB, error) {
 	api := turso.New(
 		os.Getenv("DATABASE_ORG"),
 		os.Getenv("API_TOKEN"),

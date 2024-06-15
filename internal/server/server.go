@@ -42,7 +42,13 @@ func (s Server) Start(host, port string) error {
 			// exec cobra
 			func(next ssh.Handler) ssh.Handler {
 				return func(sess ssh.Session) {
-					if err := cmd.Execute(sess, s.app); err != nil {
+					if err := cmd.Execute(
+						sess.PublicKey(),
+						sess.Command(),
+						os.Stdin,
+						sess,
+						sess.Stderr(),
+					); err != nil {
 						s.logger.Err(err).
 							Str("session", sess.Context().SessionID()).
 							Msg("failed to execute command")
@@ -52,16 +58,30 @@ func (s Server) Start(host, port string) error {
 				}
 			},
 
-			// authenticate user
+			// authenticate/register user
 			func(next ssh.Handler) ssh.Handler {
 				return func(sess ssh.Session) {
-					if _, err := s.app.AuthenticateUser(services.UserAuthRequest{
+					if user, err := s.app.AuthenticateUser(services.UserAuthRequest{
 						Username:  sess.User(),
 						PublicKey: sess.PublicKey(),
-					}); err != nil {
+					}); err != nil || !user.Auth {
 						s.logger.Warn().Msg("user not logged in")
 						s.logger.Warn().Msg("prompt to register and call 'register' command if answer is 'Y', else return/exit")
+
+						s.logger.Warn().Msg("auto-registering for now...")
+
+						_, err := s.app.RegisterUser(services.RegisterUserRequest{
+							Username:  sess.User(),
+							Email:     "not_used_yet@example.org",
+							PublicKey: sess.PublicKey(),
+						})
+						if err != nil {
+							// todo: what to do here for error?
+							return
+						}
+
 					}
+
 					next(sess)
 				}
 			},
