@@ -1,8 +1,6 @@
 package server
 
 import (
-	"os"
-
 	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/server/cmd"
 )
@@ -12,7 +10,8 @@ func cobraHandler(s Server) func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
 			db, err := newUserDBConnection(sess.PublicKey())
 			if err != nil {
-				// todo: what to do here?
+				s.logger.Err(err).Msg("failed to obtain user database connection")
+				sess.Stderr().Write([]byte("Failed to obtain database connection using the provided public key"))
 				return
 			}
 
@@ -21,7 +20,7 @@ func cobraHandler(s Server) func(next ssh.Handler) ssh.Handler {
 			if err := cmd.Execute(
 				sess.PublicKey(),
 				sess.Command(),
-				os.Stdin,
+				sess,
 				sess,
 				sess.Stderr(),
 				db,
