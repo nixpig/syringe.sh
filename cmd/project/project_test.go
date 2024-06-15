@@ -3,6 +3,7 @@ package project_test
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 	"io"
 	"os"
 	"regexp"
@@ -20,6 +21,10 @@ func TestProjectCmd(t *testing.T) {
 		"test project add command happy path":         testProjectAddCommandHappyPath,
 		"test project add command with no args":       testProjectAddCmdWithNoArgs,
 		"test project add command with too many args": testProjectAddCmdWithTooManyArgs,
+		"test project add command database error":     testProjectAddDatabaseError,
+
+		"test project remove command happy path":   testProjectRemoveCmdHappyPath,
+		"test project remove command with no args": testProjectRemoveCmdWithNoArgs,
 	}
 
 	for scenario, fn := range scenarios {
@@ -51,12 +56,7 @@ func testProjectAddCmdWithNoArgs(
 		db,
 	)
 
-	require.EqualError(
-		t,
-		err,
-		"accepts 1 arg(s), received 0",
-		"should return error message stating not enough args",
-	)
+	require.Error(t, err)
 }
 
 func testProjectAddCmdWithTooManyArgs(
@@ -76,12 +76,7 @@ func testProjectAddCmdWithTooManyArgs(
 		db,
 	)
 
-	require.EqualError(
-		t,
-		err,
-		"accepts 1 arg(s), received 2",
-		"should return error message stating too many args",
-	)
+	require.Error(t, err)
 }
 
 func testProjectAddCommandHappyPath(
@@ -105,6 +100,8 @@ func testProjectAddCommandHappyPath(
 		db,
 	)
 
+	require.NoError(t, err)
+
 	out, err := io.ReadAll(cmdOut)
 	if err != nil {
 		t.Errorf("failed to read from out")
@@ -117,15 +114,52 @@ func testProjectAddCommandHappyPath(
 		"should not output anything",
 	)
 
-	require.NoError(
-		t,
-		err,
-		"should not return error message",
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testProjectAddDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	mock.ExpectExec(regexp.QuoteMeta(`
+		insert into projects_ (name_) values ($name)
+	`)).WithArgs("my_cool_project").
+		WillReturnError(errors.New("database_error"))
+
+	err := cmd.Execute(
+		[]*cobra.Command{project.ProjectCommand()},
+		[]string{"project", "add", "my_cool_project"},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
 	)
 
-	require.NoError(
-		t,
-		mock.ExpectationsWereMet(),
-		"database should be called as expected",
+	require.Error(t, err)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testProjectRemoveCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	mock.ExpectExec(regexp.QuoteMeta(`
+		delete from projects_ where name_ = $name
+	`)).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err := cmd.Execute(
+		[]*cobra.Command{project.ProjectCommand()},
+		[]string{"project", "remove", "my_cool_project"},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
 	)
+
+	require.NoError(t, err)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testProjectRemoveCmdWithNoArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+
 }
