@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -35,6 +36,10 @@ func TestProjectCmd(t *testing.T) {
 		"test project rename command with too few args":  testProjectRenameCmdWithTooFewArgs,
 		"test project rename command with too many args": testProjectRenameCmdWithTooManyArgs,
 		"test project rename command database error":     testProjectRenameCmdDatabaseError,
+
+		"test project list command happy path":         testProjectListCmdHappyPath,
+		"test project list command database error":     testProjectListCmdDatabaseError,
+		"test project list command with too many args": testProjectListCmdWithTooManyArgs,
 	}
 
 	for scenario, fn := range scenarios {
@@ -402,4 +407,76 @@ func testProjectRenameCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *s
 
 	require.Error(t, err)
 	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testProjectListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(`select name_ from projects_`)).
+		WillReturnRows(
+			sqlmock.NewRows([]string{"name_"}).
+				AddRow("my_cool_project").
+				AddRow("my_awesome_project").
+				AddRow("my_super_project"),
+		)
+
+	err := cmd.Execute(
+		[]*cobra.Command{project.ProjectCommand()},
+		[]string{"project", "list"},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+	require.NoError(t, err)
+
+	out, err := io.ReadAll(cmdOut)
+	require.NoError(t, err)
+
+	require.Equal(
+		t,
+		strings.Split(strings.TrimSpace(string(out)), "\n"),
+		[]string{"my_cool_project", "my_awesome_project", "my_super_project"},
+	)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testProjectListCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(`select name_ from projects_`)).
+		WillReturnError(errors.New("database_error"))
+
+	err := cmd.Execute(
+		[]*cobra.Command{project.ProjectCommand()},
+		[]string{"project", "list"},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testProjectListCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{project.ProjectCommand()},
+		[]string{"project", "list", "foo"},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.Error(t, err)
 }
