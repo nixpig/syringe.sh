@@ -35,33 +35,7 @@ func secretSetCommand() *cobra.Command {
 		Short:   "Set a secret",
 		Example: "syringe secret set -p my_cool_project -e local AWS_ACCESS_KEY_ID AKIAIOSFODNN7EXAMPLE",
 		Args:    cobra.MatchAll(cobra.ExactArgs(2)),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			key := args[0]
-			value := args[1]
-
-			project, err := cmd.Flags().GetString("project")
-			if err != nil {
-				return err
-			}
-
-			environment, err := cmd.Flags().GetString("environment")
-			if err != nil {
-				return err
-			}
-
-			secretService := cmd.Context().Value(secretCtxKey).(services.SecretService)
-
-			if err := secretService.SetSecret(services.SetSecretRequest{
-				Project:     project,
-				Environment: environment,
-				Key:         key,
-				Value:       value,
-			}); err != nil {
-				return err
-			}
-
-			return nil
-		},
+		RunE:    secretSetRunE,
 	}
 
 	secretSetCmd.Flags().StringP("project", "p", "", "Project to use")
@@ -74,6 +48,34 @@ func secretSetCommand() *cobra.Command {
 	return secretSetCmd
 }
 
+func secretSetRunE(cmd *cobra.Command, args []string) error {
+	key := args[0]
+	value := args[1]
+
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return err
+	}
+
+	environment, err := cmd.Flags().GetString("environment")
+	if err != nil {
+		return err
+	}
+
+	secretService := cmd.Context().Value(secretCtxKey).(services.SecretService)
+
+	if err := secretService.SetSecret(services.SetSecretRequest{
+		Project:     project,
+		Environment: environment,
+		Key:         key,
+		Value:       value,
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func secretGetCommand() *cobra.Command {
 	secretGetCmd := &cobra.Command{
 		Use:     "get [flags] SECRET_KEY",
@@ -81,34 +83,7 @@ func secretGetCommand() *cobra.Command {
 		Short:   "Get a secret",
 		Example: "syringe get -p my_cool_project -e local AWS_ACCESS_KEY_ID",
 		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			key := args[0]
-
-			project, err := cmd.Flags().GetString("project")
-			if err != nil {
-				return err
-			}
-
-			environment, err := cmd.Flags().GetString("environment")
-			if err != nil {
-				return err
-			}
-
-			secretService := cmd.Context().Value(secretCtxKey).(services.SecretService)
-
-			secret, err := secretService.GetSecret(services.GetSecretRequest{
-				Project:     project,
-				Environment: environment,
-				Key:         key,
-			})
-			if err != nil {
-				return err
-			}
-
-			cmd.Print("cobra secret: ", secret)
-
-			return nil
-		},
+		RunE:    secretGetRunE,
 	}
 
 	secretGetCmd.Flags().StringP("project", "p", "", "Project")
@@ -119,6 +94,35 @@ func secretGetCommand() *cobra.Command {
 	secretGetCmd.MarkFlagRequired("environment")
 
 	return secretGetCmd
+}
+
+func secretGetRunE(cmd *cobra.Command, args []string) error {
+	key := args[0]
+
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return err
+	}
+
+	environment, err := cmd.Flags().GetString("environment")
+	if err != nil {
+		return err
+	}
+
+	secretService := cmd.Context().Value(secretCtxKey).(services.SecretService)
+
+	secret, err := secretService.GetSecret(services.GetSecretRequest{
+		Project:     project,
+		Environment: environment,
+		Key:         key,
+	})
+	if err != nil {
+		return err
+	}
+
+	cmd.Print("cobra secret: ", secret)
+
+	return nil
 }
 
 func initSecretContext(cmd *cobra.Command, args []string) error {

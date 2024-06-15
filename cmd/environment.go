@@ -34,26 +34,7 @@ func environmentAddCommand() *cobra.Command {
 		Short:   "Add an environment",
 		Example: "syringe environment add -p my_cool_project local",
 		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			environment := args[0]
-
-			project, err := cmd.Flags().GetString("project")
-			if err != nil {
-				return err
-			}
-
-			environmentService := cmd.Context().Value(environmentCtxKey).(services.EnvironmentService)
-
-			if err := environmentService.AddEnvironment(services.AddEnvironmentRequest{
-				Name:        environment,
-				ProjectName: project,
-			}); err != nil {
-				return err
-			}
-
-			return nil
-		},
+		RunE:    environmentAddRunE,
 	}
 
 	environmentAddCmd.Flags().StringP("project", "p", "", "Project")
@@ -61,6 +42,26 @@ func environmentAddCommand() *cobra.Command {
 	environmentAddCmd.MarkFlagRequired("project")
 
 	return environmentAddCmd
+}
+
+func environmentAddRunE(cmd *cobra.Command, args []string) error {
+	environment := args[0]
+
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return err
+	}
+
+	environmentService := cmd.Context().Value(environmentCtxKey).(services.EnvironmentService)
+
+	if err := environmentService.AddEnvironment(services.AddEnvironmentRequest{
+		Name:        environment,
+		ProjectName: project,
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func initEnvironmentContext(cmd *cobra.Command, args []string) error {

@@ -37,20 +37,22 @@ func projectAddCommand() *cobra.Command {
 		Short:   "Add a project",
 		Example: "syringe project add my_cool_project",
 		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			projectName := args[0]
-
-			projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
-
-			if err := projectService.Add(projectName); err != nil {
-				return err
-			}
-
-			return nil
-		},
+		RunE:    projectAddRunE,
 	}
 
 	return projectAddCmd
+}
+
+func projectAddRunE(cmd *cobra.Command, args []string) error {
+	projectName := args[0]
+
+	projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+
+	if err := projectService.Add(projectName); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func projectRemoveCommand() *cobra.Command {
@@ -60,20 +62,22 @@ func projectRemoveCommand() *cobra.Command {
 		Short:   "Remove a project",
 		Example: "syringe project remove my_cool_project",
 		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			projectName := args[0]
-
-			projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
-
-			if err := projectService.Remove(projectName); err != nil {
-				return err
-			}
-
-			return nil
-		},
+		RunE:    projectRemoveRunE,
 	}
 
 	return projectRemoveCmd
+}
+
+func projectRemoveRunE(cmd *cobra.Command, args []string) error {
+	projectName := args[0]
+
+	projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+
+	if err := projectService.Remove(projectName); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func projectRenameCommand() *cobra.Command {
@@ -83,21 +87,23 @@ func projectRenameCommand() *cobra.Command {
 		Short:   "Rename a project",
 		Example: "syringe project rename my_cool_project my_awesome_project",
 		Args:    cobra.MatchAll(cobra.ExactArgs(2)),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			originalName := args[0]
-			newName := args[1]
-
-			projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
-
-			if err := projectService.Rename(originalName, newName); err != nil {
-				return err
-			}
-
-			return nil
-		},
+		RunE:    projectRenameRunE,
 	}
 
 	return projectRenameCmd
+}
+
+func projectRenameRunE(cmd *cobra.Command, args []string) error {
+	originalName := args[0]
+	newName := args[1]
+
+	projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+
+	if err := projectService.Rename(originalName, newName); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func projectListCommand() *cobra.Command {
@@ -107,29 +113,31 @@ func projectListCommand() *cobra.Command {
 		Short:   "List projects",
 		Args:    cobra.NoArgs,
 		Example: "syringe project list",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
-
-			projects, err := projectService.List()
-			if err != nil {
-				return err
-			}
-
-			if len(projects) == 0 {
-				cmd.Println("No projects found!")
-				cmd.Println("Try adding one with `syringe project add PROJECT_NAME`")
-				return nil
-			}
-
-			for _, project := range projects {
-				cmd.Println(project)
-			}
-
-			return nil
-		},
+		RunE:    projectListRunE,
 	}
 
 	return projectListCmd
+}
+
+func projectListRunE(cmd *cobra.Command, args []string) error {
+	projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+
+	projects, err := projectService.List()
+	if err != nil {
+		return err
+	}
+
+	if len(projects) == 0 {
+		cmd.Println("No projects found!")
+		cmd.Println("Try adding one with `syringe project add PROJECT_NAME`")
+		return nil
+	}
+
+	for _, project := range projects {
+		cmd.Println(project)
+	}
+
+	return nil
 }
 
 func initProjectContext(cmd *cobra.Command, args []string) error {

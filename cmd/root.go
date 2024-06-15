@@ -45,6 +45,10 @@ func Execute(
 	rootCmd.SetErr(sess.Stderr())
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
+	walk(rootCmd, func(c *cobra.Command) {
+		c.Flags().BoolP("help", "h", false, "Help for the "+c.Name()+" command")
+	})
+
 	ctx := context.Background()
 
 	ctx = context.WithValue(ctx, sessCtxKey, sess)
@@ -53,6 +57,8 @@ func Execute(
 	if err != nil {
 		return err
 	}
+
+	defer db.Close()
 
 	ctx = context.WithValue(ctx, dbCtxKey, db)
 
@@ -91,4 +97,11 @@ func NewUserDB(publicKey ssh.PublicKey) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func walk(c *cobra.Command, f func(*cobra.Command)) {
+	f(c)
+	for _, c := range c.Commands() {
+		walk(c, f)
+	}
 }
