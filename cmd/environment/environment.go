@@ -1,4 +1,4 @@
-package cmd
+package environment
 
 import (
 	"context"
@@ -7,14 +7,16 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
+	"github.com/nixpig/syringe.sh/server/pkg"
 	"github.com/spf13/cobra"
 )
 
 const (
-	environmentCtxKey = contextKey("ENVIRONMENT_CTX")
+	dbCtxKey          = pkg.DBCtxKey
+	environmentCtxKey = pkg.EnvironmentCtxKey
 )
 
-func environmentCommand() *cobra.Command {
+func EnvironmentCommand() *cobra.Command {
 	environmentCmd := &cobra.Command{
 		Use:               "environment",
 		Aliases:           []string{"e"},

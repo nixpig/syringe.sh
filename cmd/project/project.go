@@ -1,4 +1,4 @@
-package cmd
+package project
 
 import (
 	"context"
@@ -7,14 +7,18 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
+	"github.com/nixpig/syringe.sh/server/pkg"
 	"github.com/spf13/cobra"
 )
 
+type contextKey string
+
 const (
-	projectCtxKey = contextKey("PROJECT_CTX")
+	dbCtxKey      = pkg.DBCtxKey
+	projectCtxKey = pkg.ProjectCtxKey
 )
 
-func projectCommand() *cobra.Command {
+func ProjectCommand() *cobra.Command {
 	projectCmd := &cobra.Command{
 		Use:               "project",
 		Aliases:           []string{"p"},

@@ -1,4 +1,4 @@
-package cmd
+package secret
 
 import (
 	"context"
@@ -7,14 +7,16 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
+	"github.com/nixpig/syringe.sh/server/pkg"
 	"github.com/spf13/cobra"
 )
 
 const (
-	secretCtxKey = contextKey("SECRET_CTX")
+	dbCtxKey     = pkg.DBCtxKey
+	secretCtxKey = pkg.SecretCtxKey
 )
 
-func secretCommand() *cobra.Command {
+func SecretCommand() *cobra.Command {
 	secretCmd := &cobra.Command{
 		Use:               "secret",
 		Aliases:           []string{"s"},

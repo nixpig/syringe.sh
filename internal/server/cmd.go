@@ -10,7 +10,9 @@ func cobraHandler(s Server) func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
 			db, err := newUserDBConnection(sess.PublicKey())
 			if err != nil {
-				s.logger.Err(err).Msg("failed to obtain user database connection")
+				s.logger.Err(err).
+					Str("session", sess.Context().SessionID()).
+					Msg("failed to obtain user database connection")
 				sess.Stderr().Write([]byte("Failed to obtain database connection using the provided public key"))
 				return
 			}
@@ -27,6 +29,7 @@ func cobraHandler(s Server) func(next ssh.Handler) ssh.Handler {
 			); err != nil {
 				s.logger.Err(err).
 					Str("session", sess.Context().SessionID()).
+					Any("command", sess.Command()).
 					Msg("failed to execute command")
 			}
 

@@ -23,7 +23,7 @@ func main() {
 
 	log.Info().Msg("loading environment")
 	if err := godotenv.Load(".env"); err != nil {
-		log.Error().Err(err).Msg("failed to load '.env' file:")
+		log.Error().Err(err).Msg("failed to load '.env' file")
 		os.Exit(1)
 	}
 

@@ -6,14 +6,16 @@ import (
 	"io"
 
 	"github.com/charmbracelet/ssh"
+	"github.com/nixpig/syringe.sh/server/cmd/environment"
+	"github.com/nixpig/syringe.sh/server/cmd/project"
+	"github.com/nixpig/syringe.sh/server/cmd/secret"
+	"github.com/nixpig/syringe.sh/server/cmd/user"
+	"github.com/nixpig/syringe.sh/server/pkg"
 	"github.com/spf13/cobra"
 )
 
-type contextKey string
-
 const (
-	dbCtxKey   = contextKey("DB_CTX")
-	sessCtxKey = contextKey("SESS_CTX")
+	dbCtxKey = pkg.DBCtxKey
 )
 
 func Execute(
@@ -30,10 +32,10 @@ func Execute(
 		Long:  "Distributed environment variable management over SSH.",
 	}
 
-	rootCmd.AddCommand(userCommand())
-	rootCmd.AddCommand(projectCommand())
-	rootCmd.AddCommand(environmentCommand())
-	rootCmd.AddCommand(secretCommand())
+	rootCmd.AddCommand(user.UserCommand())
+	rootCmd.AddCommand(project.ProjectCommand())
+	rootCmd.AddCommand(environment.EnvironmentCommand())
+	rootCmd.AddCommand(secret.SecretCommand())
 
 	rootCmd.SetArgs(args)
 	rootCmd.SetIn(cmdIn)
