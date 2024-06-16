@@ -7,6 +7,7 @@ import (
 
 	"github.com/nixpig/syringe.sh/server/pkg"
 	"github.com/spf13/cobra"
+	// "github.com/spf13/cobra/doc"
 )
 
 const (
@@ -44,6 +45,19 @@ func Execute(
 	ctx := context.Background()
 
 	ctx = context.WithValue(ctx, dbCtxKey, db)
+
+	// f, err := os.Create("./docs.md")
+	// if err != nil {
+	// 	return err
+	// }
+	//
+	// defer f.Close()
+	//
+	// walk(rootCmd, func(c *cobra.Command) {
+	// 	if err := doc.GenMarkdown(c, f); err != nil {
+	// 		panic("at the disco!")
+	// 	}
+	// })
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		return err

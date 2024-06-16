@@ -3,7 +3,6 @@ package turso
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 )
@@ -155,7 +154,7 @@ func WrapErr(statusCode int, msg string) error {
 	case http.StatusConflict:
 		return ErrConflict{
 			StatusCode: http.StatusConflict,
-			Err:        errors.New(msg),
+			Err:        fmt.Errorf(msg),
 		}
 	}
 

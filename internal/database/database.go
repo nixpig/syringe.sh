@@ -31,11 +31,6 @@ func MigrateAppDB(db *sql.DB) error {
 		return err
 	}
 
-	dropDatabasesTable := `drop table if exists databases_`
-	if _, err := db.Exec(dropDatabasesTable); err != nil {
-		return err
-	}
-
 	dropUsersTable := `drop table if exists users_`
 	if _, err := db.Exec(dropUsersTable); err != nil {
 		return err

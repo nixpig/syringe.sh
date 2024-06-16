@@ -5,11 +5,29 @@
 
 > **⚠️ THIS PROJECT IS A WORK IN PROGRESS**
 >
-> **⚠️ SOME OR ALL OF THE FUNCTIONALITY HERE MAY NOT ACTUALLY WORK CORRECTLY**
+> **⚠️ SOME OR ALL OF THE FUNCTIONALITY HERE MAY NOT ACTUALLY WORK AS DOCUMENTED, OR EVEN AT ALL**
 
 ## Proposed usage
 
 `syringe` executed without a subcommand should connect to a TUI.
+
+### `project`
+
+Manage your projects.
+
+- [x] `syringe project add <name>`
+- [x] `syringe project remove <name>`
+- [x] `syringe project list`
+- [x] `syringe project rename <old name> <new name>`
+
+### `environment`
+
+Manage your environments.
+
+- `syringe environment add [-p <project>] <name>`
+- `syringe environment remove [-p <project>] <name>`
+- `syringe environment list [-p <project>]`
+- `syringe environment rename [-p <project>] <old name> <new name>`
 
 ### `inject`
 
@@ -34,24 +52,6 @@ Manage your user account(s).
 
 - `syringe user register [-u <username>]`
 - `syringe user delete [-u <username>]`
-
-### `project`
-
-Manage your projects.
-
-- `syringe project add <name>`
-- `syringe project remove <name>`
-- `syringe project list`
-- `syringe project rename <old name> <new name>`
-
-### `environment`
-
-Manage your environments.
-
-- `syringe environment add [-p <project>] <name>`
-- `syringe environment remove [-p <project>] <name>`
-- `syringe environment list [-p <project>]`
-- `syringe environment rename [-p <project>] <old name> <new name>`
 
 ### `secret`
 

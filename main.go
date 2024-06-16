@@ -45,7 +45,7 @@ func main() {
 	appService := services.NewAppService(appStore, validate, http.Client{}, services.TursoAPISettings{
 		URL:   os.Getenv("API_BASE_URL"),
 		Token: os.Getenv("API_TOKEN"),
-	})
+	}, &log)
 
 	sshServer := server.NewServer(appService, &log)
 

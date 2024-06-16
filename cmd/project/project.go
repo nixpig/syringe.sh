@@ -51,7 +51,10 @@ func projectAddCommand() *cobra.Command {
 func projectAddRunE(cmd *cobra.Command, args []string) error {
 	projectName := args[0]
 
-	projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+	projectService, ok := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+	if !ok {
+		return fmt.Errorf("unable to get project service from context")
+	}
 
 	if err := projectService.Add(services.AddProjectRequest{
 		Name: projectName,

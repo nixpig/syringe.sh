@@ -3,6 +3,8 @@ package stores
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/nixpig/syringe.sh/server/pkg"
 )
 
 type ProjectStore interface {
@@ -76,6 +78,9 @@ func (s SqliteProjectStore) List() ([]string, error) {
 	`
 
 	rows, err := s.db.Query(query)
+	if err == sql.ErrNoRows {
+		return nil, pkg.ErrNoProjectsFound
+	}
 	if err != nil {
 		return nil, err
 	}

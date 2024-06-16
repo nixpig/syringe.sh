@@ -2,7 +2,7 @@ package stores
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 )
 
 type User struct {
@@ -24,7 +24,6 @@ type AppStore interface {
 	InsertUser(username, email, status string) (*User, error)
 	GetUserByUsername(username string) (*User, error)
 	DeleteUserByUsername(username string) error
-	UpdateUser(user User) (*User, error)
 	GetUserPublicKeys(username string) (*[]Key, error)
 	InsertKey(userID int, publicKey string) (*Key, error)
 }
@@ -104,34 +103,10 @@ func (s SqliteAppStore) DeleteUserByUsername(username string) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("no user deleted")
+		return fmt.Errorf("no user deleted")
 	}
 
 	return nil
-}
-
-func (s SqliteAppStore) UpdateUser(user User) (*User, error) {
-	query := `
-		update users_ set email_ = $2, set status_ = $3
-		where username_ = $1 
-		returning id_, username_, email_, status_, created_at_
-	`
-
-	row := s.appDB.QueryRow(query, user.Username, user.Email, user.Status)
-
-	var updatedUser User
-
-	if err := row.Scan(
-		&updatedUser.ID,
-		&updatedUser.Username,
-		&updatedUser.Email,
-		&updatedUser.Status,
-		&updatedUser.CreatedAt,
-	); err != nil {
-		return nil, err
-	}
-
-	return &user, nil
 }
 
 func (s SqliteAppStore) InsertKey(userID int, publicKey string) (*Key, error) {

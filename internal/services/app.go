@@ -2,7 +2,6 @@ package services
 
 import (
 	"crypto/sha1"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"github.com/nixpig/syringe.sh/server/internal/database"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 	"github.com/nixpig/syringe.sh/server/pkg/turso"
+	"github.com/rs/zerolog"
 	gossh "golang.org/x/crypto/ssh"
 )
 
@@ -82,6 +82,7 @@ type AppServiceImpl struct {
 	validate         *validator.Validate
 	httpClient       http.Client
 	tursoAPISettings TursoAPISettings
+	logger           *zerolog.Logger
 }
 
 func NewAppService(
@@ -89,12 +90,14 @@ func NewAppService(
 	validate *validator.Validate,
 	httpClient http.Client,
 	tursoAPISettings TursoAPISettings,
+	logger *zerolog.Logger,
 ) AppServiceImpl {
 	return AppServiceImpl{
 		store:            store,
 		validate:         validate,
 		httpClient:       httpClient,
 		tursoAPISettings: tursoAPISettings,
+		logger:           logger,
 	}
 }
 
@@ -184,7 +187,7 @@ func (a AppServiceImpl) CreateDatabase(
 	})
 
 	if exists != -1 {
-		return nil, errors.New("database already exists in returned list")
+		return nil, fmt.Errorf("database already exists in returned list")
 	}
 
 	createdDatabaseDetails, err := api.CreateDatabase(databaseDetails.Name, databaseDetails.DatabaseGroup)
@@ -211,9 +214,9 @@ func (a AppServiceImpl) CreateDatabase(
 	var count time.Duration
 	increment := time.Second * 5
 	timeout := time.Second * 60
-	fmt.Println("creating tables...")
+	a.logger.Info().Msg("creating tables...")
 	for err := envService.CreateTables(); err != nil; err = envService.CreateTables() {
-		fmt.Printf("sleep for %d seconds\n", increment/time.Second)
+		a.logger.Info().Msg(fmt.Sprintf("sleep for %d seconds", increment/time.Second))
 		time.Sleep(increment)
 		count = count + increment
 		if count >= timeout {

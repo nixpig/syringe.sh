@@ -3,7 +3,7 @@ package secret_test
 import (
 	"bytes"
 	"database/sql"
-	"errors"
+	"fmt"
 	"io"
 	"os"
 	"regexp"
@@ -233,7 +233,7 @@ func testSecretSetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 			"secret_key",
 			"secret_value",
 		).
-		WillReturnError(errors.New("database_error"))
+		WillReturnError(fmt.Errorf("database_error"))
 
 	err := cmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
@@ -446,7 +446,7 @@ func testSecretGetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 			"staging",
 			"secret_key",
 		).
-		WillReturnError(errors.New("database_error"))
+		WillReturnError(fmt.Errorf("database_error"))
 
 	err := cmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},

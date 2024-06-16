@@ -103,7 +103,6 @@ func newUserDBConnection(publicKey ssh.PublicKey) (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to create token:\n%s", err)
 	}
 
-	fmt.Println("creating new user-specific db connection")
 	db, err := database.Connection(
 		"libsql://"+hashedKey+"-"+os.Getenv("DATABASE_ORG")+".turso.io",
 		string(token.Jwt),

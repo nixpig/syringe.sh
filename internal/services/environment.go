@@ -10,8 +10,14 @@ type AddEnvironmentRequest struct {
 	ProjectName string `validate:"required,min=1,max=256"`
 }
 
+type RemoveEnvironmentRequest struct {
+	Name        string `validate:"required,min=1,max=256"`
+	ProjectName string `validate:"required,min=1,max=256"`
+}
+
 type EnvironmentService interface {
 	Add(environment AddEnvironmentRequest) error
+	Remove(environment RemoveEnvironmentRequest) error
 }
 
 func NewEnvironmentServiceImpl(
@@ -29,12 +35,34 @@ type EnvironmentServiceImpl struct {
 	validate *validator.Validate
 }
 
-func (e EnvironmentServiceImpl) Add(environment AddEnvironmentRequest) error {
+func (e EnvironmentServiceImpl) Add(
+	environment AddEnvironmentRequest,
+) error {
 	if err := e.validate.Struct(environment); err != nil {
 		return err
 	}
 
-	if err := e.store.Add(environment.Name, environment.ProjectName); err != nil {
+	if err := e.store.Add(
+		environment.Name,
+		environment.ProjectName,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e EnvironmentServiceImpl) Remove(
+	environment RemoveEnvironmentRequest,
+) error {
+	if err := e.validate.Struct(environment); err != nil {
+		return err
+	}
+
+	if err := e.store.Remove(
+		environment.Name,
+		environment.ProjectName,
+	); err != nil {
 		return err
 	}
 

@@ -26,6 +26,7 @@ func EnvironmentCommand() *cobra.Command {
 	}
 
 	environmentCmd.AddCommand(environmentAddCommand())
+	environmentCmd.AddCommand(environmentRemoveCommand())
 
 	return environmentCmd
 }
@@ -47,6 +48,22 @@ func environmentAddCommand() *cobra.Command {
 	return environmentAddCmd
 }
 
+func environmentRemoveCommand() *cobra.Command {
+	environmentRemoveCmd := &cobra.Command{
+		Use:     "remove [flags] ENVIRONMENT_NAME",
+		Aliases: []string{"r"},
+		Short:   "Remove an environment",
+		Example: "syringe environment remove -p my_cool_project staging",
+		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
+		RunE:    environmentRemoveRunE,
+	}
+
+	environmentRemoveCmd.Flags().StringP("project", "p", "", "Project")
+	environmentRemoveCmd.MarkFlagRequired("project")
+
+	return environmentRemoveCmd
+}
+
 func environmentAddRunE(cmd *cobra.Command, args []string) error {
 	environment := args[0]
 
@@ -55,9 +72,35 @@ func environmentAddRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	environmentService := cmd.Context().Value(environmentCtxKey).(services.EnvironmentService)
+	environmentService, ok := cmd.Context().Value(environmentCtxKey).(services.EnvironmentService)
+	if !ok {
+		return fmt.Errorf("unable to get environment service")
+	}
 
 	if err := environmentService.Add(services.AddEnvironmentRequest{
+		Name:        environment,
+		ProjectName: project,
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func environmentRemoveRunE(cmd *cobra.Command, args []string) error {
+	environment := args[0]
+
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return err
+	}
+
+	environmentService, ok := cmd.Context().Value(environmentCtxKey).(services.EnvironmentService)
+	if !ok {
+		return fmt.Errorf("unable to get environment service")
+	}
+
+	if err := environmentService.Remove(services.RemoveEnvironmentRequest{
 		Name:        environment,
 		ProjectName: project,
 	}); err != nil {

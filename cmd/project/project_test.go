@@ -3,7 +3,7 @@ package project_test
 import (
 	"bytes"
 	"database/sql"
-	"errors"
+	"fmt"
 	"io"
 	"os"
 	"regexp"
@@ -13,9 +13,14 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/nixpig/syringe.sh/server/cmd"
 	"github.com/nixpig/syringe.sh/server/cmd/project"
+	"github.com/nixpig/syringe.sh/server/pkg"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
+
+func incorrectNumberOfArgsErrorMsg(accepts, received int) string {
+	return fmt.Sprintf("Error: accepts %d arg(s), received %d\n", accepts, received)
+}
 
 func TestProjectCmd(t *testing.T) {
 	scenarios := map[string]func(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB){
@@ -41,6 +46,7 @@ func TestProjectCmd(t *testing.T) {
 		"test project rename command validation error":   testProjectRenameCmdValidationError,
 
 		"test project list command happy path":         testProjectListCmdHappyPath,
+		"test project list command zero results":       testProjectListCmdZeroResults,
 		"test project list command database error":     testProjectListCmdDatabaseError,
 		"test project list command with too many args": testProjectListCmdWithTooManyArgs,
 	}
@@ -64,17 +70,25 @@ func testProjectAddCmdWithNoArgs(
 ) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "add"},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from err out")
+	}
+
+	require.Equal(t, incorrectNumberOfArgsErrorMsg(1, 0), string(out))
 }
 
 func testProjectAddCmdWithTooManyArgs(
@@ -84,17 +98,25 @@ func testProjectAddCmdWithTooManyArgs(
 ) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "add", "foo", "bar"},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from err out")
+	}
+
+	require.Equal(t, incorrectNumberOfArgsErrorMsg(1, 2), string(out))
 }
 
 func testProjectAddCommandHappyPath(
@@ -146,7 +168,7 @@ func testProjectAddCmdDatabaseError(
 	mock.ExpectExec(regexp.QuoteMeta(`
 		insert into projects_ (name_) values ($name)
 	`)).WithArgs("my_cool_project").
-		WillReturnError(errors.New("database_error"))
+		WillReturnError(fmt.Errorf("database_error"))
 
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
@@ -193,17 +215,25 @@ func testProjectRemoveCmdWithNoArgs(
 ) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "remove"},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from err out")
+	}
+
+	require.Equal(t, incorrectNumberOfArgsErrorMsg(1, 0), string(out))
 }
 
 func testProjectRemoveCmdWithTooManyArgs(
@@ -213,17 +243,25 @@ func testProjectRemoveCmdWithTooManyArgs(
 ) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "remove", "foo", "bar"},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from err out")
+	}
+
+	require.Equal(t, incorrectNumberOfArgsErrorMsg(1, 2), string(out))
 }
 
 func testProjectRemoveCmdDatabaseError(
@@ -236,7 +274,7 @@ func testProjectRemoveCmdDatabaseError(
 
 	mock.ExpectExec(regexp.QuoteMeta(`
 		delete from projects_ where name_ = $name
-	`)).WillReturnError(errors.New("database_error"))
+	`)).WillReturnError(fmt.Errorf("database_error"))
 
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
@@ -261,7 +299,7 @@ func testProjectRemoveCmdRowError(
 
 	mock.ExpectExec(regexp.QuoteMeta(`
 		delete from projects_ where name_ = $name
-	`)).WillReturnResult(sqlmock.NewErrorResult(errors.New("rows_error")))
+	`)).WillReturnResult(sqlmock.NewErrorResult(fmt.Errorf("rows_error")))
 
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
@@ -342,77 +380,123 @@ func testProjectRenameCmdHappyPath(
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func testProjectRenameCmdWithNoArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+func testProjectRenameCmdWithNoArgs(
+	t *testing.T,
+	mock sqlmock.Sqlmock,
+	db *sql.DB,
+) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "rename"},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from err out")
+	}
+
+	require.Equal(t, incorrectNumberOfArgsErrorMsg(2, 0), string(out))
 }
 
-func testProjectRenameCmdWithTooFewArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+func testProjectRenameCmdWithTooFewArgs(
+	t *testing.T,
+	mock sqlmock.Sqlmock,
+	db *sql.DB,
+) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "rename", "foo"},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from err out")
+	}
+
+	require.Equal(t, incorrectNumberOfArgsErrorMsg(2, 1), string(out))
 }
 
-func testProjectRenameCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+func testProjectRenameCmdWithTooManyArgs(
+	t *testing.T,
+	mock sqlmock.Sqlmock,
+	db *sql.DB,
+) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "rename", "foo", "bar", "baz"},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from err out")
+	}
+
+	require.Equal(t, incorrectNumberOfArgsErrorMsg(2, 3), string(out))
 }
 
-func testProjectRenameCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+func testProjectRenameCmdDatabaseError(
+	t *testing.T,
+	mock sqlmock.Sqlmock,
+	db *sql.DB,
+) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	mock.ExpectExec(regexp.QuoteMeta(`
 			update projects_ set name_ = $newName where name_ = $originalName
 	`)).WithArgs("my_cool_project", "my_awesome_project").
-		WillReturnError(errors.New("database_error"))
+		WillReturnError(fmt.Errorf("database_error"))
 
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "rename", "my_cool_project", "my_awesome_project"},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func testProjectListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+func testProjectListCmdHappyPath(
+	t *testing.T,
+	mock sqlmock.Sqlmock,
+	db *sql.DB,
+) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
@@ -447,13 +531,42 @@ func testProjectListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func testProjectListCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+func testProjectListCmdZeroResults(
+	t *testing.T,
+	mock sqlmock.Sqlmock,
+	db *sql.DB,
+) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
 	mock.
 		ExpectQuery(regexp.QuoteMeta(`select name_ from projects_`)).
-		WillReturnError(errors.New("database_error"))
+		WillReturnError(sql.ErrNoRows)
+
+	err := cmd.Execute(
+		[]*cobra.Command{project.ProjectCommand()},
+		[]string{"project", "list"},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.ErrorIs(t, err, pkg.ErrNoProjectsFound)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testProjectListCmdDatabaseError(
+	t *testing.T,
+	mock sqlmock.Sqlmock,
+	db *sql.DB,
+) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(`select name_ from projects_`)).
+		WillReturnError(fmt.Errorf("database_error"))
 
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
@@ -468,7 +581,11 @@ func testProjectListCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func testProjectListCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+func testProjectListCmdWithTooManyArgs(
+	t *testing.T,
+	mock sqlmock.Sqlmock,
+	db *sql.DB,
+) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
@@ -484,7 +601,11 @@ func testProjectListCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *s
 	require.Error(t, err)
 }
 
-func testProjectAddCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+func testProjectAddCmdValidationError(
+	t *testing.T,
+	mock sqlmock.Sqlmock,
+	db *sql.DB,
+) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
@@ -521,7 +642,11 @@ func testProjectAddCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sq
 	require.Error(t, err)
 }
 
-func testProjectRemoveCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+func testProjectRemoveCmdValidationError(
+	t *testing.T,
+	mock sqlmock.Sqlmock,
+	db *sql.DB,
+) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
@@ -558,7 +683,11 @@ func testProjectRemoveCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db 
 	require.Error(t, err)
 }
 
-func testProjectRenameCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+func testProjectRenameCmdValidationError(
+	t *testing.T,
+	mock sqlmock.Sqlmock,
+	db *sql.DB,
+) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
