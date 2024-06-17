@@ -23,9 +23,10 @@ func Execute(
 	db *sql.DB,
 ) error {
 	rootCmd := &cobra.Command{
-		Use:   "syringe",
-		Short: "Distributed environment variable management over SSH.",
-		Long:  "Distributed environment variable management over SSH.",
+		Use:           "syringe",
+		Short:         "Distributed environment variable management over SSH.",
+		Long:          "Distributed environment variable management over SSH.",
+		SilenceErrors: true,
 	}
 
 	for _, command := range commands {
@@ -60,7 +61,7 @@ func Execute(
 	// })
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
-		return err
+		return pkg.FormattedError{Err: err}
 	}
 
 	return nil

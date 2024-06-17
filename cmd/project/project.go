@@ -62,6 +62,8 @@ func projectAddRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	cmd.Println("Project added successfully")
+
 	return nil
 }
 
@@ -88,6 +90,8 @@ func projectRemoveRunE(cmd *cobra.Command, args []string) error {
 	}); err != nil {
 		return err
 	}
+
+	cmd.Println("Project removed successfully")
 
 	return nil
 }
@@ -118,6 +122,8 @@ func projectRenameRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	cmd.Println("Project renamed successfully.")
+
 	return nil
 }
 
@@ -143,8 +149,8 @@ func projectListRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(projects) == 0 {
-		cmd.Println("No projects found!")
-		cmd.Println("Try adding one with `syringe project add PROJECT_NAME`")
+		cmd.Println("No projects found")
+		cmd.Println("Try adding one with 'syringe project'")
 		return nil
 	}
 

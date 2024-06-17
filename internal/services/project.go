@@ -1,21 +1,23 @@
 package services
 
 import (
+	"reflect"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 )
 
 type AddProjectRequest struct {
-	Name string `validate:"required,min=1,max=256"`
+	Name string `name:"project" validate:"required,min=1,max=256"`
 }
 
 type RemoveProjectRequest struct {
-	Name string `validate:"required,min=1,max=256"`
+	Name string `name:"project name" validate:"required,min=1,max=256"`
 }
 
 type RenameProjectRequest struct {
-	Name    string `validate:"required,min=1,max=256"`
-	NewName string `validate:"required,min=1,max=256"`
+	Name    string `name:"project" validate:"required,min=1,max=256"`
+	NewName string `name:"new project name" validate:"required,min=1,max=256"`
 }
 
 type ProjectService interface {
@@ -29,6 +31,10 @@ func NewProjectServiceImpl(
 	store stores.ProjectStore,
 	validate *validator.Validate,
 ) ProjectService {
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		return fld.Tag.Get("name")
+	})
+
 	return ProjectServiceImpl{
 		store:    store,
 		validate: validate,
