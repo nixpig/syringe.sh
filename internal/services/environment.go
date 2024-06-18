@@ -1,24 +1,26 @@
 package services
 
 import (
+	"reflect"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 )
 
 type AddEnvironmentRequest struct {
-	Name        string `validate:"required,min=1,max=256"`
-	ProjectName string `validate:"required,min=1,max=256"`
+	Name        string `name:"environment name" validate:"required,min=1,max=256"`
+	ProjectName string `name:"project name" validate:"required,min=1,max=256"`
 }
 
 type RemoveEnvironmentRequest struct {
-	Name        string `validate:"required,min=1,max=256"`
-	ProjectName string `validate:"required,min=1,max=256"`
+	Name        string `name:"environment name" validate:"required,min=1,max=256"`
+	ProjectName string `name:"project name" validate:"required,min=1,max=256"`
 }
 
 type RenameEnvironmentRequest struct {
-	Name        string `validate:"required,min=1,max=256"`
-	NewName     string `validate:"required,min=1,max=256"`
-	ProjectName string `validate:"required,min=1,max=256"`
+	Name        string `name:"environment name" validate:"required,min=1,max=256"`
+	NewName     string `name:"new environment name" validate:"required,min=1,max=256"`
+	ProjectName string `name:"project name" validate:"required,min=1,max=256"`
 }
 
 type EnvironmentService interface {
@@ -31,9 +33,13 @@ func NewEnvironmentServiceImpl(
 	store stores.EnvironmentStore,
 	validate *validator.Validate,
 ) EnvironmentService {
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		return fld.Tag.Get("name")
+	})
+
 	return EnvironmentServiceImpl{
 		store:    store,
-		validate: validator.New(validator.WithRequiredStructEnabled()),
+		validate: validate,
 	}
 }
 

@@ -50,11 +50,11 @@ func TestEnvironmentCmd(t *testing.T) {
 		"test environment remove command validation error":     testEnvironmentRemoveCmdValidationError,
 
 		"test environment rename command happy path":           testEnvironmentRenameCmdHappyPath,
+		"test environment rename command database error":       testEnvironmentRenameCmdDatabaseError,
+		"test environment rename command validation errors":    testEnvironmentRenameCmdValidationError,
 		"test environment rename command missing project flag": testEnvironmentRenameCmdMissingProjectFlag,
 		"test environment rename command with no args":         testEnvironmentRenameCmdWithNoArgs,
 		"test environment rename command with too many args":   testEnvironmentRenameCmdWithTooManyArgs,
-		"test environment rename command database error":       testEnvironmentRenameCmdDatabaseError,
-		"test environment rename command validation errors":    testEnvironmentRenameCmdValidationError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -602,10 +602,43 @@ func testEnvironmentRenameCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, d
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
+func testEnvironmentRenameCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	// cmdIn := bytes.NewReader([]byte{})
+	// cmdOut := bytes.NewBufferString("")
+	// errOut := bytes.NewBufferString("")
+	//
+	// err := cmd.Execute(
+	// 	[]*cobra.Command{environment.EnvironmentCommand()},
+	// 	[]string{
+	// 		"environment",
+	// 		"rename",
+	// 		"-p",
+	// 		"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+	// 		"current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_",
+	// 		"new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_",
+	// 	},
+	// 	cmdIn,
+	// 	cmdOut,
+	// 	errOut,
+	// 	db,
+	// )
+	//
+	// require.Error(t, err)
+	//
+	// out, err := io.ReadAll(errOut)
+	// if err != nil {
+	// 	t.Errorf("failed to read from out")
+	// }
+	//
+	// require.Equal(
+	// 	t,
+	// 	errorMsg("some validation error"),
+	// 	string(out),
+	// )
+}
+
 func testEnvironmentRenameCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {}
 
 func testEnvironmentRenameCmdWithNoArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {}
 
 func testEnvironmentRenameCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {}
-
-func testEnvironmentRenameCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {}

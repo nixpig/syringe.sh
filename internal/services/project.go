@@ -8,7 +8,7 @@ import (
 )
 
 type AddProjectRequest struct {
-	Name string `name:"project" validate:"required,min=1,max=256"`
+	Name string `name:"project name" validate:"required,min=1,max=256"`
 }
 
 type RemoveProjectRequest struct {
@@ -16,7 +16,7 @@ type RemoveProjectRequest struct {
 }
 
 type RenameProjectRequest struct {
-	Name    string `name:"project" validate:"required,min=1,max=256"`
+	Name    string `name:"project name" validate:"required,min=1,max=256"`
 	NewName string `name:"new project name" validate:"required,min=1,max=256"`
 }
 

@@ -167,8 +167,9 @@ func initEnvironmentContext(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unable to get database from context")
 	}
 
-	environmentStore := stores.NewSqliteEnvironmentStore(db)
-	environmentService := services.NewEnvironmentServiceImpl(environmentStore, validator.New(validator.WithRequiredStructEnabled()))
+	environmentService := services.NewEnvironmentServiceImpl(
+		stores.NewSqliteEnvironmentStore(db),
+		validator.New(validator.WithRequiredStructEnabled()))
 
 	ctx = context.WithValue(ctx, environmentCtxKey, environmentService)
 

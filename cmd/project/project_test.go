@@ -29,6 +29,10 @@ func renamedSuccessMsg(name, newName string) string {
 	return fmt.Sprintf("Project '%s' renamed to '%s'\n", name, newName)
 }
 
+func errorMsg(e string) string {
+	return fmt.Sprintf("Error: %s\n", e)
+}
+
 func TestProjectCmd(t *testing.T) {
 	scenarios := map[string]func(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB){
 		"test project add command happy path":         testProjectAddCommandHappyPath,
@@ -613,6 +617,7 @@ func testProjectAddCmdValidationError(
 ) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	var err error
 
@@ -621,30 +626,26 @@ func testProjectAddCmdValidationError(
 		[]string{
 			"project",
 			"add",
-			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+			"mmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projecty_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
 
-	err = cmd.Execute(
-		[]*cobra.Command{project.ProjectCommand()},
-		[]string{
-			"project",
-			"add",
-			"",
-		},
-		cmdIn,
-		cmdOut,
-		os.Stderr,
-		db,
-	)
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from out")
+	}
 
-	require.Error(t, err)
+	require.Equal(
+		t,
+		errorMsg("validation error in here"),
+		string(out),
+	)
 }
 
 func testProjectRemoveCmdValidationError(
@@ -720,7 +721,7 @@ func testProjectRenameCmdValidationError(
 			"project",
 			"rename",
 			"",
-			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
 		},
 		cmdIn,
 		cmdOut,
