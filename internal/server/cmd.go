@@ -44,7 +44,7 @@ func cobraHandler(s Server) func(next ssh.Handler) ssh.Handler {
 					Any("command", sess.Command()).
 					Msg("failed to execute command")
 
-				sess.Stderr().Write([]byte(fmt.Errorf("Error: %w", err).Error()))
+				sess.Stderr().Write([]byte(fmt.Sprintf("Error: %s", err)))
 			}
 
 			next(sess)

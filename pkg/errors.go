@@ -20,11 +20,11 @@ func (fe FormattedError) Error() string {
 }
 
 func formatError(err error) error {
-	switch err.(type) {
+	switch t := err.(type) {
 	case validator.ValidationErrors:
 		var errs []error
 
-		for _, e := range err.(validator.ValidationErrors) {
+		for _, e := range t {
 			switch tag := e.Tag(); tag {
 			case "max":
 				errs = append(errs, fmt.Errorf(
