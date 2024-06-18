@@ -14,8 +14,8 @@ type Environment struct {
 type EnvironmentStore interface {
 	Add(name, projectName string) error
 	Remove(name, projectName string) error
+	Rename(originalName, newName, projectName string) error
 	// get all (for project id/name)
-	// rename
 }
 
 type SqliteEnvironmentStore struct {
@@ -74,6 +74,43 @@ func (s SqliteEnvironmentStore) Remove(name, projectName string) error {
 
 	if rows == 0 {
 		fmt.Println("done fucked up!")
+	}
+
+	return nil
+}
+
+func (s SqliteEnvironmentStore) Rename(originalName, newName, projectName string) error {
+	query := `
+		update environments_ set name_ = $newName
+		where name_ = $originalName 
+		and id_ in (
+			select e.id_ from environments_ e
+			inner join
+			projects_ p
+			on e.project_id_ = p.id_
+			where p.name_ = $projectName
+			and e.name_ = $originalName
+		)
+	`
+
+	res, err := s.db.Exec(
+		query,
+		sql.Named("originalName", originalName),
+		sql.Named("newName", newName),
+		sql.Named("projectName", projectName),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("done fucked it")
 	}
 
 	return nil

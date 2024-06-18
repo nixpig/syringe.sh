@@ -81,7 +81,10 @@ func projectRemoveCommand() *cobra.Command {
 func projectRemoveRunE(cmd *cobra.Command, args []string) error {
 	projectName := args[0]
 
-	projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+	projectService, ok := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+	if !ok {
+		return fmt.Errorf("unable to get project service from context")
+	}
 
 	if err := projectService.Remove(services.RemoveProjectRequest{
 		Name: projectName,
@@ -97,7 +100,7 @@ func projectRemoveRunE(cmd *cobra.Command, args []string) error {
 func projectRenameCommand() *cobra.Command {
 	projectRenameCmd := &cobra.Command{
 		Use:     "rename [flags] CURRENT_PROJECT_NAME NEW_PROJECT_NAME",
-		Aliases: []string{"r"},
+		Aliases: []string{"u"},
 		Short:   "Rename a project",
 		Example: "syringe project rename my_cool_project my_awesome_project",
 		Args:    cobra.MatchAll(cobra.ExactArgs(2)),
@@ -111,7 +114,10 @@ func projectRenameRunE(cmd *cobra.Command, args []string) error {
 	name := args[0]
 	newName := args[1]
 
-	projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+	projectService, ok := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+	if !ok {
+		return fmt.Errorf("unable to get project service from context")
+	}
 
 	if err := projectService.Rename(services.RenameProjectRequest{
 		Name:    name,
@@ -139,7 +145,10 @@ func projectListCommand() *cobra.Command {
 }
 
 func projectListRunE(cmd *cobra.Command, args []string) error {
-	projectService := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+	projectService, ok := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+	if !ok {
+		return fmt.Errorf("unable to get project service from context")
+	}
 
 	projects, err := projectService.List()
 	if err != nil {

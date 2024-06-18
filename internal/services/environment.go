@@ -15,9 +15,16 @@ type RemoveEnvironmentRequest struct {
 	ProjectName string `validate:"required,min=1,max=256"`
 }
 
+type RenameEnvironmentRequest struct {
+	Name        string `validate:"required,min=1,max=256"`
+	NewName     string `validate:"required,min=1,max=256"`
+	ProjectName string `validate:"required,min=1,max=256"`
+}
+
 type EnvironmentService interface {
 	Add(environment AddEnvironmentRequest) error
 	Remove(environment RemoveEnvironmentRequest) error
+	Rename(environment RenameEnvironmentRequest) error
 }
 
 func NewEnvironmentServiceImpl(
@@ -61,6 +68,24 @@ func (e EnvironmentServiceImpl) Remove(
 
 	if err := e.store.Remove(
 		environment.Name,
+		environment.ProjectName,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e EnvironmentServiceImpl) Rename(
+	environment RenameEnvironmentRequest,
+) error {
+	if err := e.validate.Struct(environment); err != nil {
+		return err
+	}
+
+	if err := e.store.Rename(
+		environment.Name,
+		environment.NewName,
 		environment.ProjectName,
 	); err != nil {
 		return err

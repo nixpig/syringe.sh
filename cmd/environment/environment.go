@@ -27,6 +27,7 @@ func EnvironmentCommand() *cobra.Command {
 
 	environmentCmd.AddCommand(environmentAddCommand())
 	environmentCmd.AddCommand(environmentRemoveCommand())
+	environmentCmd.AddCommand(environmentRenameCommand())
 
 	return environmentCmd
 }
@@ -41,7 +42,8 @@ func environmentAddCommand() *cobra.Command {
 		RunE:    environmentAddRunE,
 	}
 
-	environmentAddCmd.Flags().StringP("project", "p", "", "Project")
+	environmentAddCmd.Flags().StringP("project", "p", "", "Project name")
+	environmentAddCmd.MarkFlagRequired("project")
 
 	environmentAddCmd.MarkFlagRequired("project")
 
@@ -58,7 +60,7 @@ func environmentRemoveCommand() *cobra.Command {
 		RunE:    environmentRemoveRunE,
 	}
 
-	environmentRemoveCmd.Flags().StringP("project", "p", "", "Project")
+	environmentRemoveCmd.Flags().StringP("project", "p", "", "Project name")
 	environmentRemoveCmd.MarkFlagRequired("project")
 
 	return environmentRemoveCmd
@@ -110,6 +112,49 @@ func environmentRemoveRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	cmd.Println(fmt.Sprintf("Environment '%s' removed from project '%s'", environmentName, project))
+
+	return nil
+}
+
+func environmentRenameCommand() *cobra.Command {
+	environmentRenameCmd := &cobra.Command{
+		Use:     "rename [flags] CURRENT_ENVIRONMENT_NAME NEW_ENVIRONMENT_NAME",
+		Aliases: []string{"u"},
+		Short:   "Rename an environment",
+		Example: "syringe environment rename -p my_cool_project staging prod",
+		Args:    cobra.MatchAll(cobra.ExactArgs(2)),
+		RunE:    environmentRenameE,
+	}
+
+	environmentRenameCmd.Flags().StringP("project", "p", "", "Project name")
+	environmentRenameCmd.MarkFlagRequired("project")
+
+	return environmentRenameCmd
+}
+
+func environmentRenameE(cmd *cobra.Command, args []string) error {
+	name := args[0]
+	newName := args[1]
+
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return err
+	}
+
+	environmentService, ok := cmd.Context().Value(environmentCtxKey).(services.EnvironmentService)
+	if !ok {
+		return fmt.Errorf("unable to get environment service")
+	}
+
+	if err := environmentService.Rename(services.RenameEnvironmentRequest{
+		Name:        name,
+		NewName:     newName,
+		ProjectName: project,
+	}); err != nil {
+		return err
+	}
+
+	cmd.Println(fmt.Sprintf("Environment '%s' renamed to '%s' in project '%s'", name, newName, project))
 
 	return nil
 }

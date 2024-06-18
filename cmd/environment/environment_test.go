@@ -24,6 +24,10 @@ func removedSuccessMsg(environment, project string) string {
 	return fmt.Sprintf("Environment '%s' removed from project '%s'\n", environment, project)
 }
 
+func renamedSuccessMsg(name, newName, project string) string {
+	return fmt.Sprintf("Environment '%s' renamed to '%s' in project '%s'\n", name, newName, project)
+}
+
 func TestEnvironmentCmd(t *testing.T) {
 	scenarios := map[string]func(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB){
 		"test environment add command happy path":           testEnvironmentAddCmdHappyPath,
@@ -39,6 +43,8 @@ func TestEnvironmentCmd(t *testing.T) {
 		"test environment remove command with too many args":   testEnvironmentRemoveCmdWithTooManyArgs,
 		"test environment remove command database error":       testEnvironmentRemoveCmdDatabaseError,
 		"test environment remove command validation error":     testEnvironmentRemoveCmdValidationError,
+
+		"test environment rename command happy path": testEnvironmentRenameCmdHappyPath,
 	}
 
 	for scenario, fn := range scenarios {
@@ -475,6 +481,59 @@ func testEnvironmentRemoveCmdValidationError(t *testing.T, mock sqlmock.Sqlmock,
 	)
 
 	require.Error(t, err)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testEnvironmentRenameCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	mock.ExpectExec(regexp.QuoteMeta(`
+		update environments_ set name_ = $newName
+		where name_ = $originalName 
+		and id_ in (
+			select e.id_ from environments_ e
+			inner join
+			projects_ p
+			on e.project_id_ = p.id_
+			where p.name_ = $projectName
+			and e.name_ = $originalName
+		)
+	`)).WithArgs(
+		"staging",
+		"prod",
+		"my_cool_project",
+	).WillReturnResult(sqlmock.NewResult(23, 1))
+
+	err := cmd.Execute(
+		[]*cobra.Command{environment.EnvironmentCommand()},
+		[]string{
+			"environment",
+			"rename",
+			"-p",
+			"my_cool_project",
+			"staging",
+			"prod",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.NoError(t, err)
+
+	out, err := io.ReadAll(cmdOut)
+	if err != nil {
+		t.Errorf("failed to read from out")
+	}
+
+	require.Equal(
+		t,
+		renamedSuccessMsg("staging", "prod", "my_cool_project"),
+		string(out),
+	)
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }

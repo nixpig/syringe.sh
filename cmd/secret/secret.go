@@ -42,11 +42,12 @@ func secretSetCommand() *cobra.Command {
 	}
 
 	secretSetCmd.Flags().StringP("project", "p", "", "Project to use")
-	secretSetCmd.Flags().StringP("environment", "e", "", "Environment to use")
-	secretSetCmd.Flags().BoolP("secret", "s", false, "Is secret?")
-
 	secretSetCmd.MarkFlagRequired("project")
+
+	secretSetCmd.Flags().StringP("environment", "e", "", "Environment to use")
 	secretSetCmd.MarkFlagRequired("environment")
+
+	secretSetCmd.Flags().BoolP("secret", "s", false, "Is secret?")
 
 	return secretSetCmd
 }
@@ -90,11 +91,12 @@ func secretGetCommand() *cobra.Command {
 	}
 
 	secretGetCmd.Flags().StringP("project", "p", "", "Project")
-	secretGetCmd.Flags().StringP("environment", "e", "", "Environment")
-	secretGetCmd.Flags().BoolP("secret", "s", false, "Is secret?")
-
 	secretGetCmd.MarkFlagRequired("project")
+
+	secretGetCmd.Flags().StringP("environment", "e", "", "Environment")
 	secretGetCmd.MarkFlagRequired("environment")
+
+	secretGetCmd.Flags().BoolP("secret", "s", false, "Is secret?")
 
 	return secretGetCmd
 }

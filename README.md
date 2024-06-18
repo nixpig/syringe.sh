@@ -7,6 +7,10 @@
 >
 > **⚠️ SOME OR ALL OF THE FUNCTIONALITY HERE MAY NOT ACTUALLY WORK AS DOCUMENTED, OR EVEN AT ALL**
 
+## TODO
+
+- [ ] Improve errors/messaging
+
 ## Proposed usage
 
 `syringe` executed without a subcommand should connect to a TUI.
@@ -24,15 +28,15 @@ Manage your projects.
 
 Manage your environments.
 
-- [ ] `syringe environment add [-p <project>] <name>`
-- [ ] `syringe environment remove [-p <project>] <name>`
-- [ ] `syringe environment list [-p <project>]`
+- [x] `syringe environment add [-p <project>] <name>`
+- [x] `syringe environment remove [-p <project>] <name>`
 - [ ] `syringe environment rename [-p <project>] <old name> <new name>`
+- [ ] `syringe environment list [-p <project>]`
 
 Manage your secrets.
 
-- [ ] `syringe secret set [-p <project> -e <environment>] <key> <value>`
-- [ ] `syringe secret get [-p <project> -e <environment>] <key>`
+- [x] `syringe secret set [-p <project> -e <environment>] <key> <value>`
+- [x] `syringe secret get [-p <project> -e <environment>] <key>`
 - [ ] `syringe secret remove [-p <project> -e <environment>] <key>`
 - [ ] `syringe secret list [-p <project> -e <environment>]`
 
@@ -59,8 +63,6 @@ Manage your user account(s).
 
 - [ ] `syringe user register [-u <username>]`
 - [ ] `syringe user delete [-u <username>]`
-
-### `secret`
 
 ### `key`
 
