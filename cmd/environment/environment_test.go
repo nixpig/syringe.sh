@@ -3,6 +3,7 @@ package environment_test
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -28,6 +29,10 @@ func renamedSuccessMsg(name, newName, project string) string {
 	return fmt.Sprintf("Environment '%s' renamed to '%s' in project '%s'\n", name, newName, project)
 }
 
+func errorMsg(e string) string {
+	return fmt.Sprintf("Error: %s\n", e)
+}
+
 func TestEnvironmentCmd(t *testing.T) {
 	scenarios := map[string]func(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB){
 		"test environment add command happy path":           testEnvironmentAddCmdHappyPath,
@@ -44,7 +49,12 @@ func TestEnvironmentCmd(t *testing.T) {
 		"test environment remove command database error":       testEnvironmentRemoveCmdDatabaseError,
 		"test environment remove command validation error":     testEnvironmentRemoveCmdValidationError,
 
-		"test environment rename command happy path": testEnvironmentRenameCmdHappyPath,
+		"test environment rename command happy path":           testEnvironmentRenameCmdHappyPath,
+		"test environment rename command missing project flag": testEnvironmentRenameCmdMissingProjectFlag,
+		"test environment rename command with no args":         testEnvironmentRenameCmdWithNoArgs,
+		"test environment rename command with too many args":   testEnvironmentRenameCmdWithTooManyArgs,
+		"test environment rename command database error":       testEnvironmentRenameCmdDatabaseError,
+		"test environment rename command validation errors":    testEnvironmentRenameCmdValidationError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -537,3 +547,65 @@ func testEnvironmentRenameCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *s
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
+
+func testEnvironmentRenameCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	mock.ExpectExec(regexp.QuoteMeta(`
+		update environments_ set name_ = $newName
+		where name_ = $originalName 
+		and id_ in (
+			select e.id_ from environments_ e
+			inner join
+			projects_ p
+			on e.project_id_ = p.id_
+			where p.name_ = $projectName
+			and e.name_ = $originalName
+		)
+	`)).WithArgs(
+		"staging",
+		"prod",
+		"my_cool_project",
+	).WillReturnError(errors.New("database_error"))
+
+	err := cmd.Execute(
+		[]*cobra.Command{environment.EnvironmentCommand()},
+		[]string{
+			"environment",
+			"rename",
+			"-p",
+			"my_cool_project",
+			"staging",
+			"prod",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.EqualError(t, err, "database_error")
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from out")
+	}
+
+	require.Equal(
+		t,
+		errorMsg("database_error"),
+		string(out),
+	)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testEnvironmentRenameCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {}
+
+func testEnvironmentRenameCmdWithNoArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {}
+
+func testEnvironmentRenameCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {}
+
+func testEnvironmentRenameCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {}
