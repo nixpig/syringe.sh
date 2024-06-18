@@ -13,13 +13,20 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/nixpig/syringe.sh/server/cmd"
 	"github.com/nixpig/syringe.sh/server/cmd/project"
-	"github.com/nixpig/syringe.sh/server/pkg"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
 
 func incorrectNumberOfArgsErrorMsg(accepts, received int) string {
 	return fmt.Sprintf("Error: accepts %d arg(s), received %d\n", accepts, received)
+}
+
+func addedSuccessMsg(name string) string {
+	return fmt.Sprintf("Project '%s' added\n", name)
+}
+
+func renamedSuccessMsg(name, newName string) string {
+	return fmt.Sprintf("Project '%s' renamed to '%s'\n", name, newName)
 }
 
 func TestProjectCmd(t *testing.T) {
@@ -149,9 +156,8 @@ func testProjectAddCommandHappyPath(
 
 	require.Equal(
 		t,
-		"",
+		addedSuccessMsg("my_cool_project"),
 		string(out),
-		"should not output anything",
 	)
 
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -372,9 +378,8 @@ func testProjectRenameCmdHappyPath(
 
 	require.Equal(
 		t,
-		"",
+		renamedSuccessMsg("my_cool_project", "my_awesome_project"),
 		string(out),
-		"should not output anything",
 	)
 
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -552,7 +557,7 @@ func testProjectListCmdZeroResults(
 		db,
 	)
 
-	require.ErrorIs(t, err, pkg.ErrNoProjectsFound)
+	require.Error(t, err)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 

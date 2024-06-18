@@ -12,8 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type contextKey string
-
 const (
 	dbCtxKey      = pkg.DBCtxKey
 	projectCtxKey = pkg.ProjectCtxKey
@@ -62,7 +60,7 @@ func projectAddRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cmd.Println("Project added successfully")
+	cmd.Println(fmt.Sprintf("Project '%s' added", projectName))
 
 	return nil
 }
@@ -91,7 +89,7 @@ func projectRemoveRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cmd.Println("Project removed successfully")
+	cmd.Println(fmt.Sprintf("Project '%s' removed\n", projectName))
 
 	return nil
 }
@@ -122,7 +120,7 @@ func projectRenameRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cmd.Println("Project renamed successfully.")
+	cmd.Println(fmt.Sprintf("Project '%s' renamed to '%s'", name, newName))
 
 	return nil
 }
@@ -149,9 +147,7 @@ func projectListRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(projects) == 0 {
-		cmd.Println("No projects found")
-		cmd.Println("Try adding one with 'syringe project'")
-		return nil
+		return fmt.Errorf("no projects found")
 	}
 
 	for _, project := range projects {

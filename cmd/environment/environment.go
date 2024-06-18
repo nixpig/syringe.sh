@@ -65,7 +65,7 @@ func environmentRemoveCommand() *cobra.Command {
 }
 
 func environmentAddRunE(cmd *cobra.Command, args []string) error {
-	environment := args[0]
+	environmentName := args[0]
 
 	project, err := cmd.Flags().GetString("project")
 	if err != nil {
@@ -78,17 +78,19 @@ func environmentAddRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := environmentService.Add(services.AddEnvironmentRequest{
-		Name:        environment,
+		Name:        environmentName,
 		ProjectName: project,
 	}); err != nil {
 		return err
 	}
 
+	cmd.Println(fmt.Sprintf("Environment '%s' added to project '%s'", environmentName, project))
+
 	return nil
 }
 
 func environmentRemoveRunE(cmd *cobra.Command, args []string) error {
-	environment := args[0]
+	environmentName := args[0]
 
 	project, err := cmd.Flags().GetString("project")
 	if err != nil {
@@ -101,11 +103,13 @@ func environmentRemoveRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := environmentService.Remove(services.RemoveEnvironmentRequest{
-		Name:        environment,
+		Name:        environmentName,
 		ProjectName: project,
 	}); err != nil {
 		return err
 	}
+
+	cmd.Println(fmt.Sprintf("Environment '%s' removed from project '%s'", environmentName, project))
 
 	return nil
 }

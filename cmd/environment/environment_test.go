@@ -16,6 +16,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func addedSuccessMsg(environment, project string) string {
+	return fmt.Sprintf("Environment '%s' added to project '%s'\n", environment, project)
+}
+
+func removedSuccessMsg(environment, project string) string {
+	return fmt.Sprintf("Environment '%s' removed from project '%s'\n", environment, project)
+}
+
 func TestEnvironmentCmd(t *testing.T) {
 	scenarios := map[string]func(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB){
 		"test environment add command happy path":           testEnvironmentAddCmdHappyPath,
@@ -82,9 +90,8 @@ func testEnvironmentAddCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.
 
 	require.Equal(
 		t,
-		"",
+		addedSuccessMsg("staging", "my_cool_project"),
 		string(out),
-		"should not output anything",
 	)
 
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -321,9 +328,8 @@ func testEnvironmentRemoveCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *s
 
 	require.Equal(
 		t,
-		"",
+		removedSuccessMsg("staging", "my_cool_project"),
 		string(out),
-		"should not output anything",
 	)
 
 	require.NoError(t, mock.ExpectationsWereMet())
