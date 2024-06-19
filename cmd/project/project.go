@@ -92,7 +92,7 @@ func projectRemoveRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cmd.Println(fmt.Sprintf("Project '%s' removed\n", projectName))
+	cmd.Println(fmt.Sprintf("Project '%s' removed", projectName))
 
 	return nil
 }

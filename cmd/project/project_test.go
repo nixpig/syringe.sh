@@ -25,8 +25,16 @@ func addedSuccessMsg(name string) string {
 	return fmt.Sprintf("Project '%s' added\n", name)
 }
 
+func removedSuccessMsg(name string) string {
+	return fmt.Sprintf("Project '%s' removed\n", name)
+}
+
 func renamedSuccessMsg(name, newName string) string {
 	return fmt.Sprintf("Project '%s' renamed to '%s'\n", name, newName)
+}
+
+func maxLengthValidationErrorMsg(field string, length int) string {
+	return fmt.Sprintf("Error: \"%s\" exceeds max length of %d characters\n", field, length)
 }
 
 func errorMsg(e string) string {
@@ -174,6 +182,7 @@ func testProjectAddCmdDatabaseError(
 ) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	mock.ExpectExec(regexp.QuoteMeta(`
 		insert into projects_ (name_) values ($name)
@@ -185,11 +194,23 @@ func testProjectAddCmdDatabaseError(
 		[]string{"project", "add", "my_cool_project"},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("unable to read from err out")
+	}
+
+	require.Equal(
+		t,
+		errorMsg("database_error"),
+		string(out),
+	)
+
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -215,6 +236,14 @@ func testProjectRemoveCmdHappyPath(
 	)
 
 	require.NoError(t, err)
+
+	out, err := io.ReadAll(cmdOut)
+	if err != nil {
+		t.Error("failed to read from cmd out")
+	}
+
+	require.Equal(t, removedSuccessMsg("my_cool_project"), string(out))
+
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -281,6 +310,7 @@ func testProjectRemoveCmdDatabaseError(
 ) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	mock.ExpectExec(regexp.QuoteMeta(`
 		delete from projects_ where name_ = $name
@@ -291,11 +321,19 @@ func testProjectRemoveCmdDatabaseError(
 		[]string{"project", "remove", "my_cool_project"},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("unable to read from err out")
+	}
+
+	require.Equal(t, errorMsg("database_error"), string(out))
+
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -643,7 +681,7 @@ func testProjectAddCmdValidationError(
 
 	require.Equal(
 		t,
-		errorMsg("validation error in here"),
+		maxLengthValidationErrorMsg("project name", 256),
 		string(out),
 	)
 }

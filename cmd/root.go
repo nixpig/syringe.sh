@@ -61,7 +61,7 @@ func Execute(
 	// })
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
-		return pkg.FormattedError{Err: err}
+		return err
 	}
 
 	return nil

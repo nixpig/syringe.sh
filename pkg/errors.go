@@ -11,15 +11,13 @@ var (
 	ErrNoProjectsFound = fmt.Errorf("no projects found")
 )
 
-type FormattedError struct {
-	Err error
+type ErrValidation struct{ msg string }
+
+func (ve ErrValidation) Error() string {
+	return ve.msg
 }
 
-func (fe FormattedError) Error() string {
-	return formatError(fe.Err).Error()
-}
-
-func formatError(err error) error {
+func ValidationError(err error) error {
 	switch t := err.(type) {
 	case validator.ValidationErrors:
 		var errs []error
@@ -27,16 +25,15 @@ func formatError(err error) error {
 		for _, e := range t {
 			switch tag := e.Tag(); tag {
 			case "max":
-				errs = append(errs, fmt.Errorf(
+				errs = append(errs, ErrValidation{msg: fmt.Sprintf(
 					"\"%s\" exceeds max length of %s characters",
 					e.Field(),
 					e.Param(),
-				))
+				)})
 			}
+
+			return errors.Join(errs...)
 		}
-
-		return errors.Join(errs...)
-
 	}
 
 	return err

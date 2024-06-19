@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
+	"github.com/nixpig/syringe.sh/server/pkg"
 )
 
 type AddProjectRequest struct {
@@ -48,7 +49,7 @@ type ProjectServiceImpl struct {
 
 func (p ProjectServiceImpl) Add(project AddProjectRequest) error {
 	if err := p.validate.Struct(project); err != nil {
-		return err
+		return pkg.ValidationError(err)
 	}
 
 	if err := p.store.Add(project.Name); err != nil {
