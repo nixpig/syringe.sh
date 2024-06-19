@@ -33,6 +33,14 @@ func maxLengthValidationErrorMsg(field string, length int) string {
 	return fmt.Sprintf("Error: \"%s\" exceeds max length of %d characters\n", field, length)
 }
 
+func requiredFlagsErrorMsg(flag string) string {
+	return fmt.Sprintf("Error: required flag(s) \"%s\" not set\n", flag)
+}
+
+func incorrectNumberOfArgsErrorMsg(accepts, received int) string {
+	return fmt.Sprintf("Error: accepts %d arg(s), received %d\n", accepts, received)
+}
+
 func errorMsg(e string) string {
 	return fmt.Sprintf("Error: %s\n", e)
 }
@@ -386,7 +394,7 @@ func testEnvironmentRemoveCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmo
 
 	require.Equal(
 		t,
-		"Error: required flag(s) \"project\" not set\n",
+		requiredFlagsErrorMsg("project"),
 		string(out),
 	)
 
@@ -607,8 +615,104 @@ func testEnvironmentRenameCmdValidationError(t *testing.T, mock sqlmock.Sqlmock,
 	)
 }
 
-func testEnvironmentRenameCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {}
+func testEnvironmentRenameCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
-func testEnvironmentRenameCmdWithNoArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {}
+	err := cmd.Execute(
+		[]*cobra.Command{environment.EnvironmentCommand()},
+		[]string{
+			"environment",
+			"rename",
+			"current_name",
+			"new_name",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
 
-func testEnvironmentRenameCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {}
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from out")
+	}
+
+	require.Equal(
+		t,
+		requiredFlagsErrorMsg("project"),
+		string(out),
+	)
+}
+
+func testEnvironmentRenameCmdWithNoArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{environment.EnvironmentCommand()},
+		[]string{
+			"environment",
+			"rename",
+			"-p",
+			"my_cool_project",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from out")
+	}
+
+	require.Equal(
+		t,
+		incorrectNumberOfArgsErrorMsg(2, 0),
+		string(out),
+	)
+}
+
+func testEnvironmentRenameCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{environment.EnvironmentCommand()},
+		[]string{
+			"environment",
+			"rename",
+			"-p",
+			"my_cool_project",
+			"foo",
+			"bar",
+			"baz",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from out")
+	}
+
+	require.Equal(
+		t,
+		incorrectNumberOfArgsErrorMsg(2, 3),
+		string(out),
+	)
+}
