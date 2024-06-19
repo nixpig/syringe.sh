@@ -28,6 +28,7 @@ func EnvironmentCommand() *cobra.Command {
 	environmentCmd.AddCommand(environmentAddCommand())
 	environmentCmd.AddCommand(environmentRemoveCommand())
 	environmentCmd.AddCommand(environmentRenameCommand())
+	environmentCmd.AddCommand(environmentListCommand())
 
 	return environmentCmd
 }
@@ -155,6 +156,47 @@ func environmentRenameE(cmd *cobra.Command, args []string) error {
 	}
 
 	cmd.Println(fmt.Sprintf("Environment '%s' renamed to '%s' in project '%s'", name, newName, project))
+
+	return nil
+}
+
+func environmentListCommand() *cobra.Command {
+	environmentListCmd := &cobra.Command{
+		Use:     "list [flags]",
+		Aliases: []string{"l"},
+		Short:   "List environments",
+		Example: "syringe environment list -p my_cool_project",
+		Args:    cobra.MatchAll(cobra.ExactArgs(0)),
+		RunE:    environmentListE,
+	}
+
+	environmentListCmd.Flags().StringP("project", "p", "", "Project name")
+	environmentListCmd.MarkFlagRequired("project")
+
+	return environmentListCmd
+}
+
+func environmentListE(cmd *cobra.Command, args []string) error {
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return err
+	}
+
+	environmentService, ok := cmd.Context().Value(environmentCtxKey).(services.EnvironmentService)
+	if !ok {
+		return fmt.Errorf("unable to get environment service")
+	}
+
+	environments, err := environmentService.List(services.ListEnvironmentRequest{
+		ProjectName: project,
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, environment := range environments {
+		cmd.Println(environment)
+	}
 
 	return nil
 }

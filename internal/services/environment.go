@@ -24,10 +24,15 @@ type RenameEnvironmentRequest struct {
 	ProjectName string `name:"project name" validate:"required,min=1,max=256"`
 }
 
+type ListEnvironmentRequest struct {
+	ProjectName string `name:"project name" validate:"required,min=1,max=256"`
+}
+
 type EnvironmentService interface {
 	Add(environment AddEnvironmentRequest) error
 	Remove(environment RemoveEnvironmentRequest) error
 	Rename(environment RenameEnvironmentRequest) error
+	List(project ListEnvironmentRequest) ([]string, error)
 }
 
 func NewEnvironmentServiceImpl(
@@ -99,4 +104,19 @@ func (e EnvironmentServiceImpl) Rename(
 	}
 
 	return nil
+}
+
+func (e EnvironmentServiceImpl) List(
+	project ListEnvironmentRequest,
+) ([]string, error) {
+	if err := e.validate.Struct(project); err != nil {
+		return nil, pkg.ValidationError(err)
+	}
+
+	environments, err := e.store.List(project.ProjectName)
+	if err != nil {
+		return nil, err
+	}
+
+	return environments, nil
 }

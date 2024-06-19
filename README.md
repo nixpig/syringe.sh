@@ -30,8 +30,8 @@ Manage your environments.
 
 - [x] `syringe environment add [-p <project>] <name>`
 - [x] `syringe environment remove [-p <project>] <name>`
-- [ ] `syringe environment list [-p <project>]`
-- [ ] `syringe environment rename [-p <project>] <old name> <new name>`
+- [-] `syringe environment list [-p <project>]`
+- [x] `syringe environment rename [-p <project>] <old name> <new name>`
 
 Manage your secrets.
 

@@ -15,7 +15,7 @@ type EnvironmentStore interface {
 	Add(name, projectName string) error
 	Remove(name, projectName string) error
 	Rename(originalName, newName, projectName string) error
-	// get all (for project id/name)
+	List(projectName string) ([]string, error)
 }
 
 type SqliteEnvironmentStore struct {
@@ -114,4 +114,35 @@ func (s SqliteEnvironmentStore) Rename(originalName, newName, projectName string
 	}
 
 	return nil
+}
+
+func (s SqliteEnvironmentStore) List(projectName string) ([]string, error) {
+	query := `
+		select e.name_ from environments_ e
+		inner join projects_ p
+		on e.project_id_ = p.id_ 
+		where p.name_ = $projectName
+	`
+
+	rows, err := s.db.Query(
+		query,
+		sql.Named("projectName", projectName),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var environments []string
+
+	for rows.Next() {
+		var environment string
+
+		if err := rows.Scan(&environment); err != nil {
+			return nil, err
+		}
+
+		environments = append(environments, environment)
+	}
+
+	return environments, nil
 }

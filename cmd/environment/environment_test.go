@@ -67,6 +67,8 @@ func TestEnvironmentCmd(t *testing.T) {
 		"test environment rename command missing project flag": testEnvironmentRenameCmdMissingProjectFlag,
 		"test environment rename command with no args":         testEnvironmentRenameCmdWithNoArgs,
 		"test environment rename command with too many args":   testEnvironmentRenameCmdWithTooManyArgs,
+
+		"test environment list command happy path": testEnvironmentListCmdHappyPath,
 	}
 
 	for scenario, fn := range scenarios {
@@ -715,4 +717,45 @@ func testEnvironmentRenameCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock,
 		incorrectNumberOfArgsErrorMsg(2, 3),
 		string(out),
 	)
+}
+
+func testEnvironmentListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+
+	query := `
+		select e.name_ from environments_ e
+		inner join projects_ p
+		on e.project_id_ = p.id_ 
+		where p.name_ = $projectName
+	`
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs("my_cool_project").
+		WillReturnRows(
+			sqlmock.
+				NewRows([]string{"name_"}).
+				AddRow("dev").
+				AddRow("staging").
+				AddRow("prod"),
+		)
+
+	err := cmd.Execute(
+		[]*cobra.Command{environment.EnvironmentCommand()},
+		[]string{
+			"environment",
+			"list",
+			"-p",
+			"my_cool_project",
+		},
+		cmdIn,
+		cmdOut,
+		os.Stderr,
+		db,
+	)
+
+	require.NoError(t, err)
+
+	require.NoError(t, mock.ExpectationsWereMet())
 }
