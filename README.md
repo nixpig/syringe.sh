@@ -30,15 +30,15 @@ Manage your environments.
 
 - [x] `syringe environment add [-p <project>] <name>`
 - [x] `syringe environment remove [-p <project>] <name>`
-- [ ] `syringe environment rename [-p <project>] <old name> <new name>`
 - [ ] `syringe environment list [-p <project>]`
+- [ ] `syringe environment rename [-p <project>] <old name> <new name>`
 
 Manage your secrets.
 
 - [x] `syringe secret set [-p <project> -e <environment>] <key> <value>`
 - [x] `syringe secret get [-p <project> -e <environment>] <key>`
-- [ ] `syringe secret remove [-p <project> -e <environment>] <key>`
 - [ ] `syringe secret list [-p <project> -e <environment>]`
+- [ ] `syringe secret remove [-p <project> -e <environment>] <key>`
 
 ### `inject`
 

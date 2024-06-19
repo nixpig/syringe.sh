@@ -61,7 +61,7 @@ func (p ProjectServiceImpl) Add(project AddProjectRequest) error {
 
 func (p ProjectServiceImpl) Remove(project RemoveProjectRequest) error {
 	if err := p.validate.Struct(project); err != nil {
-		return err
+		return pkg.ValidationError(err)
 	}
 
 	if err := p.store.Remove(project.Name); err != nil {
@@ -73,7 +73,7 @@ func (p ProjectServiceImpl) Remove(project RemoveProjectRequest) error {
 
 func (p ProjectServiceImpl) Rename(project RenameProjectRequest) error {
 	if err := p.validate.Struct(project); err != nil {
-		return err
+		return pkg.ValidationError(err)
 	}
 
 	if err := p.store.Rename(

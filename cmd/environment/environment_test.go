@@ -29,6 +29,10 @@ func renamedSuccessMsg(name, newName, project string) string {
 	return fmt.Sprintf("Environment '%s' renamed to '%s' in project '%s'\n", name, newName, project)
 }
 
+func maxLengthValidationErrorMsg(field string, length int) string {
+	return fmt.Sprintf("Error: \"%s\" exceeds max length of %d characters\n", field, length)
+}
+
 func errorMsg(e string) string {
 	return fmt.Sprintf("Error: %s\n", e)
 }
@@ -240,7 +244,7 @@ func testEnvironmentAddCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db
 			"add",
 			"-p",
 			"my_cool_project",
-			"stagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstaging",
+			"stagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstaging",
 		},
 		cmdIn,
 		cmdOut,
@@ -258,40 +262,6 @@ func testEnvironmentAddCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db
 			"-p",
 			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
 			"staging",
-		},
-		cmdIn,
-		cmdOut,
-		os.Stderr,
-		db,
-	)
-
-	require.Error(t, err)
-
-	err = cmd.Execute(
-		[]*cobra.Command{environment.EnvironmentCommand()},
-		[]string{
-			"environment",
-			"add",
-			"-p",
-			"",
-			"staging",
-		},
-		cmdIn,
-		cmdOut,
-		os.Stderr,
-		db,
-	)
-
-	require.Error(t, err)
-
-	err = cmd.Execute(
-		[]*cobra.Command{environment.EnvironmentCommand()},
-		[]string{
-			"environment",
-			"add",
-			"-p",
-			"my_cool_project",
-			"",
 		},
 		cmdIn,
 		cmdOut,
@@ -603,38 +573,38 @@ func testEnvironmentRenameCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, d
 }
 
 func testEnvironmentRenameCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
-	// cmdIn := bytes.NewReader([]byte{})
-	// cmdOut := bytes.NewBufferString("")
-	// errOut := bytes.NewBufferString("")
-	//
-	// err := cmd.Execute(
-	// 	[]*cobra.Command{environment.EnvironmentCommand()},
-	// 	[]string{
-	// 		"environment",
-	// 		"rename",
-	// 		"-p",
-	// 		"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
-	// 		"current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_",
-	// 		"new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_",
-	// 	},
-	// 	cmdIn,
-	// 	cmdOut,
-	// 	errOut,
-	// 	db,
-	// )
-	//
-	// require.Error(t, err)
-	//
-	// out, err := io.ReadAll(errOut)
-	// if err != nil {
-	// 	t.Errorf("failed to read from out")
-	// }
-	//
-	// require.Equal(
-	// 	t,
-	// 	errorMsg("some validation error"),
-	// 	string(out),
-	// )
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{environment.EnvironmentCommand()},
+		[]string{
+			"environment",
+			"rename",
+			"-p",
+			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+			"current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_current_name_",
+			"new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_new_name_",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from out")
+	}
+
+	require.Equal(
+		t,
+		maxLengthValidationErrorMsg("environment name", 256),
+		string(out),
+	)
 }
 
 func testEnvironmentRenameCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {}

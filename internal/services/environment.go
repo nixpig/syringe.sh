@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
+	"github.com/nixpig/syringe.sh/server/pkg"
 )
 
 type AddEnvironmentRequest struct {
@@ -52,7 +53,7 @@ func (e EnvironmentServiceImpl) Add(
 	environment AddEnvironmentRequest,
 ) error {
 	if err := e.validate.Struct(environment); err != nil {
-		return err
+		return pkg.ValidationError(err)
 	}
 
 	if err := e.store.Add(
@@ -69,7 +70,7 @@ func (e EnvironmentServiceImpl) Remove(
 	environment RemoveEnvironmentRequest,
 ) error {
 	if err := e.validate.Struct(environment); err != nil {
-		return err
+		return pkg.ValidationError(err)
 	}
 
 	if err := e.store.Remove(
@@ -86,7 +87,7 @@ func (e EnvironmentServiceImpl) Rename(
 	environment RenameEnvironmentRequest,
 ) error {
 	if err := e.validate.Struct(environment); err != nil {
-		return err
+		return pkg.ValidationError(err)
 	}
 
 	if err := e.store.Rename(

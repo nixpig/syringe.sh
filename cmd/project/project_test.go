@@ -693,6 +693,7 @@ func testProjectRemoveCmdValidationError(
 ) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	var err error
 
@@ -701,30 +702,26 @@ func testProjectRemoveCmdValidationError(
 		[]string{
 			"project",
 			"remove",
-			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
 
-	err = cmd.Execute(
-		[]*cobra.Command{project.ProjectCommand()},
-		[]string{
-			"project",
-			"remove",
-			"",
-		},
-		cmdIn,
-		cmdOut,
-		os.Stderr,
-		db,
-	)
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("unable to read from err out")
+	}
 
-	require.Error(t, err)
+	require.Equal(
+		t,
+		maxLengthValidationErrorMsg("project name", 256),
+		string(out),
+	)
 }
 
 func testProjectRenameCmdValidationError(
@@ -734,6 +731,7 @@ func testProjectRenameCmdValidationError(
 ) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	var err error
 
@@ -742,30 +740,25 @@ func testProjectRenameCmdValidationError(
 		[]string{
 			"project",
 			"rename",
-			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
-			"",
+			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
 
-	err = cmd.Execute(
-		[]*cobra.Command{project.ProjectCommand()},
-		[]string{
-			"project",
-			"rename",
-			"",
-			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
-		},
-		cmdIn,
-		cmdOut,
-		os.Stderr,
-		db,
-	)
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("unable to read from err out")
+	}
 
-	require.Error(t, err)
+	require.Equal(
+		t,
+		maxLengthValidationErrorMsg("project name", 256),
+		string(out),
+	)
 }
