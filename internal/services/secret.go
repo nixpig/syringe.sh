@@ -41,11 +41,18 @@ type ListSecretsResponse struct {
 	}
 }
 
+type RemoveSecretRequest struct {
+	Project     string
+	Environment string
+	Key         string
+}
+
 type SecretService interface {
 	CreateTables() error
 	Set(secret SetSecretRequest) error
 	Get(request GetSecretRequest) (*GetSecretResponse, error)
 	List(request ListSecretsRequest) (*ListSecretsResponse, error)
+	Remove(request RemoveSecretRequest) error
 }
 
 type SecretServiceImpl struct {
@@ -63,20 +70,20 @@ func NewSecretServiceImpl(
 	}
 }
 
-func (e SecretServiceImpl) CreateTables() error {
-	if err := e.store.CreateTables(); err != nil {
+func (s SecretServiceImpl) CreateTables() error {
+	if err := s.store.CreateTables(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (e SecretServiceImpl) Set(secret SetSecretRequest) error {
-	if err := e.validate.Struct(secret); err != nil {
+func (s SecretServiceImpl) Set(secret SetSecretRequest) error {
+	if err := s.validate.Struct(secret); err != nil {
 		return err
 	}
 
-	return e.store.Set(
+	return s.store.Set(
 		secret.Project,
 		secret.Environment,
 		secret.Key,
@@ -84,12 +91,12 @@ func (e SecretServiceImpl) Set(secret SetSecretRequest) error {
 	)
 }
 
-func (e SecretServiceImpl) Get(request GetSecretRequest) (*GetSecretResponse, error) {
-	if err := e.validate.Struct(request); err != nil {
+func (s SecretServiceImpl) Get(request GetSecretRequest) (*GetSecretResponse, error) {
+	if err := s.validate.Struct(request); err != nil {
 		return nil, err
 	}
 
-	secret, err := e.store.Get(
+	secret, err := s.store.Get(
 		request.Project,
 		request.Environment,
 		request.Key,
@@ -107,12 +114,12 @@ func (e SecretServiceImpl) Get(request GetSecretRequest) (*GetSecretResponse, er
 	}, nil
 }
 
-func (e SecretServiceImpl) List(request ListSecretsRequest) (*ListSecretsResponse, error) {
-	if err := e.validate.Struct(request); err != nil {
+func (s SecretServiceImpl) List(request ListSecretsRequest) (*ListSecretsResponse, error) {
+	if err := s.validate.Struct(request); err != nil {
 		return nil, err
 	}
 
-	secrets, err := e.store.List(request.Project, request.Environment)
+	secrets, err := s.store.List(request.Project, request.Environment)
 	if err != nil {
 		return nil, err
 	}
@@ -123,15 +130,15 @@ func (e SecretServiceImpl) List(request ListSecretsRequest) (*ListSecretsRespons
 		Value string
 	}
 
-	for _, s := range secrets {
+	for _, sv := range secrets {
 		secretsResponseList = append(secretsResponseList, &struct {
 			ID    int
 			Key   string
 			Value string
 		}{
-			ID:    s.ID,
-			Key:   s.Key,
-			Value: s.Value,
+			ID:    sv.ID,
+			Key:   sv.Key,
+			Value: sv.Value,
 		})
 	}
 
@@ -140,4 +147,20 @@ func (e SecretServiceImpl) List(request ListSecretsRequest) (*ListSecretsRespons
 		Environment: request.Environment,
 		Secrets:     secretsResponseList,
 	}, nil
+}
+
+func (s SecretServiceImpl) Remove(request RemoveSecretRequest) error {
+	if err := s.validate.Struct(request); err != nil {
+		return err
+	}
+
+	if err := s.store.Remove(
+		request.Project,
+		request.Environment,
+		request.Key,
+	); err != nil {
+		return err
+	}
+
+	return nil
 }

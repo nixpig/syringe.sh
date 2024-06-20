@@ -28,6 +28,7 @@ func SecretCommand() *cobra.Command {
 	secretCmd.AddCommand(secretSetCommand())
 	secretCmd.AddCommand(secretGetCommand())
 	secretCmd.AddCommand(secretListCommand())
+	secretCmd.AddCommand(secretRemoveCommand())
 
 	return secretCmd
 }
@@ -175,6 +176,53 @@ func secretListRunE(cmd *cobra.Command, args []string) error {
 
 	for _, s := range secrets.Secrets {
 		cmd.Println(s.ID, s.Key, s.Value)
+	}
+
+	return nil
+}
+
+func secretRemoveCommand() *cobra.Command {
+	secretRemoveCmd := &cobra.Command{
+		Use:     "remove [flags] SECRET_KEY",
+		Aliases: []string{"r"},
+		Example: "syringe secret remove -p my_cool_project -e staging AWS_ACCESS_KEY_ID",
+		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
+		RunE:    secretRemoveRunE,
+	}
+
+	secretRemoveCmd.Flags().StringP("project", "p", "", "Project name")
+	secretRemoveCmd.MarkFlagRequired("project")
+
+	secretRemoveCmd.Flags().StringP("environment", "e", "", "Environment name")
+	secretRemoveCmd.MarkFlagRequired("environment")
+
+	return secretRemoveCmd
+}
+
+func secretRemoveRunE(cmd *cobra.Command, args []string) error {
+	key := args[0]
+
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return err
+	}
+
+	environment, err := cmd.Flags().GetString("environment")
+	if err != nil {
+		return err
+	}
+
+	secretService, ok := cmd.Context().Value(secretCtxKey).(services.SecretService)
+	if !ok {
+		return fmt.Errorf("unable to get secret service from context")
+	}
+
+	if err := secretService.Remove(services.RemoveSecretRequest{
+		Project:     project,
+		Environment: environment,
+		Key:         key,
+	}); err != nil {
+		return err
 	}
 
 	return nil

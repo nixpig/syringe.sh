@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"database/sql"
+	"fmt"
 )
 
 type Secret struct {
@@ -18,6 +19,7 @@ type SecretStore interface {
 	Set(project, environment, key, value string) error
 	Get(project, environment, key string) (*Secret, error)
 	List(project, environment string) ([]*Secret, error)
+	Remove(project, environment, key string) error
 	// delete
 }
 
@@ -186,4 +188,43 @@ func (s SqliteSecretStore) List(project, environment string) ([]*Secret, error) 
 	}
 
 	return secrets, nil
+}
+
+func (s SqliteSecretStore) Remove(project, environment, key string) error {
+	query := `
+		delete from secrets_ 
+		where id_ in (
+			select s.id_ from secrets_ s
+			inner join
+			environments_ e
+			on s.environment_id_ = e.id_
+			inner join
+			projects_ p
+			on e.project_id_ = p.id_
+			where p.name_ = $projectName
+			and e.name_ = $environmentName
+			and s.key_ = $key
+		)
+	`
+
+	res, err := s.db.Exec(
+		query,
+		sql.Named("projectName", project),
+		sql.Named("environmentName", environment),
+		sql.Named("key", key),
+	)
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("nothing deleted")
+	}
+
+	return nil
 }
