@@ -32,6 +32,8 @@ func TestSecretCmd(t *testing.T) {
 		"test secret get command missing key":         testSecretGetCmdMissingKey,
 		"test secret get command database error":      testSecretGetCmdDatabaseError,
 		"test secret get command validation error":    testSecretGetCmdValidationError,
+
+		"test secret list command happy path": testSecretListCmdHappyPath,
 	}
 
 	for scenario, fn := range scenarios {
@@ -492,6 +494,60 @@ func testSecretGetCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql
 	)
 
 	require.Error(t, err)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testSecretListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	query := `
+		select s.id_, s.key_, s.value_, p.name_, e.name_
+		from secrets_ s
+		inner join
+		environments_ e
+		on s.environment_id_ e.id_
+		inner join
+		projects_ p
+		on e.project_id_ p.id_
+		where p.name_ = $projectName
+		and e.name_ = $environmentName
+	`
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs("my_cool_project", "staging").
+		WillReturnRows(
+			sqlmock.NewRows([]string{
+				"id_",
+				"key_",
+				"value_",
+				"project_name_",
+				"environment_name_",
+			}).
+				AddRow(1, "key_1", "value_1", "my_cool_project", "staging").
+				AddRow(2, "key_2", "value_2", "my_cool_project", "staging"),
+		)
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{"secret", "list", "-p", "my_cool_project", "-e", "staging"},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.NoError(t, err)
+
+	out, err := io.ReadAll(cmdOut)
+	if err != nil {
+		t.Errorf("unable to read from cmd out")
+	}
+
+	require.Equal(t, "1 key_1 value_1\n2 key_2 value_2\n", string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }

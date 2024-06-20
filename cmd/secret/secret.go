@@ -173,7 +173,9 @@ func secretListRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cmd.Println(secrets)
+	for _, s := range secrets.Secrets {
+		cmd.Println(s.ID, s.Key, s.Value)
+	}
 
 	return nil
 }

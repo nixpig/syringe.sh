@@ -129,6 +129,7 @@ func (e SecretServiceImpl) List(request ListSecretsRequest) (*ListSecretsRespons
 			Key   string
 			Value string
 		}{
+			ID:    s.ID,
 			Key:   s.Key,
 			Value: s.Value,
 		})

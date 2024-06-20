@@ -37,8 +37,15 @@ Manage your secrets.
 
 - [x] `syringe secret set [-p <project> -e <environment>] <key> <value>`
 - [x] `syringe secret get [-p <project> -e <environment>] <key>`
-- [ ] `syringe secret list [-p <project> -e <environment>]`
+- [-] `syringe secret list [-p <project> -e <environment>]`
 - [ ] `syringe secret remove [-p <project> -e <environment>] <key>`
+
+### `user`
+
+Manage your user account(s).
+
+- [ ] `syringe user register [-u <username>]`
+- [ ] `syringe user delete [-u <username>]`
 
 ### `inject`
 
@@ -56,13 +63,6 @@ Manage your secrets.
 #### Examples
 
 - [ ] `syringe link -p galactic_takeover -e death_star .`
-
-### `user`
-
-Manage your user account(s).
-
-- [ ] `syringe user register [-u <username>]`
-- [ ] `syringe user delete [-u <username>]`
 
 ### `key`
 
