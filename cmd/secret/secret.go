@@ -27,6 +27,7 @@ func SecretCommand() *cobra.Command {
 
 	secretCmd.AddCommand(secretSetCommand())
 	secretCmd.AddCommand(secretGetCommand())
+	secretCmd.AddCommand(secretListCommand())
 
 	return secretCmd
 }
@@ -126,6 +127,53 @@ func secretGetRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	cmd.Print(secret)
+
+	return nil
+}
+
+func secretListCommand() *cobra.Command {
+	secretListCmd := &cobra.Command{
+		Use:     "list [flags]",
+		Aliases: []string{"l"},
+		Example: "syringe secret list -p my_cool_project -e staging",
+		Args:    cobra.MatchAll(cobra.ExactArgs(0)),
+		RunE:    secretListRunE,
+	}
+
+	secretListCmd.Flags().StringP("project", "p", "", "Project name")
+	secretListCmd.MarkFlagRequired("project")
+
+	secretListCmd.Flags().StringP("environment", "e", "", "Environment name")
+	secretListCmd.MarkFlagRequired("environment")
+
+	return secretListCmd
+}
+
+func secretListRunE(cmd *cobra.Command, args []string) error {
+	project, err := cmd.Flags().GetString("project")
+	if err != nil {
+		return err
+	}
+
+	environment, err := cmd.Flags().GetString("environment")
+	if err != nil {
+		return err
+	}
+
+	secretService, ok := cmd.Context().Value(secretCtxKey).(services.SecretService)
+	if !ok {
+		return fmt.Errorf("unable to load secret service from context")
+	}
+
+	secrets, err := secretService.List(services.ListSecretsRequest{
+		Project:     project,
+		Environment: environment,
+	})
+	if err != nil {
+		return err
+	}
+
+	cmd.Println(secrets)
 
 	return nil
 }

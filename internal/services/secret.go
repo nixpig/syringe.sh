@@ -26,10 +26,26 @@ type GetSecretResponse struct {
 	Value       string
 }
 
+type ListSecretsRequest struct {
+	Project     string
+	Environment string
+}
+
+type ListSecretsResponse struct {
+	Project     string
+	Environment string
+	Secrets     []*struct {
+		ID    int
+		Key   string
+		Value string
+	}
+}
+
 type SecretService interface {
 	CreateTables() error
 	Set(secret SetSecretRequest) error
 	Get(request GetSecretRequest) (*GetSecretResponse, error)
+	List(request ListSecretsRequest) (*ListSecretsResponse, error)
 }
 
 type SecretServiceImpl struct {
@@ -88,5 +104,39 @@ func (e SecretServiceImpl) Get(request GetSecretRequest) (*GetSecretResponse, er
 		Environment: secret.Environment,
 		Key:         secret.Key,
 		Value:       secret.Value,
+	}, nil
+}
+
+func (e SecretServiceImpl) List(request ListSecretsRequest) (*ListSecretsResponse, error) {
+	if err := e.validate.Struct(request); err != nil {
+		return nil, err
+	}
+
+	secrets, err := e.store.List(request.Project, request.Environment)
+	if err != nil {
+		return nil, err
+	}
+
+	var secretsResponseList []*struct {
+		ID    int
+		Key   string
+		Value string
+	}
+
+	for _, s := range secrets {
+		secretsResponseList = append(secretsResponseList, &struct {
+			ID    int
+			Key   string
+			Value string
+		}{
+			Key:   s.Key,
+			Value: s.Value,
+		})
+	}
+
+	return &ListSecretsResponse{
+		Project:     request.Project,
+		Environment: request.Environment,
+		Secrets:     secretsResponseList,
 	}, nil
 }

@@ -17,8 +17,8 @@ type SecretStore interface {
 	CreateTables() error
 	Set(project, environment, key, value string) error
 	Get(project, environment, key string) (*Secret, error)
+	List(project, environment string) ([]*Secret, error)
 	// delete
-	// get all (for project + environment)
 }
 
 type SqliteSecretStore struct {
@@ -142,4 +142,48 @@ func (s SqliteSecretStore) Get(project, environment, key string) (*Secret, error
 	}
 
 	return &secret, nil
+}
+
+func (s SqliteSecretStore) List(project, environment string) ([]*Secret, error) {
+	query := `
+		select s.id_, s.key_, s.value_, p.name_, e.name_
+		from secrets_ s
+		inner join
+		environments_ e
+		on s.environment_id_ e.id_
+		inner join
+		projects_ p
+		on e.project_id_ p.id_
+		where p.name_ = $projectName
+		and e.name_ = $environmentName
+	`
+
+	rows, err := s.db.Query(
+		query,
+		sql.Named("projectName", project),
+		sql.Named("environmentName", environment),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var secrets []*Secret
+
+	for rows.Next() {
+		var secret Secret
+
+		if err := rows.Scan(
+			&secret.ID,
+			&secret.Key,
+			&secret.Value,
+			&secret.Project,
+			&secret.Environment,
+		); err != nil {
+			return nil, err
+		}
+
+		secrets = append(secrets, &secret)
+	}
+
+	return secrets, nil
 }
