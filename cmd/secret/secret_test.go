@@ -34,6 +34,8 @@ func TestSecretCmd(t *testing.T) {
 		"test secret get command validation error":    testSecretGetCmdValidationError,
 
 		"test secret list command happy path": testSecretListCmdHappyPath,
+
+		"test secret remove command happy path": testSecretRemoveCmdHappyPath,
 	}
 
 	for scenario, fn := range scenarios {
@@ -548,6 +550,53 @@ func testSecretListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) 
 	}
 
 	require.Equal(t, "1 key_1 value_1\n2 key_2 value_2\n", string(out))
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testSecretRemoveCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	query := `
+		delete from secrets_ 
+		where id_ in (
+			select s.id_ from secrets_ s
+			inner join
+			environments_ e
+			on s.environment_id_ = e.id_
+			inner join
+			projects_ p
+			on e.project_id_ = p.id_
+			where p.name_ = $projectName
+			and e.name_ = $environmentName
+			and s.key_ = $key
+		)
+	`
+
+	mock.ExpectExec(regexp.QuoteMeta(query)).WithArgs(
+		"my_cool_project", "staging", "key_1",
+	).WillReturnResult(sqlmock.NewResult(23, 1))
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"remove",
+			"-p",
+			"my_cool_project",
+			"-e",
+			"staging",
+			"key_1",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.NoError(t, err)
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
