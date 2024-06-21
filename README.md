@@ -9,7 +9,7 @@
 
 ## TODO
 
-- [ ] Improve errors/messaging
+- [ ] Improve errors and messaging
 
 ## Proposed usage
 
@@ -38,7 +38,7 @@ Manage your secrets.
 - [x] `syringe secret set [-p <project> -e <environment>] <key> <value>`
 - [x] `syringe secret get [-p <project> -e <environment>] <key>`
 - [-] `syringe secret list [-p <project> -e <environment>]`
-- [ ] `syringe secret remove [-p <project> -e <environment>] <key>`
+- [-] `syringe secret remove [-p <project> -e <environment>] <key>`
 
 ### `user`
 

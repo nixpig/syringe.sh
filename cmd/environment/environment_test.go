@@ -68,7 +68,11 @@ func TestEnvironmentCmd(t *testing.T) {
 		"test environment rename command with no args":         testEnvironmentRenameCmdWithNoArgs,
 		"test environment rename command with too many args":   testEnvironmentRenameCmdWithTooManyArgs,
 
-		"test environment list command happy path": testEnvironmentListCmdHappyPath,
+		"test environment list command happy path":           testEnvironmentListCmdHappyPath,
+		"test environment list command database error":       testEnvironmentListCmdDatabaseError,
+		"test environment list command validation errors":    testEnvironmentListCmdValidationError,
+		"test environment list command missing project flag": testEnvironmentListCmdMissingProjectFlag,
+		"test environment list command with too many args":   testEnvironmentListCmdWithTooManyArgs,
 	}
 
 	for scenario, fn := range scenarios {
@@ -758,4 +762,135 @@ func testEnvironmentListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql
 	require.NoError(t, err)
 
 	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testEnvironmentListCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	query := `
+		select e.name_ from environments_ e
+		inner join projects_ p
+		on e.project_id_ = p.id_ 
+		where p.name_ = $projectName
+	`
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs("my_cool_project").
+		WillReturnError(
+			errors.New("database_error"),
+		)
+
+	err := cmd.Execute(
+		[]*cobra.Command{environment.EnvironmentCommand()},
+		[]string{
+			"environment",
+			"list",
+			"-p",
+			"my_cool_project",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, errorMsg("database_error"), string(out))
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testEnvironmentListCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{environment.EnvironmentCommand()},
+		[]string{
+			"environment",
+			"list",
+			"-p",
+			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, maxLengthValidationErrorMsg("project name", 256), string(out))
+}
+
+func testEnvironmentListCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{environment.EnvironmentCommand()},
+		[]string{
+			"environment",
+			"list",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, requiredFlagsErrorMsg("project"), string(out))
+}
+
+func testEnvironmentListCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{environment.EnvironmentCommand()},
+		[]string{
+			"environment",
+			"list",
+			"-p",
+			"my_cool_project",
+			"foobarbaz",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, incorrectNumberOfArgsErrorMsg(0, 1), string(out))
 }

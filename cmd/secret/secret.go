@@ -136,6 +136,7 @@ func secretListCommand() *cobra.Command {
 	secretListCmd := &cobra.Command{
 		Use:     "list [flags]",
 		Aliases: []string{"l"},
+		Short:   "List all secrets",
 		Example: "syringe secret list -p my_cool_project -e staging",
 		Args:    cobra.MatchAll(cobra.ExactArgs(0)),
 		RunE:    secretListRunE,
@@ -185,6 +186,7 @@ func secretRemoveCommand() *cobra.Command {
 	secretRemoveCmd := &cobra.Command{
 		Use:     "remove [flags] SECRET_KEY",
 		Aliases: []string{"r"},
+		Short:   "Remove a secret",
 		Example: "syringe secret remove -p my_cool_project -e staging AWS_ACCESS_KEY_ID",
 		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
 		RunE:    secretRemoveRunE,
