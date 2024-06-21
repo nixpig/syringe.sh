@@ -46,16 +46,24 @@ Manage your secrets.
 Manage your user account(s).
 
 - [ ] `syringe user register [-u <username>]`
+- [ ] `syringe user list-keys [-u <username>]`
+- [ ] `syringe user add-key [-k <ssh_public_key>] [-u <username>]`
+- [ ] `syringe user remove-key [-k <ssh_public_key>] [-u <username>]`
 - [ ] `syringe user delete [-u <username>]`
 
 ### `inject`
 
-- [ ] `syringe inject [-p <project> -e <environment> -s <key>]`
+- [ ] `syringe inject [-p <project> -e <environment> -s <secret_key>] COMMAND`
 
 #### Examples
 
-- [ ] `syringe inject`
-- [ ] `syringe inject -p galactic_takeover -e death_star -s launch_code .`
+Unlinked:
+
+- [ ] `syringe inject -p galactic_takeover -e death_star -s ENV_LAUNCH_CODE my_cool_app`
+
+Linked:
+
+- [ ] `syringe inject my_cool_app`
 
 ### `link`
 
@@ -64,10 +72,4 @@ Manage your user account(s).
 #### Examples
 
 - [ ] `syringe link -p galactic_takeover -e death_star .`
-
-### `key`
-
-Manage SSH public keys associated with your account.
-
-- [ ] `syringe key add`
-- [ ] `syringe key remove [-k <public key>]`
+- [ ] `syringe link -p galactic_takeover -e death_star /home/nixpig/projects/joubini`
