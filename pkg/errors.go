@@ -31,9 +31,9 @@ func ValidationError(err error) error {
 					e.Param(),
 				)})
 			}
-
-			return errors.Join(errs...)
 		}
+
+		return errors.Join(errs...)
 	}
 
 	return err
