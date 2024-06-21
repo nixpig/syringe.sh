@@ -84,7 +84,7 @@ func testProjectAddCmdWithNoArgs(
 		t.Errorf("failed to read from err out")
 	}
 
-	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(1, 0), string(out))
+	require.Equal(t, test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(1, 0)), string(out))
 }
 
 func testProjectAddCmdWithTooManyArgs(
@@ -112,7 +112,7 @@ func testProjectAddCmdWithTooManyArgs(
 		t.Errorf("failed to read from err out")
 	}
 
-	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(1, 2), string(out))
+	require.Equal(t, test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(1, 2)), string(out))
 }
 
 func testProjectAddCommandHappyPath(
@@ -184,7 +184,7 @@ func testProjectAddCmdDatabaseError(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database_error"),
+		test.ErrorMsg("database_error\n"),
 		string(out),
 	)
 
@@ -249,7 +249,7 @@ func testProjectRemoveCmdWithNoArgs(
 		t.Errorf("failed to read from err out")
 	}
 
-	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(1, 0), string(out))
+	require.Equal(t, test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(1, 0)), string(out))
 }
 
 func testProjectRemoveCmdWithTooManyArgs(
@@ -277,7 +277,7 @@ func testProjectRemoveCmdWithTooManyArgs(
 		t.Errorf("failed to read from err out")
 	}
 
-	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(1, 2), string(out))
+	require.Equal(t, test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(1, 2)), string(out))
 }
 
 func testProjectRemoveCmdDatabaseError(
@@ -309,7 +309,7 @@ func testProjectRemoveCmdDatabaseError(
 		t.Errorf("unable to read from err out")
 	}
 
-	require.Equal(t, test.ErrorMsg("database_error"), string(out))
+	require.Equal(t, test.ErrorMsg("database_error\n"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -429,7 +429,7 @@ func testProjectRenameCmdWithNoArgs(
 		t.Errorf("failed to read from err out")
 	}
 
-	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(2, 0), string(out))
+	require.Equal(t, test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(2, 0)), string(out))
 }
 
 func testProjectRenameCmdWithTooFewArgs(
@@ -457,7 +457,7 @@ func testProjectRenameCmdWithTooFewArgs(
 		t.Errorf("failed to read from err out")
 	}
 
-	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(2, 1), string(out))
+	require.Equal(t, test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(2, 1)), string(out))
 }
 
 func testProjectRenameCmdWithTooManyArgs(
@@ -485,7 +485,7 @@ func testProjectRenameCmdWithTooManyArgs(
 		t.Errorf("failed to read from err out")
 	}
 
-	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(2, 3), string(out))
+	require.Equal(t, test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(2, 3)), string(out))
 }
 
 func testProjectRenameCmdDatabaseError(
@@ -658,7 +658,7 @@ func testProjectAddCmdValidationError(
 
 	require.Equal(
 		t,
-		test.MaxLengthValidationErrorMsg("project name", 256),
+		test.ErrorMsg(test.MaxLengthValidationErrorMsg("project name", 256)),
 		string(out),
 	)
 }
@@ -696,7 +696,7 @@ func testProjectRemoveCmdValidationError(
 
 	require.Equal(
 		t,
-		test.MaxLengthValidationErrorMsg("project name", 256),
+		test.ErrorMsg(test.MaxLengthValidationErrorMsg("project name", 256)),
 		string(out),
 	)
 }
@@ -735,7 +735,14 @@ func testProjectRenameCmdValidationError(
 
 	require.Equal(
 		t,
-		test.MaxLengthValidationErrorMsg("project name", 256),
+		test.ErrorMsg(strings.Join(
+			[]string{
+				test.MaxLengthValidationErrorMsg("project name", 256),
+				test.MaxLengthValidationErrorMsg("new project name", 256),
+			},
+			"",
+		),
+		),
 		string(out),
 	)
 }

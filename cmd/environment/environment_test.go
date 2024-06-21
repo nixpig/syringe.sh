@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -373,7 +374,7 @@ func testEnvironmentRemoveCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmo
 
 	require.Equal(
 		t,
-		test.RequiredFlagsErrorMsg("project"),
+		test.ErrorMsg(test.RequiredFlagsErrorMsg("project")),
 		string(out),
 	)
 
@@ -552,7 +553,7 @@ func testEnvironmentRenameCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, d
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database_error"),
+		test.ErrorMsg("database_error\n"),
 		string(out),
 	)
 
@@ -589,7 +590,11 @@ func testEnvironmentRenameCmdValidationError(t *testing.T, mock sqlmock.Sqlmock,
 
 	require.Equal(
 		t,
-		test.MaxLengthValidationErrorMsg("environment name", 256),
+		test.ErrorMsg(strings.Join([]string{
+			test.MaxLengthValidationErrorMsg("environment name", 256),
+			test.MaxLengthValidationErrorMsg("new environment name", 256),
+			test.MaxLengthValidationErrorMsg("project name", 256),
+		}, "")),
 		string(out),
 	)
 }
@@ -622,7 +627,8 @@ func testEnvironmentRenameCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmo
 
 	require.Equal(
 		t,
-		test.RequiredFlagsErrorMsg("project"),
+		test.ErrorMsg(test.RequiredFlagsErrorMsg("project")),
+
 		string(out),
 	)
 }
@@ -655,7 +661,7 @@ func testEnvironmentRenameCmdWithNoArgs(t *testing.T, mock sqlmock.Sqlmock, db *
 
 	require.Equal(
 		t,
-		test.IncorrectNumberOfArgsErrorMsg(2, 0),
+		test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(2, 0)),
 		string(out),
 	)
 }
@@ -691,7 +697,7 @@ func testEnvironmentRenameCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock,
 
 	require.Equal(
 		t,
-		test.IncorrectNumberOfArgsErrorMsg(2, 3),
+		test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(2, 3)),
 		string(out),
 	)
 }
@@ -777,7 +783,7 @@ func testEnvironmentListCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db 
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.ErrorMsg("database_error"), string(out))
+	require.Equal(t, test.ErrorMsg("database_error\n"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -808,7 +814,11 @@ func testEnvironmentListCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, d
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.MaxLengthValidationErrorMsg("project name", 256), string(out))
+	require.Equal(
+		t,
+		test.ErrorMsg(test.MaxLengthValidationErrorMsg("project name", 256)),
+		string(out),
+	)
 }
 
 func testEnvironmentListCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -835,7 +845,7 @@ func testEnvironmentListCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmock
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.RequiredFlagsErrorMsg("project"), string(out))
+	require.Equal(t, test.ErrorMsg(test.RequiredFlagsErrorMsg("project")), string(out))
 }
 
 func testEnvironmentListCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -865,5 +875,5 @@ func testEnvironmentListCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, d
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(0, 1), string(out))
+	require.Equal(t, test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(0, 1)), string(out))
 }

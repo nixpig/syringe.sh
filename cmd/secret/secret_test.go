@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -155,7 +156,11 @@ func testSecretSetCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql.
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.RequiredFlagsErrorMsg("project"), string(out))
+	require.Equal(
+		t,
+		test.ErrorMsg(test.RequiredFlagsErrorMsg("project")),
+		string(out),
+	)
 }
 
 func testSecretSetCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -186,7 +191,7 @@ func testSecretSetCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.RequiredFlagsErrorMsg("environment"), string(out))
+	require.Equal(t, test.ErrorMsg(test.RequiredFlagsErrorMsg("environment")), string(out))
 }
 
 func testSecretSetCmdTooFewArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -216,7 +221,11 @@ func testSecretSetCmdTooFewArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) 
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(2, 1), string(out))
+	require.Equal(
+		t,
+		test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(2, 1)),
+		string(out),
+	)
 }
 
 func testSecretSetCmdTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -248,7 +257,11 @@ func testSecretSetCmdTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB)
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(2, 3), string(out))
+	require.Equal(
+		t,
+		test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(2, 3)),
+		string(out),
+	)
 }
 
 func testSecretSetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -308,7 +321,7 @@ func testSecretSetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.ErrorMsg("database_error"), string(out))
+	require.Equal(t, test.ErrorMsg("database_error\n"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -343,7 +356,19 @@ func testSecretSetCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.MaxLengthValidationErrorMsg("project name", 256), string(out))
+	require.Equal(
+		t,
+		test.ErrorMsg(strings.Join(
+			[]string{
+				test.MaxLengthValidationErrorMsg("project name", 256),
+				test.MaxLengthValidationErrorMsg("environment name", 256),
+				test.MaxLengthValidationErrorMsg("secret key", 256),
+				test.MaxLengthValidationErrorMsg("secret name", 256),
+			},
+			"",
+		)),
+		string(out),
+	)
 }
 
 func testSecretGetCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -445,7 +470,7 @@ func testSecretGetCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql.
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.RequiredFlagsErrorMsg("project"), string(out))
+	require.Equal(t, test.ErrorMsg(test.RequiredFlagsErrorMsg("project")), string(out))
 }
 
 func testSecretGetCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -475,7 +500,7 @@ func testSecretGetCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.RequiredFlagsErrorMsg("environment"), string(out))
+	require.Equal(t, test.ErrorMsg(test.RequiredFlagsErrorMsg("environment")), string(out))
 }
 
 func testSecretGetCmdMissingKey(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -506,7 +531,7 @@ func testSecretGetCmdMissingKey(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) 
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(1, 0), string(out))
+	require.Equal(t, test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(1, 0)), string(out))
 }
 
 func testSecretGetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -560,7 +585,7 @@ func testSecretGetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.ErrorMsg("database_error"), string(out))
+	require.Equal(t, test.ErrorMsg("database_error\n"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -594,7 +619,16 @@ func testSecretGetCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.MaxLengthValidationErrorMsg("project name", 256), string(out))
+	require.Equal(
+		t,
+		test.ErrorMsg(strings.Join(
+			[]string{
+				test.MaxLengthValidationErrorMsg("project name", 256),
+				test.MaxLengthValidationErrorMsg("environment name", 256),
+				test.MaxLengthValidationErrorMsg("secret key", 256),
+			}, "")),
+		string(out),
+	)
 }
 
 func testSecretListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -743,7 +777,7 @@ func testSecretListCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.ErrorMsg("database_error"), string(out))
+	require.Equal(t, test.ErrorMsg("database_error\n"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -774,7 +808,7 @@ func testSecretListCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.RequiredFlagsErrorMsg("project"), string(out))
+	require.Equal(t, test.ErrorMsg(test.RequiredFlagsErrorMsg("project")), string(out))
 }
 
 func testSecretListCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -803,7 +837,7 @@ func testSecretListCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db 
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.RequiredFlagsErrorMsg("environment"), string(out))
+	require.Equal(t, test.ErrorMsg(test.RequiredFlagsErrorMsg("environment")), string(out))
 }
 
 func testSecretListCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -834,7 +868,12 @@ func testSecretListCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sq
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.MaxLengthValidationErrorMsg("project name", 256), string(out))
+	require.Equal(
+
+		t,
+		test.ErrorMsg(test.MaxLengthValidationErrorMsg("project name", 256)),
+		string(out),
+	)
 
 	err = cmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
@@ -859,7 +898,11 @@ func testSecretListCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sq
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.MaxLengthValidationErrorMsg("environment name", 256), string(out))
+	require.Equal(
+		t,
+		test.ErrorMsg(test.MaxLengthValidationErrorMsg("environment name", 256)),
+		string(out),
+	)
 }
 
 func testSecretRemoveCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -911,7 +954,7 @@ func testSecretRemoveCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sq
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.ErrorMsg("database_error"), string(out))
+	require.Equal(t, test.ErrorMsg("database_error\n"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -943,7 +986,7 @@ func testSecretRemoveCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *s
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.RequiredFlagsErrorMsg("project"), string(out))
+	require.Equal(t, test.ErrorMsg(test.RequiredFlagsErrorMsg("project")), string(out))
 }
 
 func testSecretRemoveCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -973,7 +1016,7 @@ func testSecretRemoveCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, d
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.RequiredFlagsErrorMsg("environment"), string(out))
+	require.Equal(t, test.ErrorMsg(test.RequiredFlagsErrorMsg("environment")), string(out))
 }
 
 func testSecretRemoveCmdMissingKey(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -1004,7 +1047,7 @@ func testSecretRemoveCmdMissingKey(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(1, 0), string(out))
+	require.Equal(t, test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(1, 0)), string(out))
 }
 
 func testSecretRemoveCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -1018,7 +1061,7 @@ func testSecretRemoveCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *
 			"secret",
 			"remove",
 			"-p",
-			"my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_",
+			"my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_",
 			"-e",
 			"staging",
 			"key_1",
@@ -1036,7 +1079,7 @@ func testSecretRemoveCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.MaxLengthValidationErrorMsg("project name", 256), string(out))
+	require.Equal(t, test.ErrorMsg(test.MaxLengthValidationErrorMsg("project name", 256)), string(out))
 
 	err = cmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
@@ -1046,7 +1089,7 @@ func testSecretRemoveCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *
 			"-p",
 			"my_cool_project",
 			"-e",
-			"staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_",
+			"staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_",
 			"key_1",
 		},
 		cmdIn,
@@ -1062,5 +1105,5 @@ func testSecretRemoveCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.MaxLengthValidationErrorMsg("environment name", 256), string(out))
+	require.Equal(t, test.ErrorMsg(test.MaxLengthValidationErrorMsg("environment name", 256)), string(out))
 }
