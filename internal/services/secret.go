@@ -1,21 +1,24 @@
 package services
 
 import (
+	"reflect"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
+	"github.com/nixpig/syringe.sh/server/pkg"
 )
 
 type SetSecretRequest struct {
-	Project     string
-	Environment string
-	Key         string
-	Value       string
+	Project     string `name:"project name" validate:"required,min=1,max=256"`
+	Environment string `name:"environment name" validate:"required,min=1,max=256"`
+	Key         string `name:"secret key" validate:"required,min=1,max=256"`
+	Value       string `name:"secret name" validate:"required,min=1,max=256"`
 }
 
 type GetSecretRequest struct {
-	Project     string
-	Environment string
-	Key         string
+	Project     string `name:"project name" validate:"required,min=1,max=256"`
+	Environment string `name:"environment name" validate:"required,min=1,max=256"`
+	Key         string `name:"secret key" validate:"required,min=1,max=256"`
 }
 
 type GetSecretResponse struct {
@@ -27,8 +30,8 @@ type GetSecretResponse struct {
 }
 
 type ListSecretsRequest struct {
-	Project     string
-	Environment string
+	Project     string `name:"project name" validate:"required,min=1,max=256"`
+	Environment string `name:"environment name" validate:"required,min=1,max=256"`
 }
 
 type ListSecretsResponse struct {
@@ -42,9 +45,9 @@ type ListSecretsResponse struct {
 }
 
 type RemoveSecretRequest struct {
-	Project     string
-	Environment string
-	Key         string
+	Project     string `name:"project name" validate:"required,min=1,max=256"`
+	Environment string `name:"environment name" validate:"required,min=1,max=256"`
+	Key         string `name:"secret key" validate:"required,min=1,max=256"`
 }
 
 type SecretService interface {
@@ -64,6 +67,10 @@ func NewSecretServiceImpl(
 	store stores.SecretStore,
 	validate *validator.Validate,
 ) SecretService {
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		return fld.Tag.Get("name")
+	})
+
 	return SecretServiceImpl{
 		store:    store,
 		validate: validate,
@@ -80,7 +87,7 @@ func (s SecretServiceImpl) CreateTables() error {
 
 func (s SecretServiceImpl) Set(secret SetSecretRequest) error {
 	if err := s.validate.Struct(secret); err != nil {
-		return err
+		return pkg.ValidationError(err)
 	}
 
 	return s.store.Set(
@@ -93,7 +100,7 @@ func (s SecretServiceImpl) Set(secret SetSecretRequest) error {
 
 func (s SecretServiceImpl) Get(request GetSecretRequest) (*GetSecretResponse, error) {
 	if err := s.validate.Struct(request); err != nil {
-		return nil, err
+		return nil, pkg.ValidationError(err)
 	}
 
 	secret, err := s.store.Get(
@@ -116,7 +123,7 @@ func (s SecretServiceImpl) Get(request GetSecretRequest) (*GetSecretResponse, er
 
 func (s SecretServiceImpl) List(request ListSecretsRequest) (*ListSecretsResponse, error) {
 	if err := s.validate.Struct(request); err != nil {
-		return nil, err
+		return nil, pkg.ValidationError(err)
 	}
 
 	secrets, err := s.store.List(request.Project, request.Environment)
@@ -151,7 +158,7 @@ func (s SecretServiceImpl) List(request ListSecretsRequest) (*ListSecretsRespons
 
 func (s SecretServiceImpl) Remove(request RemoveSecretRequest) error {
 	if err := s.validate.Struct(request); err != nil {
-		return err
+		return pkg.ValidationError(err)
 	}
 
 	if err := s.store.Remove(

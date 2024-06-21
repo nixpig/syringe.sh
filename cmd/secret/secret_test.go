@@ -3,6 +3,7 @@ package secret_test
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/nixpig/syringe.sh/server/cmd"
 	"github.com/nixpig/syringe.sh/server/cmd/secret"
+	"github.com/nixpig/syringe.sh/server/test"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
@@ -33,9 +35,18 @@ func TestSecretCmd(t *testing.T) {
 		"test secret get command database error":      testSecretGetCmdDatabaseError,
 		"test secret get command validation error":    testSecretGetCmdValidationError,
 
-		"test secret list command happy path": testSecretListCmdHappyPath,
+		"test secret list command happy path":          testSecretListCmdHappyPath,
+		"test secret list command database error":      testSecretListCmdDatabaseError,
+		"test secret list command missing project":     testSecretListCmdMissingProject,
+		"test secret list command missing environment": testSecretListCmdMissingEnvironment,
+		"test secret list command validation error":    testSecretListCmdValidationError,
 
-		"test secret remove command happy path": testSecretRemoveCmdHappyPath,
+		"test secret remove command happy path":          testSecretRemoveCmdHappyPath,
+		"test secret remove command database error":      testSecretRemoveCmdDatabaseError,
+		"test secret remove command missing project":     testSecretRemoveCmdMissingProject,
+		"test secret remove command missing environment": testSecretRemoveCmdMissingEnvironment,
+		"test secret remove command missing key":         testSecretRemoveCmdMissingKey,
+		"test secret remove command validation error":    testSecretRemoveCmdValidationError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -119,6 +130,7 @@ func testSecretSetCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 func testSecretSetCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
@@ -132,16 +144,24 @@ func testSecretSetCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql.
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.RequiredFlagsErrorMsg("project"), string(out))
 }
 
 func testSecretSetCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
@@ -155,16 +175,24 @@ func testSecretSetCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.RequiredFlagsErrorMsg("environment"), string(out))
 }
 
 func testSecretSetCmdTooFewArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
@@ -177,16 +205,24 @@ func testSecretSetCmdTooFewArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) 
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(2, 1), string(out))
 }
 
 func testSecretSetCmdTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
@@ -201,16 +237,24 @@ func testSecretSetCmdTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB)
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(2, 3), string(out))
 }
 
 func testSecretSetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	query := `
 		insert into secrets_ 
@@ -253,11 +297,18 @@ func testSecretSetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.ErrorMsg("database_error"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -265,6 +316,7 @@ func testSecretSetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 func testSecretSetCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
@@ -274,17 +326,24 @@ func testSecretSetCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql
 			"-p",
 			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
 			"-e",
-			"stagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstaging",
-			"secret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_key",
-			"secret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_value",
+			"sstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingtagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstaging",
+			"ssecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keyecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_key",
+			"ssecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valueecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_valuesecret_value",
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.MaxLengthValidationErrorMsg("project name", 256), string(out))
 }
 
 func testSecretGetCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -362,6 +421,7 @@ func testSecretGetCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 func testSecretGetCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
@@ -374,16 +434,24 @@ func testSecretGetCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql.
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.RequiredFlagsErrorMsg("project"), string(out))
 }
 
 func testSecretGetCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
@@ -396,16 +464,24 @@ func testSecretGetCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.RequiredFlagsErrorMsg("environment"), string(out))
 }
 
 func testSecretGetCmdMissingKey(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
@@ -419,16 +495,24 @@ func testSecretGetCmdMissingKey(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) 
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(1, 0), string(out))
 }
 
 func testSecretGetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	query := `
 		select s.id_, s.key_, s.value_, p.name_, e.name_
@@ -465,11 +549,18 @@ func testSecretGetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.ErrorMsg("database_error"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -477,6 +568,7 @@ func testSecretGetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 func testSecretGetCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
@@ -491,13 +583,18 @@ func testSecretGetCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql
 		},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
 
-	require.NoError(t, mock.ExpectationsWereMet())
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.MaxLengthValidationErrorMsg("project name", 256), string(out))
 }
 
 func testSecretListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
@@ -599,4 +696,371 @@ func testSecretRemoveCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB
 	require.NoError(t, err)
 
 	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testSecretListCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	query := `
+		select s.id_, s.key_, s.value_, p.name_, e.name_
+		from secrets_ s
+		inner join
+		environments_ e
+		on s.environment_id_ e.id_
+		inner join
+		projects_ p
+		on e.project_id_ p.id_
+		where p.name_ = $projectName
+		and e.name_ = $environmentName
+	`
+
+	mock.ExpectQuery(regexp.QuoteMeta(query)).WithArgs(
+		"my_cool_project", "staging",
+	).WillReturnError(errors.New("database_error"))
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"list",
+			"-p",
+			"my_cool_project",
+			"-e",
+			"staging",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.ErrorMsg("database_error"), string(out))
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testSecretListCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"list",
+			"-e",
+			"staging",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.RequiredFlagsErrorMsg("project"), string(out))
+}
+
+func testSecretListCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"list",
+			"-p",
+			"my_cool_project",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.RequiredFlagsErrorMsg("environment"), string(out))
+}
+
+func testSecretListCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"list",
+			"-p",
+			"my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_",
+			"-e",
+			"staging",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.MaxLengthValidationErrorMsg("project name", 256), string(out))
+
+	err = cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"list",
+			"-p",
+			"my_cool_project",
+			"-e",
+			"staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err = io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.MaxLengthValidationErrorMsg("environment name", 256), string(out))
+}
+
+func testSecretRemoveCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	query := `
+		delete from secrets_ 
+		where id_ in (
+			select s.id_ from secrets_ s
+			inner join
+			environments_ e
+			on s.environment_id_ = e.id_
+			inner join
+			projects_ p
+			on e.project_id_ = p.id_
+			where p.name_ = $projectName
+			and e.name_ = $environmentName
+			and s.key_ = $key
+		)
+	`
+
+	mock.ExpectExec(regexp.QuoteMeta(query)).WithArgs(
+		"my_cool_project", "staging", "key_1",
+	).WillReturnError(errors.New("database_error"))
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"remove",
+			"-p",
+			"my_cool_project",
+			"-e",
+			"staging",
+			"key_1",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.ErrorMsg("database_error"), string(out))
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testSecretRemoveCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"remove",
+			"-e",
+			"staging",
+			"key_1",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.RequiredFlagsErrorMsg("project"), string(out))
+}
+
+func testSecretRemoveCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"remove",
+			"-p",
+			"my_cool_project",
+			"key_1",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.RequiredFlagsErrorMsg("environment"), string(out))
+}
+
+func testSecretRemoveCmdMissingKey(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"remove",
+			"-p",
+			"my_cool_project",
+			"-e",
+			"staging",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.IncorrectNumberOfArgsErrorMsg(1, 0), string(out))
+}
+
+func testSecretRemoveCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"remove",
+			"-p",
+			"my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_my_cool_project_",
+			"-e",
+			"staging",
+			"key_1",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.MaxLengthValidationErrorMsg("project name", 256), string(out))
+
+	err = cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"remove",
+			"-p",
+			"my_cool_project",
+			"-e",
+			"staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_staging_",
+			"key_1",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err = io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.MaxLengthValidationErrorMsg("environment name", 256), string(out))
 }
