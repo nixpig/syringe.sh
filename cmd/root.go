@@ -2,10 +2,14 @@ package cmd
 
 import (
 	"context"
+	"os"
+	"os/user"
 	"strings"
 
 	client "github.com/nixpig/syringe.sh/cli/pkg/ssh"
+
 	"github.com/spf13/cobra"
+	gossh "golang.org/x/crypto/ssh"
 )
 
 func Execute() error {
@@ -32,18 +36,42 @@ func Execute() error {
 }
 
 func rootRunE(cmd *cobra.Command, args []string) error {
-	identity := "/home/nixpig/.ssh/id_rsa"
+	var err error
+	var authMethod gossh.AuthMethod
 
-	output, err := client.SSHClient(
+	// identity := "/home/nixpig/.ssh/id_rsa"
+	identity := ""
+
+	currentUser, err := user.Current()
+	if err != nil || currentUser.Username == "" {
+		return err
+	}
+
+	if identity != "" {
+		authMethod, err = client.IdentityAuthMethod(identity)
+		if err != nil {
+			return err
+		}
+	} else {
+		authMethod, err = client.AgentAuthMethod(os.Getenv("SSH_AUTH_SOCK"))
+		if err != nil {
+			return err
+		}
+	}
+
+	client, err := client.NewSSHClient(
 		"localhost",
 		23234,
-		identity,
-		strings.Join(args, " "),
+		currentUser.Username,
+		authMethod,
 	)
 	if err != nil {
 		return err
 	}
 
-	cmd.Println(string(output))
+	defer client.Close()
+
+	client.Run(strings.Join(args, " "), cmd.OutOrStdout())
+
 	return nil
 }
