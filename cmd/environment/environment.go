@@ -22,6 +22,7 @@ func EnvironmentCommand() *cobra.Command {
 		Use:               "environment",
 		Aliases:           []string{"e"},
 		Short:             "Manage environments",
+		Long:              "Manage your environments.",
 		PersistentPreRunE: initEnvironmentContext,
 	}
 

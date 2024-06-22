@@ -152,18 +152,18 @@ func (s SqliteSecretStore) List(project, environment string) ([]*Secret, error) 
 		from secrets_ s
 		inner join
 		environments_ e
-		on s.environment_id_ e.id_
+		on s.environment_id_ = e.id_
 		inner join
 		projects_ p
-		on e.project_id_ p.id_
-		where p.name_ = $projectName
-		and e.name_ = $environmentName
+		on p.id_ = e.project_id_
+		where p.name_ = $project
+		and e.name_ = $environment
 	`
 
 	rows, err := s.db.Query(
 		query,
-		sql.Named("projectName", project),
-		sql.Named("environmentName", environment),
+		sql.Named("project", project),
+		sql.Named("environment", environment),
 	)
 	if err != nil {
 		return nil, err

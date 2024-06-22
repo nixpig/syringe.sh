@@ -1,20 +1,17 @@
 [![Workflow Status](https://github.com/syringe-sh/server/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/syringe-sh/server/actions/workflows/build.yml?query=branch%3Amain)
 [![Coverage Status](https://coveralls.io/repos/github/syringe-sh/server/badge.svg?branch=main)](https://coveralls.io/github/syringe-sh/server?branch=main)
 
-# `syringe.sh/server`
+# 🔐 `syringe.sh/server`
 
-> **⚠️ THIS PROJECT IS A WORK IN PROGRESS**
->
-> **⚠️ SOME OR ALL OF THE FUNCTIONALITY HERE MAY NOT ACTUALLY WORK AS DOCUMENTED, OR EVEN AT ALL**
+Distributed database-per-user encrypted secrets management over SSH protocol.
 
 ## TODO
 
 - [ ] Improve errors and messaging
 - [ ] Happy path outputs
+- [ ] Logging
 
 ## Proposed usage
-
-`syringe` executed without a subcommand should connect to a TUI.
 
 ### `project`
 
