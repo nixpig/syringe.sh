@@ -1,5 +1,5 @@
-[![Workflow Status](https://github.com/syringe.sh/cli/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/syringe.sh/cli/actions/workflows/build.yml?query=branch%3Amain)
-[![Coverage Status](https://coveralls.io/repos/github/syringe.sh/cli/badge.svg?branch=main)](https://coveralls.io/github/syringe.sh/cli?branch=main)
+[![Workflow Status](https://github.com/syringe-sh/cli/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/syringe-sh/cli/actions/workflows/build.yml?query=branch%3Amain)
+[![Coverage Status](https://coveralls.io/repos/github/syringe-sh/cli/badge.svg?branch=main)](https://coveralls.io/github/syringe-sh/cli?branch=main)
 
 # 💉 `syringe.sh/cli`
 
