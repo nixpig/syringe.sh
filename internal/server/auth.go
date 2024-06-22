@@ -16,8 +16,8 @@ func authAndRegisterHandler(s Server) func(next ssh.Handler) ssh.Handler {
 				s.logger.Warn().Msg("prompt to register and call 'register' command if answer is 'Y', else return/exit")
 				s.logger.Warn().Msg("auto-registering for now...")
 
-				sess.Write([]byte("You are not logged in or registered."))
-				sess.Write([]byte("Auto-registering using provided public key..."))
+				sess.Write([]byte("You are not logged in or registered.\n"))
+				sess.Write([]byte("Auto-registering using provided public key...\n"))
 
 				_, err := s.app.RegisterUser(services.RegisterUserRequest{
 					Username:  sess.User(),
@@ -26,7 +26,7 @@ func authAndRegisterHandler(s Server) func(next ssh.Handler) ssh.Handler {
 				})
 				if err != nil {
 					s.logger.Err(err).Msg("failed to register user")
-					sess.Stderr().Write([]byte("Failed to register user using provided public key."))
+					sess.Stderr().Write([]byte("Failed to register user using provided public key.\n"))
 					return
 				}
 			}

@@ -41,8 +41,9 @@ func (s Server) Start(host, port string) error {
 	server, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, port)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),
+		wish.WithMaxTimeout(time.Duration(time.Second*30)),
 		wish.WithPublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
-			return key.Type() == "ssh-ed25519"
+			return key.Type() == "ssh-ed25519" || key.Type() == "ssh-rsa"
 		}),
 		wish.WithMiddleware(
 			cobraHandler(s),

@@ -89,6 +89,7 @@ func UserListKeysCommand() *cobra.Command {
 }
 
 func userListKeysRunE(cmd *cobra.Command, args []string) error {
+	fmt.Println("list keys...")
 	return nil
 }
 
