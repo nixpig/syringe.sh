@@ -15,6 +15,9 @@ import (
 	"golang.org/x/term"
 )
 
+var keyError *knownhosts.KeyError
+var revokedError *knownhosts.RevokedError
+
 func SSHClient(
 	host string,
 	port int,
@@ -29,6 +32,47 @@ func SSHClient(
 	sshConfig := &gossh.ClientConfig{
 		User: currentUser.Username,
 	}
+
+	sshConfig.HostKeyCallback = gossh.HostKeyCallback(func(hostname string, remote net.Addr, key gossh.PublicKey) error {
+		khf := filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
+
+		kh, err := knownhosts.New(khf)
+		if err != nil {
+			return fmt.Errorf("unable to open knownhosts file: %w", err)
+		}
+
+		kerr := kh(fmt.Sprintf("%s:%d", host, port), remote, key)
+
+		if errors.As(kerr, &revokedError) {
+			return fmt.Errorf("key revoked: %w", revokedError)
+		}
+
+		if errors.As(kerr, &keyError) && len(keyError.Want) > 0 {
+			return fmt.Errorf("host %s is not a key of %s: %w", key, host, keyError)
+		}
+
+		if errors.As(err, &keyError) && len(keyError.Want) == 0 {
+			khfh, err := os.OpenFile(khf, os.O_APPEND|os.O_WRONLY, 0600)
+			if err != nil {
+				return fmt.Errorf("unable to open known hosts file for writing: %w", err)
+			}
+
+			defer khfh.Close()
+
+			knownhost := knownhosts.Normalize(remote.String())
+
+			if _, err := khfh.WriteString(knownhosts.Line([]string{knownhost}, key)); err != nil {
+				return fmt.Errorf("failed to write to knownhosts: %w", err)
+			}
+
+			return nil
+		}
+
+		fmt.Println("kerr: ", kerr)
+
+		fmt.Println("pub key already exists!!")
+		return nil
+	})
 
 	sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
 
@@ -70,51 +114,6 @@ func SSHClient(
 			gossh.PublicKeys(signer),
 		}
 
-		sshConfig.HostKeyCallback = gossh.HostKeyCallback(func(hostname string, remote net.Addr, key gossh.PublicKey) error {
-			fmt.Println("calling back...")
-			khf := filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
-
-			fmt.Println("creating knownhosts for: ", khf)
-			kh, err := knownhosts.New(khf)
-			if err != nil {
-				return errors.New("couldn't open known_hosts file")
-			}
-
-			var kerr *knownhosts.KeyError
-
-			fmt.Println("checking against knownhosts")
-			fmt.Println("host: ", host)
-			fmt.Println("remote: ", remote.String())
-			fmt.Println("key: ", key)
-			if err := kh(fmt.Sprintf("%s:%d", host, port), remote, key); err != nil {
-				fmt.Println("checking if matches want")
-				if errors.As(err, &kerr) && len(kerr.Want) > 0 {
-					return fmt.Errorf("host %s is not a key of %s: %w", key, host, err)
-				}
-
-				fmt.Println("checking if present")
-				if errors.As(err, &kerr) && len(kerr.Want) == 0 {
-					fmt.Println("host key not present; adding to known hosts")
-
-					khfh, err := os.OpenFile(khf, os.O_APPEND|os.O_WRONLY, 0600)
-					if err != nil {
-						return errors.New("unable to open known hosts file for writing")
-					}
-
-					defer khfh.Close()
-
-					knownhost := knownhosts.Normalize(remote.String())
-
-					fmt.Println("writing new known hosts")
-					if _, err := khfh.WriteString(knownhosts.Line([]string{knownhost}, key)); err != nil {
-						return errors.New("failed to write to knownhosts")
-					}
-				}
-			}
-
-			return nil
-		})
-
 	} else {
 		sshAgent, err := net.Dial("unix", sshAuthSock)
 		if err != nil {
@@ -125,10 +124,6 @@ func SSHClient(
 			gossh.PublicKeysCallback(agent.NewClient(sshAgent).Signers),
 		}
 
-		sshConfig.HostKeyCallback = gossh.HostKeyCallback(func(hostname string, remote net.Addr, key gossh.PublicKey) error {
-			// TODO: verify keys when used from agent
-			return nil
-		})
 	}
 
 	conn, err := gossh.Dial("tcp", fmt.Sprintf("%s:%d", host, port), sshConfig)
