@@ -1,4 +1,4 @@
-package client
+package ssh
 
 import (
 	"fmt"
@@ -81,7 +81,7 @@ func NewSSHClient(
 					return fmt.Errorf("failed to write to known hosts: %w", err)
 				}
 
-				fmt.Println(fmt.Sprintf("added host %s to known hosts", hostname))
+				fmt.Printf("added host %s to known hosts\n", hostname)
 			}
 
 			return nil

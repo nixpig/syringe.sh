@@ -6,7 +6,7 @@ import (
 	"os/user"
 	"strings"
 
-	client "github.com/nixpig/syringe.sh/cli/pkg/ssh"
+	"github.com/nixpig/syringe.sh/cli/pkg/ssh"
 
 	"github.com/spf13/cobra"
 	gossh "golang.org/x/crypto/ssh"
@@ -48,18 +48,18 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	if identity != "" {
-		authMethod, err = client.IdentityAuthMethod(identity)
+		authMethod, err = ssh.IdentityAuthMethod(identity)
 		if err != nil {
 			return err
 		}
 	} else {
-		authMethod, err = client.AgentAuthMethod(os.Getenv("SSH_AUTH_SOCK"))
+		authMethod, err = ssh.AgentAuthMethod(os.Getenv("SSH_AUTH_SOCK"))
 		if err != nil {
 			return err
 		}
 	}
 
-	client, err := client.NewSSHClient(
+	client, err := ssh.NewSSHClient(
 		"localhost",
 		23234,
 		currentUser.Username,
