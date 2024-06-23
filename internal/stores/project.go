@@ -32,7 +32,7 @@ func (s SqliteProjectStore) Add(name string) error {
 	`
 
 	if _, err := s.db.Exec(query, sql.Named("name", name)); err != nil {
-		return err
+		return pkg.ErrDatabaseExec(err)
 	}
 
 	return nil
@@ -45,7 +45,7 @@ func (s SqliteProjectStore) Remove(name string) error {
 
 	res, err := s.db.Exec(query, sql.Named("name", name))
 	if err != nil {
-		return err
+		return pkg.ErrDatabaseExec(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
@@ -70,7 +70,7 @@ func (s SqliteProjectStore) Rename(originalName, newName string) error {
 		sql.Named("originalName", originalName),
 		sql.Named("newName", newName),
 	); err != nil {
-		return err
+		return pkg.ErrDatabaseExec(err)
 	}
 
 	return nil
@@ -86,7 +86,7 @@ func (s SqliteProjectStore) List() (*[]Project, error) {
 		return nil, pkg.ErrNoProjectsFound
 	}
 	if err != nil {
-		return nil, err
+		return nil, pkg.ErrDatabaseQuery(err)
 	}
 
 	var projects []Project

@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 
+	"github.com/nixpig/syringe.sh/server/pkg"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
@@ -28,12 +29,12 @@ func Connection(databaseURL, databaseToken string) (*sql.DB, error) {
 func MigrateAppDB(db *sql.DB) error {
 	dropKeysTable := `drop table if exists keys_`
 	if _, err := db.Exec(dropKeysTable); err != nil {
-		return err
+		return pkg.ErrDatabaseExec(err)
 	}
 
 	dropUsersTable := `drop table if exists users_`
 	if _, err := db.Exec(dropUsersTable); err != nil {
-		return err
+		return pkg.ErrDatabaseExec(err)
 	}
 
 	createUsersTable := `
@@ -58,11 +59,11 @@ func MigrateAppDB(db *sql.DB) error {
 	`
 
 	if _, err := db.Exec(createUsersTable); err != nil {
-		return err
+		return pkg.ErrDatabaseExec(err)
 	}
 
 	if _, err := db.Exec(createKeysTable); err != nil {
-		return err
+		return pkg.ErrDatabaseExec(err)
 	}
 
 	return nil

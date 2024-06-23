@@ -323,7 +323,7 @@ func testSecretSetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.ErrorMsg("database_error\n"), string(out))
+	require.Equal(t, test.ErrorMsg("database exec error\n"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -587,7 +587,7 @@ func testSecretGetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.ErrorMsg("database_error\n"), string(out))
+	require.Equal(t, test.ErrorMsg("database exec error\n"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -786,7 +786,7 @@ func testSecretListCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.ErrorMsg("database_error\n"), string(out))
+	require.Equal(t, test.ErrorMsg("database query error\n"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -963,7 +963,7 @@ func testSecretRemoveCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sq
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.ErrorMsg("database_error\n"), string(out))
+	require.Equal(t, test.ErrorMsg("database exec error\n"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }

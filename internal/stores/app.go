@@ -3,6 +3,8 @@ package stores
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/nixpig/syringe.sh/server/pkg"
 )
 
 type User struct {
@@ -94,7 +96,7 @@ func (s SqliteAppStore) DeleteUserByUsername(username string) error {
 
 	res, err := s.appDB.Exec(query, username)
 	if err != nil {
-		return err
+		return pkg.ErrDatabaseExec(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()

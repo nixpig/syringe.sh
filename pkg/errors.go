@@ -7,6 +7,38 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+func NewError(err error, msg string) Error {
+	return Error{
+		err: fmt.Errorf("%s: %w", msg, err),
+		msg: msg,
+	}
+}
+
+type Error struct {
+	err error
+	msg string
+}
+
+func (e Error) Error() string {
+	return e.msg
+}
+
+func (e Error) Unwrap() error {
+	return e.err
+}
+
+func ErrDatabaseExec(err error) error {
+	return NewError(err, "database exec error")
+}
+
+func ErrDatabaseQuery(err error) error {
+	return NewError(err, "database query error")
+}
+
+func ErrNoProjects(err error) error {
+	return NewError(err, "no projects found")
+}
+
 var (
 	ErrNoProjectsFound     = fmt.Errorf("no projects found")
 	ErrNoEnvironmentsFound = fmt.Errorf("no environments found")

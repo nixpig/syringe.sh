@@ -184,7 +184,7 @@ func testProjectAddCmdDatabaseError(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database_error\n"),
+		test.ErrorMsg("database exec error\n"),
 		string(out),
 	)
 
@@ -309,7 +309,7 @@ func testProjectRemoveCmdDatabaseError(
 		t.Errorf("unable to read from err out")
 	}
 
-	require.Equal(t, test.ErrorMsg("database_error\n"), string(out))
+	require.Equal(t, test.ErrorMsg("database exec error\n"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }

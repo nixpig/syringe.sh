@@ -40,7 +40,7 @@ func (s SqliteEnvironmentStore) Add(name, projectName string) error {
 		sql.Named("name", name),
 		sql.Named("projectName", projectName),
 	); err != nil {
-		return err
+		return pkg.ErrDatabaseExec(err)
 	}
 
 	return nil
@@ -65,7 +65,7 @@ func (s SqliteEnvironmentStore) Remove(name, projectName string) error {
 		sql.Named("projectName", projectName),
 	)
 	if err != nil {
-		return err
+		return pkg.ErrDatabaseExec(err)
 	}
 
 	rows, err := res.RowsAffected()
@@ -102,7 +102,7 @@ func (s SqliteEnvironmentStore) Rename(originalName, newName, projectName string
 	)
 
 	if err != nil {
-		return err
+		return pkg.ErrDatabaseExec(err)
 	}
 
 	rows, err := res.RowsAffected()
@@ -133,7 +133,7 @@ func (s SqliteEnvironmentStore) List(projectName string) (*[]Environment, error)
 		return nil, pkg.ErrNoEnvironmentsFound
 	}
 	if err != nil {
-		return nil, err
+		return nil, pkg.ErrDatabaseQuery(err)
 	}
 
 	var environments []Environment

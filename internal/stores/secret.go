@@ -105,7 +105,7 @@ func (s SqliteSecretStore) Set(project, environment, key, value string) error {
 		sql.Named("key", key),
 		sql.Named("value", value),
 	); err != nil {
-		return err
+		return pkg.ErrDatabaseExec(err)
 	}
 
 	return nil
@@ -142,7 +142,7 @@ func (s SqliteSecretStore) Get(project, environment, key string) (*Secret, error
 		&secret.Project,
 		&secret.Environment,
 	); err != nil {
-		return nil, err
+		return nil, pkg.ErrDatabaseExec(err)
 	}
 
 	return &secret, nil
@@ -171,7 +171,7 @@ func (s SqliteSecretStore) List(project, environment string) (*[]Secret, error) 
 		return nil, pkg.ErrNoSecretsFound
 	}
 	if err != nil {
-		return nil, err
+		return nil, pkg.ErrDatabaseQuery(err)
 	}
 
 	var secrets []Secret
@@ -219,7 +219,7 @@ func (s SqliteSecretStore) Remove(project, environment, key string) error {
 		sql.Named("key", key),
 	)
 	if err != nil {
-		return err
+		return pkg.ErrDatabaseExec(err)
 	}
 
 	rows, err := res.RowsAffected()

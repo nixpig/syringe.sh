@@ -546,7 +546,7 @@ func testEnvironmentRenameCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, d
 		db,
 	)
 
-	require.EqualError(t, err, "database_error")
+	require.Error(t, err)
 
 	out, err := io.ReadAll(errOut)
 	if err != nil {
@@ -555,7 +555,7 @@ func testEnvironmentRenameCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, d
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database_error\n"),
+		test.ErrorMsg("database exec error\n"),
 		string(out),
 	)
 
@@ -792,7 +792,7 @@ func testEnvironmentListCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db 
 		t.Error("failed to read from err out")
 	}
 
-	require.Equal(t, test.ErrorMsg("database_error\n"), string(out))
+	require.Equal(t, test.ErrorMsg("database query error\n"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }

@@ -8,8 +8,10 @@ Distributed database-per-user encrypted secrets management over SSH protocol.
 ## TODO
 
 - [ ] Improve errors and messaging
-- [ ] Happy path outputs
-- [ ] Logging
+- [ ] Tests for scenarios like adding a secret to a non-existent project or environment
+- [ ] Explicit (not implicit) user registration
+- [ ] E2E tests with an SSH client
+- [ ] Secret injection
 
 ## Proposed usage
 

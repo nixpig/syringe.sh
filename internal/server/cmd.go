@@ -1,6 +1,8 @@
 package server
 
 import (
+	"errors"
+
 	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/server/cmd"
 	"github.com/nixpig/syringe.sh/server/cmd/environment"
@@ -37,7 +39,7 @@ func cobraHandler(s Server) func(next ssh.Handler) ssh.Handler {
 				sess.Stderr(),
 				db,
 			); err != nil {
-				s.logger.Err(err).
+				s.logger.Err(errors.Unwrap(err)).
 					Str("session", sess.Context().SessionID()).
 					Any("command", sess.Command()).
 					Msg("failed to execute command")
