@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/services"
@@ -159,13 +160,12 @@ func projectListRunE(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no projects found")
 	}
 
-	count := len(projects.Projects)
-	for i, project := range projects.Projects {
-		cmd.Print(project.Name)
-		if i < (count - 1) {
-			cmd.Print("\n")
-		}
+	projectNames := make([]string, len(projects.Projects))
+	for i, p := range projects.Projects {
+		projectNames[i] = p.Name
 	}
+
+	cmd.Print(strings.Join(projectNames, "\n"))
 
 	return nil
 }

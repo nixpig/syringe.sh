@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/services"
@@ -176,13 +177,12 @@ func secretListRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	count := len(secrets.Secrets)
+	secretsList := make([]string, len(secrets.Secrets))
 	for i, s := range secrets.Secrets {
-		cmd.Print(fmt.Sprintf("%s=%s", s.Key, s.Value))
-		if i < (count - 1) {
-			cmd.Print("\n")
-		}
+		secretsList[i] = fmt.Sprintf("%s=%s", s.Key, s.Value)
 	}
+
+	cmd.Print(strings.Join(secretsList, "\n"))
 
 	return nil
 }

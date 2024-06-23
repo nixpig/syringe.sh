@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/services"
@@ -195,13 +196,12 @@ func environmentListE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	count := len(environments.Environments)
+	environmentNames := make([]string, len(environments.Environments))
 	for i, e := range environments.Environments {
-		cmd.Print(e.Name)
-		if i < (count - 1) {
-			cmd.Print("\n")
-		}
+		environmentNames[i] = e.Name
 	}
+
+	cmd.Print(strings.Join(environmentNames, "\n"))
 
 	return nil
 }
