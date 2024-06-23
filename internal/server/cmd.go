@@ -43,6 +43,11 @@ func cobraHandler(s Server) func(next ssh.Handler) ssh.Handler {
 					Msg("failed to execute command")
 			}
 
+			s.logger.Info().
+				Str("session", sess.Context().SessionID()).
+				Any("command", sess.Command()).
+				Msg("executed command")
+
 			next(sess)
 		}
 	}

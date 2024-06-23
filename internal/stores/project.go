@@ -2,7 +2,6 @@ package stores
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/nixpig/syringe.sh/server/pkg"
 )
@@ -55,7 +54,7 @@ func (s SqliteProjectStore) Remove(name string) error {
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("project not found")
+		return pkg.ErrProjectNotFound
 	}
 
 	return nil

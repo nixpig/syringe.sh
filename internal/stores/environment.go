@@ -2,7 +2,6 @@ package stores
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/nixpig/syringe.sh/server/pkg"
 )
@@ -75,7 +74,7 @@ func (s SqliteEnvironmentStore) Remove(name, projectName string) error {
 	}
 
 	if rows == 0 {
-		return fmt.Errorf("environment not found")
+		return pkg.ErrEnvironmentNotFound
 	}
 
 	return nil
@@ -112,7 +111,7 @@ func (s SqliteEnvironmentStore) Rename(originalName, newName, projectName string
 	}
 
 	if rows == 0 {
-		return fmt.Errorf("done fucked it")
+		return pkg.ErrEnvironmentNotFound
 	}
 
 	return nil

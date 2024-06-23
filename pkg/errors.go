@@ -11,6 +11,9 @@ var (
 	ErrNoProjectsFound     = fmt.Errorf("no projects found")
 	ErrNoEnvironmentsFound = fmt.Errorf("no environments found")
 	ErrNoSecretsFound      = fmt.Errorf("no secrets found")
+	ErrProjectNotFound     = fmt.Errorf("project not found")
+	ErrEnvironmentNotFound = fmt.Errorf("environment not found")
+	ErrSecretNotFound      = fmt.Errorf("secret not found")
 )
 
 type ErrValidation struct{ msg string }

@@ -3,7 +3,6 @@ package stores
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/nixpig/syringe.sh/server/pkg"
 )
@@ -229,7 +228,7 @@ func (s SqliteSecretStore) Remove(project, environment, key string) error {
 	}
 
 	if rows == 0 {
-		return fmt.Errorf("secret not found")
+		return pkg.ErrSecretNotFound
 	}
 
 	return nil
