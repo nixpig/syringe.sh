@@ -1,8 +1,6 @@
 package services
 
 import (
-	"reflect"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 	"github.com/nixpig/syringe.sh/server/pkg"
@@ -47,10 +45,6 @@ func NewEnvironmentServiceImpl(
 	store stores.EnvironmentStore,
 	validate *validator.Validate,
 ) EnvironmentService {
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		return fld.Tag.Get("name")
-	})
-
 	return EnvironmentServiceImpl{
 		store:    store,
 		validate: validate,

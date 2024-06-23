@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 	"github.com/nixpig/syringe.sh/server/pkg"
@@ -216,7 +215,8 @@ func initEnvironmentContext(cmd *cobra.Command, args []string) error {
 
 	environmentService := services.NewEnvironmentServiceImpl(
 		stores.NewSqliteEnvironmentStore(db),
-		validator.New(validator.WithRequiredStructEnabled()))
+		pkg.NewValidator(),
+	)
 
 	ctx = context.WithValue(ctx, environmentCtxKey, environmentService)
 

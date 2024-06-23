@@ -1,8 +1,6 @@
 package services
 
 import (
-	"reflect"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 	"github.com/nixpig/syringe.sh/server/pkg"
@@ -67,10 +65,6 @@ func NewSecretServiceImpl(
 	store stores.SecretStore,
 	validate *validator.Validate,
 ) SecretService {
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		return fld.Tag.Get("name")
-	})
-
 	return SecretServiceImpl{
 		store:    store,
 		validate: validate,
@@ -90,12 +84,16 @@ func (s SecretServiceImpl) Set(secret SetSecretRequest) error {
 		return pkg.ValidationError(err)
 	}
 
-	return s.store.Set(
+	if err := s.store.Set(
 		secret.Project,
 		secret.Environment,
 		secret.Key,
 		secret.Value,
-	)
+	); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s SecretServiceImpl) Get(request GetSecretRequest) (*GetSecretResponse, error) {

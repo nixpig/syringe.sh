@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 	"github.com/nixpig/syringe.sh/server/pkg"
@@ -246,7 +245,10 @@ func initSecretContext(cmd *cobra.Command, args []string) error {
 	}
 
 	secretStore := stores.NewSqliteSecretStore(db)
-	secretService := services.NewSecretServiceImpl(secretStore, validator.New(validator.WithRequiredStructEnabled()))
+	secretService := services.NewSecretServiceImpl(
+		secretStore,
+		pkg.NewValidator(),
+	)
 
 	ctx = context.WithValue(ctx, secretCtxKey, secretService)
 

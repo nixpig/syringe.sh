@@ -1,8 +1,6 @@
 package services
 
 import (
-	"reflect"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 	"github.com/nixpig/syringe.sh/server/pkg"
@@ -39,10 +37,6 @@ func NewProjectServiceImpl(
 	store stores.ProjectStore,
 	validate *validator.Validate,
 ) ProjectService {
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		return fld.Tag.Get("name")
-	})
-
 	return ProjectServiceImpl{
 		store:    store,
 		validate: validate,

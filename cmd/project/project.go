@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/server/internal/services"
 	"github.com/nixpig/syringe.sh/server/internal/stores"
 	"github.com/nixpig/syringe.sh/server/pkg"
@@ -180,7 +179,7 @@ func initProjectContext(cmd *cobra.Command, args []string) error {
 
 	projectService := services.NewProjectServiceImpl(
 		stores.NewSqliteProjectStore(db),
-		validator.New(validator.WithRequiredStructEnabled()),
+		pkg.NewValidator(),
 	)
 
 	ctx = context.WithValue(ctx, projectCtxKey, projectService)
