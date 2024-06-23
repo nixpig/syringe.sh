@@ -79,6 +79,7 @@ func secretSetRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	cmd.Print("")
 	return nil
 }
 
@@ -127,7 +128,7 @@ func secretGetRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cmd.Print(secret)
+	cmd.Print(secret.Value)
 
 	return nil
 }
@@ -175,8 +176,12 @@ func secretListRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	for _, s := range secrets.Secrets {
-		cmd.Println(s.ID, s.Key, s.Value)
+	count := len(secrets.Secrets)
+	for i, s := range secrets.Secrets {
+		cmd.Print(fmt.Sprintf("%s=%s", s.Key, s.Value))
+		if i < (count - 1) {
+			cmd.Print("\n")
+		}
 	}
 
 	return nil
@@ -226,6 +231,8 @@ func secretRemoveRunE(cmd *cobra.Command, args []string) error {
 	}); err != nil {
 		return err
 	}
+
+	cmd.Print("")
 
 	return nil
 }

@@ -21,11 +21,18 @@ type RenameProjectRequest struct {
 	NewName string `name:"new project name" validate:"required,min=1,max=256"`
 }
 
+type ListProjectsResponse struct {
+	Projects []struct {
+		ID   int
+		Name string
+	}
+}
+
 type ProjectService interface {
 	Add(project AddProjectRequest) error
 	Remove(project RemoveProjectRequest) error
 	Rename(project RenameProjectRequest) error
-	List() ([]string, error)
+	List() (*ListProjectsResponse, error)
 }
 
 func NewProjectServiceImpl(
@@ -86,11 +93,26 @@ func (p ProjectServiceImpl) Rename(project RenameProjectRequest) error {
 	return nil
 }
 
-func (p ProjectServiceImpl) List() ([]string, error) {
+func (p ProjectServiceImpl) List() (*ListProjectsResponse, error) {
 	projects, err := p.store.List()
 	if err != nil {
 		return nil, err
 	}
 
-	return projects, nil
+	var projectsResponseList []struct {
+		ID   int
+		Name string
+	}
+
+	for _, pv := range *projects {
+		projectsResponseList = append(projectsResponseList, struct {
+			ID   int
+			Name string
+		}{
+			ID:   pv.ID,
+			Name: pv.Name,
+		})
+	}
+
+	return &ListProjectsResponse{Projects: projectsResponseList}, nil
 }

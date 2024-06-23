@@ -21,6 +21,17 @@ type GetSecretRequest struct {
 	Key         string `name:"secret key" validate:"required,min=1,max=256"`
 }
 
+type ListSecretsRequest struct {
+	Project     string `name:"project name" validate:"required,min=1,max=256"`
+	Environment string `name:"environment name" validate:"required,min=1,max=256"`
+}
+
+type RemoveSecretRequest struct {
+	Project     string `name:"project name" validate:"required,min=1,max=256"`
+	Environment string `name:"environment name" validate:"required,min=1,max=256"`
+	Key         string `name:"secret key" validate:"required,min=1,max=256"`
+}
+
 type GetSecretResponse struct {
 	ID          int
 	Project     string
@@ -29,25 +40,14 @@ type GetSecretResponse struct {
 	Value       string
 }
 
-type ListSecretsRequest struct {
-	Project     string `name:"project name" validate:"required,min=1,max=256"`
-	Environment string `name:"environment name" validate:"required,min=1,max=256"`
-}
-
 type ListSecretsResponse struct {
 	Project     string
 	Environment string
-	Secrets     []*struct {
+	Secrets     []struct {
 		ID    int
 		Key   string
 		Value string
 	}
-}
-
-type RemoveSecretRequest struct {
-	Project     string `name:"project name" validate:"required,min=1,max=256"`
-	Environment string `name:"environment name" validate:"required,min=1,max=256"`
-	Key         string `name:"secret key" validate:"required,min=1,max=256"`
 }
 
 type SecretService interface {
@@ -131,14 +131,14 @@ func (s SecretServiceImpl) List(request ListSecretsRequest) (*ListSecretsRespons
 		return nil, err
 	}
 
-	var secretsResponseList []*struct {
+	var secretsResponseList []struct {
 		ID    int
 		Key   string
 		Value string
 	}
 
-	for _, sv := range secrets {
-		secretsResponseList = append(secretsResponseList, &struct {
+	for _, sv := range *secrets {
+		secretsResponseList = append(secretsResponseList, struct {
 			ID    int
 			Key   string
 			Value string

@@ -7,11 +7,16 @@ import (
 	"github.com/nixpig/syringe.sh/server/pkg"
 )
 
+type Project struct {
+	ID   int
+	Name string
+}
+
 type ProjectStore interface {
 	Add(name string) error
 	Remove(name string) error
 	Rename(originalName, newName string) error
-	List() ([]string, error)
+	List() (*[]Project, error)
 }
 
 type SqliteProjectStore struct {
@@ -72,9 +77,9 @@ func (s SqliteProjectStore) Rename(originalName, newName string) error {
 	return nil
 }
 
-func (s SqliteProjectStore) List() ([]string, error) {
+func (s SqliteProjectStore) List() (*[]Project, error) {
 	query := `
-		select name_ from projects_
+		select id_, name_ from projects_
 	`
 
 	rows, err := s.db.Query(query)
@@ -85,17 +90,17 @@ func (s SqliteProjectStore) List() ([]string, error) {
 		return nil, err
 	}
 
-	var projects []string
+	var projects []Project
 
 	for rows.Next() {
-		var project string
+		var project Project
 
-		if err := rows.Scan(&project); err != nil {
+		if err := rows.Scan(&project.ID, &project.Name); err != nil {
 			return nil, err
 		}
 
 		projects = append(projects, project)
 	}
 
-	return projects, nil
+	return &projects, nil
 }

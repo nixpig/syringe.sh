@@ -435,7 +435,7 @@ func testSecretGetCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 
 	require.Equal(
 		t,
-		"&{23 secret_key secret_value my_cool_project staging}",
+		"secret_value",
 		string(out),
 		"should not output anything",
 	)
@@ -680,7 +680,7 @@ func testSecretListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) 
 		t.Errorf("unable to read from cmd out")
 	}
 
-	require.Equal(t, "1 key_1 value_1\n2 key_2 value_2\n", string(out))
+	require.Equal(t, "key_1=value_1\nkey_2=value_2", string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
@@ -728,6 +728,13 @@ func testSecretRemoveCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB
 	)
 
 	require.NoError(t, err)
+
+	out, err := io.ReadAll(cmdOut)
+	if err != nil {
+		t.Error("unable to read from cmd out")
+	}
+
+	require.Equal(t, string(out), "", "shouldn't output anything")
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }

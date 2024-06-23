@@ -18,9 +18,8 @@ type SecretStore interface {
 	CreateTables() error
 	Set(project, environment, key, value string) error
 	Get(project, environment, key string) (*Secret, error)
-	List(project, environment string) ([]*Secret, error)
+	List(project, environment string) (*[]Secret, error)
 	Remove(project, environment, key string) error
-	// delete
 }
 
 type SqliteSecretStore struct {
@@ -137,10 +136,10 @@ func (s SqliteSecretStore) Get(project, environment, key string) (*Secret, error
 
 	if err := row.Scan(
 		&secret.ID,
-		&secret.Project,
-		&secret.Environment,
 		&secret.Key,
 		&secret.Value,
+		&secret.Project,
+		&secret.Environment,
 	); err != nil {
 		return nil, err
 	}
@@ -148,7 +147,7 @@ func (s SqliteSecretStore) Get(project, environment, key string) (*Secret, error
 	return &secret, nil
 }
 
-func (s SqliteSecretStore) List(project, environment string) ([]*Secret, error) {
+func (s SqliteSecretStore) List(project, environment string) (*[]Secret, error) {
 	query := `
 		select s.id_, s.key_, s.value_, p.name_, e.name_
 		from secrets_ s
@@ -171,7 +170,7 @@ func (s SqliteSecretStore) List(project, environment string) ([]*Secret, error) 
 		return nil, err
 	}
 
-	var secrets []*Secret
+	var secrets []Secret
 
 	for rows.Next() {
 		var secret Secret
@@ -186,10 +185,10 @@ func (s SqliteSecretStore) List(project, environment string) ([]*Secret, error) 
 			return nil, err
 		}
 
-		secrets = append(secrets, &secret)
+		secrets = append(secrets, secret)
 	}
 
-	return secrets, nil
+	return &secrets, nil
 }
 
 func (s SqliteSecretStore) Remove(project, environment, key string) error {

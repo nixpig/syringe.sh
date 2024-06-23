@@ -6,16 +6,16 @@ import (
 )
 
 type Environment struct {
-	ID        int
-	Name      string
-	ProjectID int
+	ID      int
+	Name    string
+	Project string
 }
 
 type EnvironmentStore interface {
 	Add(name, projectName string) error
 	Remove(name, projectName string) error
 	Rename(originalName, newName, projectName string) error
-	List(projectName string) ([]string, error)
+	List(projectName string) (*[]Environment, error)
 }
 
 type SqliteEnvironmentStore struct {
@@ -116,9 +116,9 @@ func (s SqliteEnvironmentStore) Rename(originalName, newName, projectName string
 	return nil
 }
 
-func (s SqliteEnvironmentStore) List(projectName string) ([]string, error) {
+func (s SqliteEnvironmentStore) List(projectName string) (*[]Environment, error) {
 	query := `
-		select e.name_ from environments_ e
+		select e.id_, e.name_, p.name_ from environments_ e
 		inner join projects_ p
 		on e.project_id_ = p.id_ 
 		where p.name_ = $projectName
@@ -132,17 +132,21 @@ func (s SqliteEnvironmentStore) List(projectName string) ([]string, error) {
 		return nil, err
 	}
 
-	var environments []string
+	var environments []Environment
 
 	for rows.Next() {
-		var environment string
+		var environment Environment
 
-		if err := rows.Scan(&environment); err != nil {
+		if err := rows.Scan(
+			&environment.ID,
+			&environment.Name,
+			&environment.Project,
+		); err != nil {
 			return nil, err
 		}
 
 		environments = append(environments, environment)
 	}
 
-	return environments, nil
+	return &environments, nil
 }

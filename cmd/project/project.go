@@ -155,12 +155,16 @@ func projectListRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if len(projects) == 0 {
+	if len(projects.Projects) == 0 {
 		return fmt.Errorf("no projects found")
 	}
 
-	for _, project := range projects {
-		cmd.Println(project)
+	count := len(projects.Projects)
+	for i, project := range projects.Projects {
+		cmd.Print(project.Name)
+		if i < (count - 1) {
+			cmd.Print("\n")
+		}
 	}
 
 	return nil

@@ -9,30 +9,38 @@ import (
 )
 
 type AddEnvironmentRequest struct {
-	Name        string `name:"environment name" validate:"required,min=1,max=256"`
-	ProjectName string `name:"project name" validate:"required,min=1,max=256"`
+	Name    string `name:"environment name" validate:"required,min=1,max=256"`
+	Project string `name:"project name" validate:"required,min=1,max=256"`
 }
 
 type RemoveEnvironmentRequest struct {
-	Name        string `name:"environment name" validate:"required,min=1,max=256"`
-	ProjectName string `name:"project name" validate:"required,min=1,max=256"`
+	Name    string `name:"environment name" validate:"required,min=1,max=256"`
+	Project string `name:"project name" validate:"required,min=1,max=256"`
 }
 
 type RenameEnvironmentRequest struct {
-	Name        string `name:"environment name" validate:"required,min=1,max=256"`
-	NewName     string `name:"new environment name" validate:"required,min=1,max=256"`
-	ProjectName string `name:"project name" validate:"required,min=1,max=256"`
+	Name    string `name:"environment name" validate:"required,min=1,max=256"`
+	NewName string `name:"new environment name" validate:"required,min=1,max=256"`
+	Project string `name:"project name" validate:"required,min=1,max=256"`
 }
 
 type ListEnvironmentRequest struct {
-	ProjectName string `name:"project name" validate:"required,min=1,max=256"`
+	Project string `name:"project name" validate:"required,min=1,max=256"`
+}
+
+type ListEnvironmentsResponse struct {
+	Project      string
+	Environments []struct {
+		ID   int
+		Name string
+	}
 }
 
 type EnvironmentService interface {
 	Add(environment AddEnvironmentRequest) error
 	Remove(environment RemoveEnvironmentRequest) error
 	Rename(environment RenameEnvironmentRequest) error
-	List(project ListEnvironmentRequest) ([]string, error)
+	List(project ListEnvironmentRequest) (*ListEnvironmentsResponse, error)
 }
 
 func NewEnvironmentServiceImpl(
@@ -63,7 +71,7 @@ func (e EnvironmentServiceImpl) Add(
 
 	if err := e.store.Add(
 		environment.Name,
-		environment.ProjectName,
+		environment.Project,
 	); err != nil {
 		return err
 	}
@@ -80,7 +88,7 @@ func (e EnvironmentServiceImpl) Remove(
 
 	if err := e.store.Remove(
 		environment.Name,
-		environment.ProjectName,
+		environment.Project,
 	); err != nil {
 		return err
 	}
@@ -98,7 +106,7 @@ func (e EnvironmentServiceImpl) Rename(
 	if err := e.store.Rename(
 		environment.Name,
 		environment.NewName,
-		environment.ProjectName,
+		environment.Project,
 	); err != nil {
 		return err
 	}
@@ -107,16 +115,35 @@ func (e EnvironmentServiceImpl) Rename(
 }
 
 func (e EnvironmentServiceImpl) List(
-	project ListEnvironmentRequest,
-) ([]string, error) {
-	if err := e.validate.Struct(project); err != nil {
+	request ListEnvironmentRequest,
+) (*ListEnvironmentsResponse, error) {
+	if err := e.validate.Struct(request); err != nil {
 		return nil, pkg.ValidationError(err)
 	}
 
-	environments, err := e.store.List(project.ProjectName)
+	environments, err := e.store.List(request.Project)
 	if err != nil {
 		return nil, err
 	}
 
-	return environments, nil
+	var environmentsResponseList []struct {
+		ID   int
+		Name string
+	}
+
+	for _, ev := range *environments {
+		environmentsResponseList = append(environmentsResponseList, struct {
+			ID   int
+			Name string
+		}{
+			ID:   ev.ID,
+			Name: ev.Name,
+		},
+		)
+	}
+
+	return &ListEnvironmentsResponse{
+		Project:      request.Project,
+		Environments: environmentsResponseList,
+	}, nil
 }

@@ -525,12 +525,12 @@ func testProjectListCmdHappyPath(
 	cmdOut := bytes.NewBufferString("")
 
 	mock.
-		ExpectQuery(regexp.QuoteMeta(`select name_ from projects_`)).
+		ExpectQuery(regexp.QuoteMeta(`select id_, name_ from projects_`)).
 		WillReturnRows(
-			sqlmock.NewRows([]string{"name_"}).
-				AddRow("my_cool_project").
-				AddRow("my_awesome_project").
-				AddRow("my_super_project"),
+			sqlmock.NewRows([]string{"id_", "name_"}).
+				AddRow(1, "my_cool_project").
+				AddRow(2, "my_awesome_project").
+				AddRow(3, "my_super_project"),
 		)
 
 	err := cmd.Execute(
@@ -544,12 +544,14 @@ func testProjectListCmdHappyPath(
 	require.NoError(t, err)
 
 	out, err := io.ReadAll(cmdOut)
-	require.NoError(t, err)
+	if err != nil {
+		t.Error("failed to read from std out")
+	}
 
 	require.Equal(
 		t,
-		strings.Split(strings.TrimSpace(string(out)), "\n"),
-		[]string{"my_cool_project", "my_awesome_project", "my_super_project"},
+		string(out),
+		fmt.Sprint("my_cool_project\nmy_awesome_project\nmy_super_project"),
 	)
 
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -564,7 +566,7 @@ func testProjectListCmdZeroResults(
 	cmdOut := bytes.NewBufferString("")
 
 	mock.
-		ExpectQuery(regexp.QuoteMeta(`select name_ from projects_`)).
+		ExpectQuery(regexp.QuoteMeta(`select id_, name_ from projects_`)).
 		WillReturnError(sql.ErrNoRows)
 
 	err := cmd.Execute(
@@ -589,7 +591,7 @@ func testProjectListCmdDatabaseError(
 	cmdOut := bytes.NewBufferString("")
 
 	mock.
-		ExpectQuery(regexp.QuoteMeta(`select name_ from projects_`)).
+		ExpectQuery(regexp.QuoteMeta(`select id_, name_ from projects_`)).
 		WillReturnError(fmt.Errorf("database_error"))
 
 	err := cmd.Execute(

@@ -707,7 +707,7 @@ func testEnvironmentListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql
 	cmdOut := bytes.NewBufferString("")
 
 	query := `
-		select e.name_ from environments_ e
+		select e.id_, e.name_, p.name_ from environments_ e
 		inner join projects_ p
 		on e.project_id_ = p.id_ 
 		where p.name_ = $projectName
@@ -718,10 +718,10 @@ func testEnvironmentListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql
 		WithArgs("my_cool_project").
 		WillReturnRows(
 			sqlmock.
-				NewRows([]string{"name_"}).
-				AddRow("dev").
-				AddRow("staging").
-				AddRow("prod"),
+				NewRows([]string{"id_", "name_", "project_name_"}).
+				AddRow(1, "dev", "my_cool_project").
+				AddRow(2, "staging", "my_cool_project").
+				AddRow(3, "prod", "my_cool_project"),
 		)
 
 	err := cmd.Execute(
@@ -740,6 +740,13 @@ func testEnvironmentListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql
 
 	require.NoError(t, err)
 
+	out, err := io.ReadAll(cmdOut)
+	if err != nil {
+		t.Error("failed to read from stdout")
+	}
+
+	require.Equal(t, string(out), "dev\nstaging\nprod")
+
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -749,7 +756,7 @@ func testEnvironmentListCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db 
 	errOut := bytes.NewBufferString("")
 
 	query := `
-		select e.name_ from environments_ e
+		select e.id_, e.name_, p.name_ from environments_ e
 		inner join projects_ p
 		on e.project_id_ = p.id_ 
 		where p.name_ = $projectName

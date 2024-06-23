@@ -82,8 +82,8 @@ func environmentAddRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := environmentService.Add(services.AddEnvironmentRequest{
-		Name:        environmentName,
-		ProjectName: project,
+		Name:    environmentName,
+		Project: project,
 	}); err != nil {
 		return err
 	}
@@ -107,8 +107,8 @@ func environmentRemoveRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := environmentService.Remove(services.RemoveEnvironmentRequest{
-		Name:        environmentName,
-		ProjectName: project,
+		Name:    environmentName,
+		Project: project,
 	}); err != nil {
 		return err
 	}
@@ -149,9 +149,9 @@ func environmentRenameE(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := environmentService.Rename(services.RenameEnvironmentRequest{
-		Name:        name,
-		NewName:     newName,
-		ProjectName: project,
+		Name:    name,
+		NewName: newName,
+		Project: project,
 	}); err != nil {
 		return err
 	}
@@ -189,14 +189,18 @@ func environmentListE(cmd *cobra.Command, args []string) error {
 	}
 
 	environments, err := environmentService.List(services.ListEnvironmentRequest{
-		ProjectName: project,
+		Project: project,
 	})
 	if err != nil {
 		return err
 	}
 
-	for _, environment := range environments {
-		cmd.Println(environment)
+	count := len(environments.Environments)
+	for i, e := range environments.Environments {
+		cmd.Print(e.Name)
+		if i < (count - 1) {
+			cmd.Print("\n")
+		}
 	}
 
 	return nil
