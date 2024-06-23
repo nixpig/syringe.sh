@@ -155,10 +155,6 @@ func projectListRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if len(projects.Projects) == 0 {
-		return fmt.Errorf("no projects found")
-	}
-
 	projectNames := make([]string, len(projects.Projects))
 	for i, p := range projects.Projects {
 		projectNames[i] = p.Name

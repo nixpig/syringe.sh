@@ -8,7 +8,9 @@ import (
 )
 
 var (
-	ErrNoProjectsFound = fmt.Errorf("no projects found")
+	ErrNoProjectsFound     = fmt.Errorf("no projects found")
+	ErrNoEnvironmentsFound = fmt.Errorf("no environments found")
+	ErrNoSecretsFound      = fmt.Errorf("no secrets found")
 )
 
 type ErrValidation struct{ msg string }

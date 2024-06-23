@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"github.com/nixpig/syringe.sh/server/pkg"
 )
 
 type Secret struct {
@@ -166,6 +168,9 @@ func (s SqliteSecretStore) List(project, environment string) (*[]Secret, error) 
 		sql.Named("project", project),
 		sql.Named("environment", environment),
 	)
+	if err == sql.ErrNoRows {
+		return nil, pkg.ErrNoSecretsFound
+	}
 	if err != nil {
 		return nil, err
 	}

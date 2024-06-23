@@ -564,6 +564,7 @@ func testProjectListCmdZeroResults(
 ) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	mock.
 		ExpectQuery(regexp.QuoteMeta(`select id_, name_ from projects_`)).
@@ -574,11 +575,19 @@ func testProjectListCmdZeroResults(
 		[]string{"project", "list"},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.ErrorMsg("no projects found\n"), string(out))
+
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 

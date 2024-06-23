@@ -3,6 +3,8 @@ package stores
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/nixpig/syringe.sh/server/pkg"
 )
 
 type Environment struct {
@@ -128,6 +130,9 @@ func (s SqliteEnvironmentStore) List(projectName string) (*[]Environment, error)
 		query,
 		sql.Named("projectName", projectName),
 	)
+	if err == sql.ErrNoRows {
+		return nil, pkg.ErrNoEnvironmentsFound
+	}
 	if err != nil {
 		return nil, err
 	}
