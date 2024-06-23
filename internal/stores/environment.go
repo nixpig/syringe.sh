@@ -75,7 +75,7 @@ func (s SqliteEnvironmentStore) Remove(name, projectName string) error {
 	}
 
 	if rows == 0 {
-		fmt.Println("done fucked up!")
+		return fmt.Errorf("environment not found")
 	}
 
 	return nil

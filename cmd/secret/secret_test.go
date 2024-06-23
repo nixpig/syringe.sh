@@ -44,6 +44,7 @@ func TestSecretCmd(t *testing.T) {
 		"test secret list command validation error":    testSecretListCmdValidationError,
 
 		"test secret remove command happy path":          testSecretRemoveCmdHappyPath,
+		"test secret remove command zero results":        testSecretRemoveCmdZeroResults,
 		"test secret remove command database error":      testSecretRemoveCmdDatabaseError,
 		"test secret remove command missing project":     testSecretRemoveCmdMissingProject,
 		"test secret remove command missing environment": testSecretRemoveCmdMissingEnvironment,
@@ -1158,5 +1159,58 @@ func testSecretListCmdZeroResults(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB
 	require.Equal(t, test.ErrorMsg("no secrets found\n"), string(out))
 
 	require.NoError(t, mock.ExpectationsWereMet())
+}
 
+func testSecretRemoveCmdZeroResults(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	query := `
+		delete from secrets_ 
+		where id_ in (
+			select s.id_ from secrets_ s
+			inner join
+			environments_ e
+			on s.environment_id_ = e.id_
+			inner join
+			projects_ p
+			on e.project_id_ = p.id_
+			where p.name_ = $projectName
+			and e.name_ = $environmentName
+			and s.key_ = $key
+		)
+	`
+
+	mock.ExpectExec(regexp.QuoteMeta(query)).WithArgs(
+		"my_cool_project", "staging", "key_1",
+	).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	err := cmd.Execute(
+		[]*cobra.Command{secret.SecretCommand()},
+		[]string{
+			"secret",
+			"remove",
+			"-p",
+			"my_cool_project",
+			"-e",
+			"staging",
+			"key_1",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("unable to read from cmd out")
+	}
+
+	require.Equal(t, string(out), test.ErrorMsg("secret not found\n"))
+
+	require.NoError(t, mock.ExpectationsWereMet())
 }

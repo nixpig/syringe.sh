@@ -346,21 +346,30 @@ func testProjectRemoveCmdZeroAffectedRows(
 ) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
 
 	mock.ExpectExec(regexp.QuoteMeta(`
 		delete from projects_ where name_ = $name
-	`)).WillReturnResult(sqlmock.NewResult(1, 0))
+	`)).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	err := cmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "remove", "my_cool_project"},
 		cmdIn,
 		cmdOut,
-		os.Stderr,
+		errOut,
 		db,
 	)
 
 	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Error("failed to read from err out")
+	}
+
+	require.Equal(t, test.ErrorMsg("project not found\n"), string(out))
+
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 

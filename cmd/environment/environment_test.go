@@ -33,6 +33,7 @@ func TestEnvironmentCmd(t *testing.T) {
 		"test environment remove command with no args":         testEnvironmentRemoveCmdWithNoArgs,
 		"test environment remove command with too many args":   testEnvironmentRemoveCmdWithTooManyArgs,
 		"test environment remove command database error":       testEnvironmentRemoveCmdDatabaseError,
+		"test environment remove command zero affected rows":   testEnvironmentRemoveCmdZeroAffectedRows,
 		"test environment remove command validation error":     testEnvironmentRemoveCmdValidationError,
 
 		"test environment rename command happy path":           testEnvironmentRenameCmdHappyPath,
@@ -925,6 +926,56 @@ func testEnvironmentListCmdZeroResults(t *testing.T, mock sqlmock.Sqlmock, db *s
 	}
 
 	require.Equal(t, test.ErrorMsg("no environments found\n"), string(out))
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testEnvironmentRemoveCmdZeroAffectedRows(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	mock.ExpectExec(regexp.QuoteMeta(`
+		delete from environments_ 
+		where id_ in (
+			select e.id_ from environments_ e
+			inner join
+			projects_ p
+			on e.project_id_ = p.id_
+			where p.name_ = $projectName
+			and e.name_ = $name
+		)
+	`)).
+		WithArgs("staging", "my_cool_project").
+		WillReturnResult(sqlmock.NewResult(0, 0))
+
+	err := cmd.Execute(
+		[]*cobra.Command{environment.EnvironmentCommand()},
+		[]string{
+			"environment",
+			"remove",
+			"-p",
+			"my_cool_project",
+			"staging",
+		},
+		cmdIn,
+		cmdOut,
+		errOut,
+		db,
+	)
+
+	require.Error(t, err)
+
+	out, err := io.ReadAll(errOut)
+	if err != nil {
+		t.Errorf("failed to read from out")
+	}
+
+	require.Equal(
+		t,
+		test.ErrorMsg("environment not found\n"),
+		string(out),
+	)
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }

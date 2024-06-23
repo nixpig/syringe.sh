@@ -229,7 +229,7 @@ func (s SqliteSecretStore) Remove(project, environment, key string) error {
 	}
 
 	if rows == 0 {
-		return fmt.Errorf("nothing deleted")
+		return fmt.Errorf("secret not found")
 	}
 
 	return nil

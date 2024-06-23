@@ -55,7 +55,7 @@ func (s SqliteProjectStore) Remove(name string) error {
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("nothing deleted")
+		return fmt.Errorf("project not found")
 	}
 
 	return nil
