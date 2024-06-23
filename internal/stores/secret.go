@@ -51,7 +51,7 @@ func (s SqliteSecretStore) CreateTables() error {
 	secretsQuery := `
 		create table if not exists secrets_ (
 			id_ integer primary key autoincrement,
-			key_ text not null,
+			key_ text not null unique,
 			value_ text not null,
 			environment_id_ integer not null,
 
@@ -93,7 +93,9 @@ func (s SqliteSecretStore) Set(project, environment, key, value string) error {
 					where p.name_ = $project 
 					and e.name_ = $environment
 			)
-		)
+		) 
+		on conflict(key_)
+		do update set value_ = $value
 	`
 
 	if _, err := s.db.Exec(

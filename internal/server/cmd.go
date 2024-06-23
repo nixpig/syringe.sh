@@ -1,8 +1,6 @@
 package server
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/server/cmd"
 	"github.com/nixpig/syringe.sh/server/cmd/environment"
@@ -43,8 +41,6 @@ func cobraHandler(s Server) func(next ssh.Handler) ssh.Handler {
 					Str("session", sess.Context().SessionID()).
 					Any("command", sess.Command()).
 					Msg("failed to execute command")
-
-				sess.Stderr().Write([]byte(fmt.Sprintf("Error: %s", err)))
 			}
 
 			next(sess)
