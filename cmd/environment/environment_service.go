@@ -1,9 +1,8 @@
-package services
+package environment
 
 import (
 	"github.com/go-playground/validator/v10"
-	"github.com/nixpig/syringe.sh/server/internal/stores"
-	"github.com/nixpig/syringe.sh/server/pkg"
+	"github.com/nixpig/syringe.sh/server/pkg/serrors"
 )
 
 type AddEnvironmentRequest struct {
@@ -42,7 +41,7 @@ type EnvironmentService interface {
 }
 
 func NewEnvironmentServiceImpl(
-	store stores.EnvironmentStore,
+	store EnvironmentStore,
 	validate *validator.Validate,
 ) EnvironmentService {
 	return EnvironmentServiceImpl{
@@ -52,7 +51,7 @@ func NewEnvironmentServiceImpl(
 }
 
 type EnvironmentServiceImpl struct {
-	store    stores.EnvironmentStore
+	store    EnvironmentStore
 	validate *validator.Validate
 }
 
@@ -60,7 +59,7 @@ func (e EnvironmentServiceImpl) Add(
 	environment AddEnvironmentRequest,
 ) error {
 	if err := e.validate.Struct(environment); err != nil {
-		return pkg.ValidationError(err)
+		return serrors.ValidationError(err)
 	}
 
 	if err := e.store.Add(
@@ -77,7 +76,7 @@ func (e EnvironmentServiceImpl) Remove(
 	environment RemoveEnvironmentRequest,
 ) error {
 	if err := e.validate.Struct(environment); err != nil {
-		return pkg.ValidationError(err)
+		return serrors.ValidationError(err)
 	}
 
 	if err := e.store.Remove(
@@ -94,7 +93,7 @@ func (e EnvironmentServiceImpl) Rename(
 	environment RenameEnvironmentRequest,
 ) error {
 	if err := e.validate.Struct(environment); err != nil {
-		return pkg.ValidationError(err)
+		return serrors.ValidationError(err)
 	}
 
 	if err := e.store.Rename(
@@ -112,7 +111,7 @@ func (e EnvironmentServiceImpl) List(
 	request ListEnvironmentRequest,
 ) (*ListEnvironmentsResponse, error) {
 	if err := e.validate.Struct(request); err != nil {
-		return nil, pkg.ValidationError(err)
+		return nil, serrors.ValidationError(err)
 	}
 
 	environments, err := e.store.List(request.Project)

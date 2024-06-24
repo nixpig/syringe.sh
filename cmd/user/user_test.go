@@ -36,7 +36,7 @@ func testUserCmdInitialiseCmd(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	cmdOut := bytes.NewBufferString("")
 
 	err := cmd.Execute(
-		[]*cobra.Command{user.UserCommand()},
+		[]*cobra.Command{user.UserCommand(nil)},
 		[]string{"user"},
 		cmdIn,
 		cmdOut,

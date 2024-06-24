@@ -2,12 +2,8 @@ package server
 
 import (
 	"context"
-	"crypto/sha1"
-	"database/sql"
 	"errors"
-	"fmt"
 	"net"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,25 +11,21 @@ import (
 
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
-	"github.com/nixpig/syringe.sh/server/internal/database"
-	"github.com/nixpig/syringe.sh/server/internal/services"
-	"github.com/nixpig/syringe.sh/server/pkg/turso"
 	"github.com/rs/zerolog"
-	gossh "golang.org/x/crypto/ssh"
 )
 
 type Server struct {
-	app    services.AppService
-	logger *zerolog.Logger
+	logger     *zerolog.Logger
+	middleware []wish.Middleware
 }
 
 func NewServer(
-	app services.AppService,
 	logger *zerolog.Logger,
+	middleware []wish.Middleware,
 ) Server {
 	return Server{
-		app:    app,
-		logger: logger,
+		logger:     logger,
+		middleware: middleware,
 	}
 }
 
@@ -46,9 +38,7 @@ func (s Server) Start(host, port string) error {
 			return key.Type() == "ssh-ed25519" || key.Type() == "ssh-rsa"
 		}),
 		wish.WithMiddleware(
-			cobraHandler(s),
-			authAndRegisterHandler(s),
-			loggingHandler(s),
+			s.middleware...,
 		),
 	)
 	if err != nil {
@@ -84,33 +74,4 @@ func (s Server) Start(host, port string) error {
 	}
 
 	return nil
-}
-
-// TODO: really don't like this!!
-func newUserDBConnection(publicKey ssh.PublicKey) (*sql.DB, error) {
-	api := turso.New(
-		os.Getenv("DATABASE_ORG"),
-		os.Getenv("API_TOKEN"),
-		http.Client{},
-	)
-
-	marshalledKey := gossh.MarshalAuthorizedKey(publicKey)
-
-	hashedKey := fmt.Sprintf("%x", sha1.Sum(marshalledKey))
-	expiration := "30s"
-
-	token, err := api.CreateToken(hashedKey, expiration)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create token:\n%s", err)
-	}
-
-	db, err := database.Connection(
-		"libsql://"+hashedKey+"-"+os.Getenv("DATABASE_ORG")+".turso.io",
-		string(token.Jwt),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("error creating database connection:\n%s", err)
-	}
-
-	return db, nil
 }

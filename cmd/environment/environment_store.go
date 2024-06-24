@@ -1,9 +1,9 @@
-package stores
+package environment
 
 import (
 	"database/sql"
 
-	"github.com/nixpig/syringe.sh/server/pkg"
+	"github.com/nixpig/syringe.sh/server/pkg/serrors"
 )
 
 type Environment struct {
@@ -40,7 +40,7 @@ func (s SqliteEnvironmentStore) Add(name, projectName string) error {
 		sql.Named("name", name),
 		sql.Named("projectName", projectName),
 	); err != nil {
-		return pkg.ErrDatabaseExec(err)
+		return serrors.ErrDatabaseExec(err)
 	}
 
 	return nil
@@ -65,7 +65,7 @@ func (s SqliteEnvironmentStore) Remove(name, projectName string) error {
 		sql.Named("projectName", projectName),
 	)
 	if err != nil {
-		return pkg.ErrDatabaseExec(err)
+		return serrors.ErrDatabaseExec(err)
 	}
 
 	rows, err := res.RowsAffected()
@@ -74,7 +74,7 @@ func (s SqliteEnvironmentStore) Remove(name, projectName string) error {
 	}
 
 	if rows == 0 {
-		return pkg.ErrEnvironmentNotFound
+		return serrors.ErrEnvironmentNotFound
 	}
 
 	return nil
@@ -102,7 +102,7 @@ func (s SqliteEnvironmentStore) Rename(originalName, newName, projectName string
 	)
 
 	if err != nil {
-		return pkg.ErrDatabaseExec(err)
+		return serrors.ErrDatabaseExec(err)
 	}
 
 	rows, err := res.RowsAffected()
@@ -111,7 +111,7 @@ func (s SqliteEnvironmentStore) Rename(originalName, newName, projectName string
 	}
 
 	if rows == 0 {
-		return pkg.ErrEnvironmentNotFound
+		return serrors.ErrEnvironmentNotFound
 	}
 
 	return nil
@@ -130,10 +130,10 @@ func (s SqliteEnvironmentStore) List(projectName string) (*[]Environment, error)
 		sql.Named("projectName", projectName),
 	)
 	if err == sql.ErrNoRows {
-		return nil, pkg.ErrNoEnvironmentsFound
+		return nil, serrors.ErrNoEnvironmentsFound
 	}
 	if err != nil {
-		return nil, pkg.ErrDatabaseQuery(err)
+		return nil, serrors.ErrDatabaseQuery(err)
 	}
 
 	var environments []Environment

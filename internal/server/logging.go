@@ -1,12 +1,15 @@
 package server
 
-import "github.com/charmbracelet/ssh"
+import (
+	"github.com/charmbracelet/ssh"
+	"github.com/rs/zerolog"
+)
 
-func loggingHandler(s Server) func(next ssh.Handler) ssh.Handler {
+func NewLoggingHandler(logger *zerolog.Logger) func(next ssh.Handler) ssh.Handler {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
 			// log incoming connection
-			s.logger.Info().
+			logger.Info().
 				Str("session", sess.Context().SessionID()).
 				Str("user", sess.User()).
 				Str("address", sess.RemoteAddr().String()).
@@ -17,7 +20,7 @@ func loggingHandler(s Server) func(next ssh.Handler) ssh.Handler {
 			next(sess)
 
 			// log end of connection
-			s.logger.Info().
+			logger.Info().
 				Str("session", sess.Context().SessionID()).
 				Msg("disconnect")
 		}

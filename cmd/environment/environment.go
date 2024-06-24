@@ -6,15 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nixpig/syringe.sh/server/internal/services"
-	"github.com/nixpig/syringe.sh/server/internal/stores"
-	"github.com/nixpig/syringe.sh/server/pkg"
+	"github.com/nixpig/syringe.sh/server/pkg/ctxkeys"
+	"github.com/nixpig/syringe.sh/server/pkg/validation"
 	"github.com/spf13/cobra"
-)
-
-const (
-	dbCtxKey          = pkg.DBCtxKey
-	environmentCtxKey = pkg.EnvironmentCtxKey
 )
 
 func EnvironmentCommand() *cobra.Command {
@@ -76,12 +70,12 @@ func environmentAddRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	environmentService, ok := cmd.Context().Value(environmentCtxKey).(services.EnvironmentService)
+	environmentService, ok := cmd.Context().Value(ctxkeys.EnvironmentService).(EnvironmentService)
 	if !ok {
 		return fmt.Errorf("unable to get environment service")
 	}
 
-	if err := environmentService.Add(services.AddEnvironmentRequest{
+	if err := environmentService.Add(AddEnvironmentRequest{
 		Name:    environmentName,
 		Project: project,
 	}); err != nil {
@@ -101,12 +95,12 @@ func environmentRemoveRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	environmentService, ok := cmd.Context().Value(environmentCtxKey).(services.EnvironmentService)
+	environmentService, ok := cmd.Context().Value(ctxkeys.EnvironmentService).(EnvironmentService)
 	if !ok {
 		return fmt.Errorf("unable to get environment service")
 	}
 
-	if err := environmentService.Remove(services.RemoveEnvironmentRequest{
+	if err := environmentService.Remove(RemoveEnvironmentRequest{
 		Name:    environmentName,
 		Project: project,
 	}); err != nil {
@@ -143,12 +137,12 @@ func environmentRenameE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	environmentService, ok := cmd.Context().Value(environmentCtxKey).(services.EnvironmentService)
+	environmentService, ok := cmd.Context().Value(ctxkeys.EnvironmentService).(EnvironmentService)
 	if !ok {
 		return fmt.Errorf("unable to get environment service")
 	}
 
-	if err := environmentService.Rename(services.RenameEnvironmentRequest{
+	if err := environmentService.Rename(RenameEnvironmentRequest{
 		Name:    name,
 		NewName: newName,
 		Project: project,
@@ -183,12 +177,12 @@ func environmentListE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	environmentService, ok := cmd.Context().Value(environmentCtxKey).(services.EnvironmentService)
+	environmentService, ok := cmd.Context().Value(ctxkeys.EnvironmentService).(EnvironmentService)
 	if !ok {
 		return fmt.Errorf("unable to get environment service")
 	}
 
-	environments, err := environmentService.List(services.ListEnvironmentRequest{
+	environments, err := environmentService.List(ListEnvironmentRequest{
 		Project: project,
 	})
 	if err != nil {
@@ -208,17 +202,17 @@ func environmentListE(cmd *cobra.Command, args []string) error {
 func initEnvironmentContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	db, ok := ctx.Value(dbCtxKey).(*sql.DB)
+	db, ok := ctx.Value(ctxkeys.DB).(*sql.DB)
 	if !ok {
 		return fmt.Errorf("unable to get database from context")
 	}
 
-	environmentService := services.NewEnvironmentServiceImpl(
-		stores.NewSqliteEnvironmentStore(db),
-		pkg.NewValidator(),
+	environmentService := NewEnvironmentServiceImpl(
+		NewSqliteEnvironmentStore(db),
+		validation.NewValidator(),
 	)
 
-	ctx = context.WithValue(ctx, environmentCtxKey, environmentService)
+	ctx = context.WithValue(ctx, ctxkeys.EnvironmentService, environmentService)
 
 	cmd.SetContext(ctx)
 

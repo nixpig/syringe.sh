@@ -1,10 +1,10 @@
-package stores
+package secret
 
 import (
 	"context"
 	"database/sql"
 
-	"github.com/nixpig/syringe.sh/server/pkg"
+	"github.com/nixpig/syringe.sh/server/pkg/serrors"
 )
 
 type Secret struct {
@@ -105,7 +105,7 @@ func (s SqliteSecretStore) Set(project, environment, key, value string) error {
 		sql.Named("key", key),
 		sql.Named("value", value),
 	); err != nil {
-		return pkg.ErrDatabaseExec(err)
+		return serrors.ErrDatabaseExec(err)
 	}
 
 	return nil
@@ -142,7 +142,7 @@ func (s SqliteSecretStore) Get(project, environment, key string) (*Secret, error
 		&secret.Project,
 		&secret.Environment,
 	); err != nil {
-		return nil, pkg.ErrDatabaseExec(err)
+		return nil, serrors.ErrDatabaseExec(err)
 	}
 
 	return &secret, nil
@@ -168,10 +168,10 @@ func (s SqliteSecretStore) List(project, environment string) (*[]Secret, error) 
 		sql.Named("environment", environment),
 	)
 	if err == sql.ErrNoRows {
-		return nil, pkg.ErrNoSecretsFound
+		return nil, serrors.ErrNoSecretsFound
 	}
 	if err != nil {
-		return nil, pkg.ErrDatabaseQuery(err)
+		return nil, serrors.ErrDatabaseQuery(err)
 	}
 
 	var secrets []Secret
@@ -219,7 +219,7 @@ func (s SqliteSecretStore) Remove(project, environment, key string) error {
 		sql.Named("key", key),
 	)
 	if err != nil {
-		return pkg.ErrDatabaseExec(err)
+		return serrors.ErrDatabaseExec(err)
 	}
 
 	rows, err := res.RowsAffected()
@@ -228,7 +228,7 @@ func (s SqliteSecretStore) Remove(project, environment, key string) error {
 	}
 
 	if rows == 0 {
-		return pkg.ErrSecretNotFound
+		return serrors.ErrSecretNotFound
 	}
 
 	return nil

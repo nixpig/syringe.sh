@@ -6,15 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nixpig/syringe.sh/server/internal/services"
-	"github.com/nixpig/syringe.sh/server/internal/stores"
-	"github.com/nixpig/syringe.sh/server/pkg"
+	"github.com/nixpig/syringe.sh/server/pkg/ctxkeys"
+	"github.com/nixpig/syringe.sh/server/pkg/validation"
 	"github.com/spf13/cobra"
-)
-
-const (
-	dbCtxKey      = pkg.DBCtxKey
-	projectCtxKey = pkg.ProjectCtxKey
 )
 
 func ProjectCommand() *cobra.Command {
@@ -49,12 +43,12 @@ func projectAddCommand() *cobra.Command {
 func projectAddRunE(cmd *cobra.Command, args []string) error {
 	projectName := args[0]
 
-	projectService, ok := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+	projectService, ok := cmd.Context().Value(ctxkeys.ProjectService).(ProjectService)
 	if !ok {
 		return fmt.Errorf("unable to get project service from context")
 	}
 
-	if err := projectService.Add(services.AddProjectRequest{
+	if err := projectService.Add(AddProjectRequest{
 		Name: projectName,
 	}); err != nil {
 		return err
@@ -81,12 +75,12 @@ func projectRemoveCommand() *cobra.Command {
 func projectRemoveRunE(cmd *cobra.Command, args []string) error {
 	projectName := args[0]
 
-	projectService, ok := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+	projectService, ok := cmd.Context().Value(ctxkeys.ProjectService).(ProjectService)
 	if !ok {
 		return fmt.Errorf("unable to get project service from context")
 	}
 
-	if err := projectService.Remove(services.RemoveProjectRequest{
+	if err := projectService.Remove(RemoveProjectRequest{
 		Name: projectName,
 	}); err != nil {
 		return err
@@ -114,12 +108,12 @@ func projectRenameRunE(cmd *cobra.Command, args []string) error {
 	name := args[0]
 	newName := args[1]
 
-	projectService, ok := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+	projectService, ok := cmd.Context().Value(ctxkeys.ProjectService).(ProjectService)
 	if !ok {
 		return fmt.Errorf("unable to get project service from context")
 	}
 
-	if err := projectService.Rename(services.RenameProjectRequest{
+	if err := projectService.Rename(RenameProjectRequest{
 		Name:    name,
 		NewName: newName,
 	}); err != nil {
@@ -145,7 +139,7 @@ func projectListCommand() *cobra.Command {
 }
 
 func projectListRunE(cmd *cobra.Command, args []string) error {
-	projectService, ok := cmd.Context().Value(projectCtxKey).(services.ProjectService)
+	projectService, ok := cmd.Context().Value(ctxkeys.ProjectService).(ProjectService)
 	if !ok {
 		return fmt.Errorf("unable to get project service from context")
 	}
@@ -168,17 +162,17 @@ func projectListRunE(cmd *cobra.Command, args []string) error {
 func initProjectContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	db, ok := ctx.Value(dbCtxKey).(*sql.DB)
+	db, ok := ctx.Value(ctxkeys.DB).(*sql.DB)
 	if !ok {
 		return fmt.Errorf("unable to get database from context")
 	}
 
-	projectService := services.NewProjectServiceImpl(
-		stores.NewSqliteProjectStore(db),
-		pkg.NewValidator(),
+	projectService := NewProjectServiceImpl(
+		NewSqliteProjectStore(db),
+		validation.NewValidator(),
 	)
 
-	ctx = context.WithValue(ctx, projectCtxKey, projectService)
+	ctx = context.WithValue(ctx, ctxkeys.ProjectService, projectService)
 
 	cmd.SetContext(ctx)
 

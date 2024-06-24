@@ -1,9 +1,8 @@
-package services
+package project
 
 import (
 	"github.com/go-playground/validator/v10"
-	"github.com/nixpig/syringe.sh/server/internal/stores"
-	"github.com/nixpig/syringe.sh/server/pkg"
+	"github.com/nixpig/syringe.sh/server/pkg/serrors"
 )
 
 type AddProjectRequest struct {
@@ -34,7 +33,7 @@ type ProjectService interface {
 }
 
 func NewProjectServiceImpl(
-	store stores.ProjectStore,
+	store ProjectStore,
 	validate *validator.Validate,
 ) ProjectService {
 	return ProjectServiceImpl{
@@ -44,13 +43,13 @@ func NewProjectServiceImpl(
 }
 
 type ProjectServiceImpl struct {
-	store    stores.ProjectStore
+	store    ProjectStore
 	validate *validator.Validate
 }
 
 func (p ProjectServiceImpl) Add(project AddProjectRequest) error {
 	if err := p.validate.Struct(project); err != nil {
-		return pkg.ValidationError(err)
+		return serrors.ValidationError(err)
 	}
 
 	if err := p.store.Add(project.Name); err != nil {
@@ -62,7 +61,7 @@ func (p ProjectServiceImpl) Add(project AddProjectRequest) error {
 
 func (p ProjectServiceImpl) Remove(project RemoveProjectRequest) error {
 	if err := p.validate.Struct(project); err != nil {
-		return pkg.ValidationError(err)
+		return serrors.ValidationError(err)
 	}
 
 	if err := p.store.Remove(project.Name); err != nil {
@@ -74,7 +73,7 @@ func (p ProjectServiceImpl) Remove(project RemoveProjectRequest) error {
 
 func (p ProjectServiceImpl) Rename(project RenameProjectRequest) error {
 	if err := p.validate.Struct(project); err != nil {
-		return pkg.ValidationError(err)
+		return serrors.ValidationError(err)
 	}
 
 	if err := p.store.Rename(

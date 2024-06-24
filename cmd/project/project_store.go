@@ -1,9 +1,9 @@
-package stores
+package project
 
 import (
 	"database/sql"
 
-	"github.com/nixpig/syringe.sh/server/pkg"
+	"github.com/nixpig/syringe.sh/server/pkg/serrors"
 )
 
 type Project struct {
@@ -32,7 +32,7 @@ func (s SqliteProjectStore) Add(name string) error {
 	`
 
 	if _, err := s.db.Exec(query, sql.Named("name", name)); err != nil {
-		return pkg.ErrDatabaseExec(err)
+		return serrors.ErrDatabaseExec(err)
 	}
 
 	return nil
@@ -45,7 +45,7 @@ func (s SqliteProjectStore) Remove(name string) error {
 
 	res, err := s.db.Exec(query, sql.Named("name", name))
 	if err != nil {
-		return pkg.ErrDatabaseExec(err)
+		return serrors.ErrDatabaseExec(err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
@@ -54,7 +54,7 @@ func (s SqliteProjectStore) Remove(name string) error {
 	}
 
 	if rowsAffected == 0 {
-		return pkg.ErrProjectNotFound
+		return serrors.ErrProjectNotFound
 	}
 
 	return nil
@@ -70,7 +70,7 @@ func (s SqliteProjectStore) Rename(originalName, newName string) error {
 		sql.Named("originalName", originalName),
 		sql.Named("newName", newName),
 	); err != nil {
-		return pkg.ErrDatabaseExec(err)
+		return serrors.ErrDatabaseExec(err)
 	}
 
 	return nil
@@ -83,10 +83,10 @@ func (s SqliteProjectStore) List() (*[]Project, error) {
 
 	rows, err := s.db.Query(query)
 	if err == sql.ErrNoRows {
-		return nil, pkg.ErrNoProjectsFound
+		return nil, serrors.ErrNoProjectsFound
 	}
 	if err != nil {
-		return nil, pkg.ErrDatabaseQuery(err)
+		return nil, serrors.ErrDatabaseQuery(err)
 	}
 
 	var projects []Project

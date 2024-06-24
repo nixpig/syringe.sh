@@ -6,15 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nixpig/syringe.sh/server/internal/services"
-	"github.com/nixpig/syringe.sh/server/internal/stores"
-	"github.com/nixpig/syringe.sh/server/pkg"
+	"github.com/nixpig/syringe.sh/server/pkg/ctxkeys"
+	"github.com/nixpig/syringe.sh/server/pkg/validation"
 	"github.com/spf13/cobra"
-)
-
-const (
-	dbCtxKey     = pkg.DBCtxKey
-	secretCtxKey = pkg.SecretCtxKey
 )
 
 func SecretCommand() *cobra.Command {
@@ -68,9 +62,9 @@ func secretSetRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	secretService := cmd.Context().Value(secretCtxKey).(services.SecretService)
+	secretService := cmd.Context().Value(ctxkeys.SecretService).(SecretService)
 
-	if err := secretService.Set(services.SetSecretRequest{
+	if err := secretService.Set(SetSecretRequest{
 		Project:     project,
 		Environment: environment,
 		Key:         key,
@@ -117,9 +111,9 @@ func secretGetRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	secretService := cmd.Context().Value(secretCtxKey).(services.SecretService)
+	secretService := cmd.Context().Value(ctxkeys.SecretService).(SecretService)
 
-	secret, err := secretService.Get(services.GetSecretRequest{
+	secret, err := secretService.Get(GetSecretRequest{
 		Project:     project,
 		Environment: environment,
 		Key:         key,
@@ -163,12 +157,12 @@ func secretListRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	secretService, ok := cmd.Context().Value(secretCtxKey).(services.SecretService)
+	secretService, ok := cmd.Context().Value(ctxkeys.SecretService).(SecretService)
 	if !ok {
 		return fmt.Errorf("unable to load secret service from context")
 	}
 
-	secrets, err := secretService.List(services.ListSecretsRequest{
+	secrets, err := secretService.List(ListSecretsRequest{
 		Project:     project,
 		Environment: environment,
 	})
@@ -218,12 +212,12 @@ func secretRemoveRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	secretService, ok := cmd.Context().Value(secretCtxKey).(services.SecretService)
+	secretService, ok := cmd.Context().Value(ctxkeys.SecretService).(SecretService)
 	if !ok {
 		return fmt.Errorf("unable to get secret service from context")
 	}
 
-	if err := secretService.Remove(services.RemoveSecretRequest{
+	if err := secretService.Remove(RemoveSecretRequest{
 		Project:     project,
 		Environment: environment,
 		Key:         key,
@@ -239,18 +233,18 @@ func secretRemoveRunE(cmd *cobra.Command, args []string) error {
 func initSecretContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	db, ok := ctx.Value(dbCtxKey).(*sql.DB)
+	db, ok := ctx.Value(ctxkeys.DB).(*sql.DB)
 	if !ok {
 		return fmt.Errorf("unable to get database from context")
 	}
 
-	secretStore := stores.NewSqliteSecretStore(db)
-	secretService := services.NewSecretServiceImpl(
+	secretStore := NewSqliteSecretStore(db)
+	secretService := NewSecretServiceImpl(
 		secretStore,
-		pkg.NewValidator(),
+		validation.NewValidator(),
 	)
 
-	ctx = context.WithValue(ctx, secretCtxKey, secretService)
+	ctx = context.WithValue(ctx, ctxkeys.SecretService, secretService)
 
 	cmd.SetContext(ctx)
 

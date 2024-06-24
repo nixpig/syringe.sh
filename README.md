@@ -7,11 +7,15 @@ Distributed database-per-user encrypted secrets management over SSH protocol.
 
 ## TODO
 
+- [ ] E2E tests with an SSH client, including a couple like trying to create secrets for a non-existent project or environmnet
+  - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?
+- [?] Explicit (not implicit) user registration
 - [ ] Improve errors and messaging
-- [ ] Tests for scenarios like adding a secret to a non-existent project or environment
-- [ ] Explicit (not implicit) user registration
-- [ ] E2E tests with an SSH client
 - [ ] Secret injection
+- [ ] Remove use of third-party package for SSH client (in CLI client)
+- [?] Merge client and server codebases into one
+- [ ] Proper good refactor and tidy-up
+- [ ] Pull the Turso stuff out into separate SDK package??
 
 ## Proposed usage
 

@@ -1,15 +1,14 @@
 package main
 
 import (
-	"net/http"
 	"os"
 
+	"github.com/charmbracelet/wish"
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
+	"github.com/nixpig/syringe.sh/server/internal/auth"
 	"github.com/nixpig/syringe.sh/server/internal/database"
 	"github.com/nixpig/syringe.sh/server/internal/server"
-	"github.com/nixpig/syringe.sh/server/internal/services"
-	"github.com/nixpig/syringe.sh/server/internal/stores"
 	"github.com/rs/zerolog"
 )
 
@@ -41,13 +40,21 @@ func main() {
 
 	log.Info().Msg("building app components")
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	appStore := stores.NewSqliteAppStore(appDB)
-	appService := services.NewAppService(appStore, validate, http.Client{}, services.TursoAPISettings{
-		URL:   os.Getenv("API_BASE_URL"),
-		Token: os.Getenv("API_TOKEN"),
-	}, &log)
+	authStore := auth.NewSqliteAuthStore(appDB)
+	authService := auth.NewAuthService(authStore, validate, &log)
 
-	sshServer := server.NewServer(appService, &log)
+	commandHandler := server.NewCommandHandler(&log, appDB)
+	authHandler := server.NewAuthHandler(&log, authService)
+	loggingHandler := server.NewLoggingHandler(&log)
+
+	sshServer := server.NewServer(
+		&log,
+		[]wish.Middleware{
+			commandHandler,
+			authHandler,
+			loggingHandler,
+		},
+	)
 
 	if err := sshServer.Start(
 		os.Getenv("APP_HOST"),

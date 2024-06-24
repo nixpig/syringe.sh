@@ -1,4 +1,4 @@
-package services
+package user
 
 import (
 	"crypto/sha1"
@@ -10,10 +10,9 @@ import (
 
 	"github.com/charmbracelet/ssh"
 	"github.com/go-playground/validator/v10"
+	"github.com/nixpig/syringe.sh/server/cmd/secret"
 	"github.com/nixpig/syringe.sh/server/internal/database"
-	"github.com/nixpig/syringe.sh/server/internal/stores"
 	"github.com/nixpig/syringe.sh/server/pkg/turso"
-	"github.com/rs/zerolog"
 	gossh "golang.org/x/crypto/ssh"
 )
 
@@ -56,59 +55,46 @@ type CreateDatabaseResponse struct {
 	HostName string
 }
 
-type UserAuthRequest struct {
-	Username  string
-	PublicKey ssh.PublicKey
-}
-
-type UserAuthResponse struct {
-	Auth bool
-}
-
 type TursoAPISettings struct {
 	URL   string
 	Token string
 }
 
-type AppService interface {
+type UserService interface {
 	RegisterUser(user RegisterUserRequest) (*RegisterUserResponse, error)
 	AddPublicKey(publicKey AddPublicKeyRequest) (*AddPublicKeyResponse, error)
 	CreateDatabase(databaseDetails CreateDatabaseRequest) (*CreateDatabaseResponse, error)
-	AuthenticateUser(authDetails UserAuthRequest) (*UserAuthResponse, error)
 }
 
-type AppServiceImpl struct {
-	store            stores.AppStore
+type UserServiceImpl struct {
+	store            UserStore
 	validate         *validator.Validate
 	httpClient       http.Client
 	tursoAPISettings TursoAPISettings
-	logger           *zerolog.Logger
 }
 
-func NewAppService(
-	store stores.AppStore,
+func NewUserServiceImpl(
+	store UserStore,
 	validate *validator.Validate,
 	httpClient http.Client,
 	tursoAPISettings TursoAPISettings,
-	logger *zerolog.Logger,
-) AppServiceImpl {
-	return AppServiceImpl{
+) UserServiceImpl {
+	return UserServiceImpl{
 		store:            store,
 		validate:         validate,
 		httpClient:       httpClient,
 		tursoAPISettings: tursoAPISettings,
-		logger:           logger,
 	}
 }
 
-func (a AppServiceImpl) RegisterUser(
+func (u UserServiceImpl) RegisterUser(
 	user RegisterUserRequest,
 ) (*RegisterUserResponse, error) {
-	if err := a.validate.Struct(user); err != nil {
+	if err := u.validate.Struct(user); err != nil {
 		return nil, err
 	}
 
-	insertedUser, err := a.store.InsertUser(
+	insertedUser, err := u.store.InsertUser(
 		user.Username,
 		user.Email,
 		"active",
@@ -119,7 +105,7 @@ func (a AppServiceImpl) RegisterUser(
 
 	marshalledKey := gossh.MarshalAuthorizedKey(user.PublicKey)
 
-	insertedKey, err := a.AddPublicKey(AddPublicKeyRequest{
+	insertedKey, err := u.AddPublicKey(AddPublicKeyRequest{
 		UserID:    insertedUser.ID,
 		PublicKey: string(marshalledKey),
 	})
@@ -127,7 +113,7 @@ func (a AppServiceImpl) RegisterUser(
 		return nil, err
 	}
 
-	insertedDatabase, err := a.CreateDatabase(
+	insertedDatabase, err := u.CreateDatabase(
 		CreateDatabaseRequest{
 			Name:          fmt.Sprintf("%x", sha1.Sum(marshalledKey)),
 			UserID:        insertedUser.ID,
@@ -148,14 +134,14 @@ func (a AppServiceImpl) RegisterUser(
 	}, nil
 }
 
-func (a AppServiceImpl) AddPublicKey(
+func (u UserServiceImpl) AddPublicKey(
 	addKeyDetails AddPublicKeyRequest,
 ) (*AddPublicKeyResponse, error) {
-	if err := a.validate.Struct(addKeyDetails); err != nil {
+	if err := u.validate.Struct(addKeyDetails); err != nil {
 		return nil, err
 	}
 
-	addedKeyDetails, err := a.store.InsertKey(addKeyDetails.UserID, addKeyDetails.PublicKey)
+	addedKeyDetails, err := u.store.InsertKey(addKeyDetails.UserID, addKeyDetails.PublicKey)
 	if err != nil {
 		return nil, err
 	}
@@ -168,14 +154,14 @@ func (a AppServiceImpl) AddPublicKey(
 	}, nil
 }
 
-func (a AppServiceImpl) CreateDatabase(
+func (u UserServiceImpl) CreateDatabase(
 	databaseDetails CreateDatabaseRequest,
 ) (*CreateDatabaseResponse, error) {
-	if err := a.validate.Struct(databaseDetails); err != nil {
+	if err := u.validate.Struct(databaseDetails); err != nil {
 		return nil, err
 	}
 
-	api := turso.New(databaseDetails.DatabaseOrg, a.tursoAPISettings.Token, a.httpClient)
+	api := turso.New(databaseDetails.DatabaseOrg, u.tursoAPISettings.Token, u.httpClient)
 
 	list, err := api.ListDatabases()
 	if err != nil {
@@ -208,50 +194,24 @@ func (a AppServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	envStore := stores.NewSqliteSecretStore(userDB)
-	envService := NewSecretServiceImpl(envStore, validator.New())
+	envStore := secret.NewSqliteSecretStore(userDB)
+	envService := secret.NewSecretServiceImpl(envStore, validator.New())
 
 	var count time.Duration
 	increment := time.Second * 5
 	timeout := time.Second * 60
-	a.logger.Info().Msg("creating tables...")
 	for err := envService.CreateTables(); err != nil; err = envService.CreateTables() {
-		a.logger.Info().Msg(fmt.Sprintf("sleep for %d seconds", increment/time.Second))
 		time.Sleep(increment)
 		count = count + increment
 		if count >= timeout {
-			return nil, fmt.Errorf(fmt.Sprintf("timed out after %d seconds trying to create tables", timeout/time.Second))
+			return nil, fmt.Errorf(
+				fmt.Sprintf(
+					"timed out after %d seconds trying to create tables",
+					timeout/time.Second,
+				),
+			)
 		}
 	}
 
 	return &CreateDatabaseResponse{Name: createdDatabaseDetails.Database.Name}, nil
-}
-
-func (a AppServiceImpl) AuthenticateUser(
-	authDetails UserAuthRequest,
-) (*UserAuthResponse, error) {
-	if err := a.validate.Struct(authDetails); err != nil {
-		return nil, err
-	}
-
-	publicKeysDetails, err := a.store.GetUserPublicKeys(authDetails.Username)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, v := range *publicKeysDetails {
-		parsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(v.PublicKey))
-		if err != nil {
-			return nil, err
-		}
-
-		if ssh.KeysEqual(
-			authDetails.PublicKey,
-			parsed,
-		) {
-			return &UserAuthResponse{Auth: true}, nil
-		}
-	}
-
-	return &UserAuthResponse{Auth: false}, nil
 }

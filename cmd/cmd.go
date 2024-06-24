@@ -5,13 +5,9 @@ import (
 	"database/sql"
 	"io"
 
-	"github.com/nixpig/syringe.sh/server/pkg"
+	"github.com/nixpig/syringe.sh/server/pkg/ctxkeys"
 	"github.com/spf13/cobra"
 	// "github.com/spf13/cobra/doc"
-)
-
-const (
-	dbCtxKey = pkg.DBCtxKey
 )
 
 func Execute(
@@ -27,7 +23,10 @@ func Execute(
 		Short: "🔐 Distributed database-per-user encrypted secrets management over SSH protocol.",
 		Long:  "🔐 Distributed database-per-user encrypted secrets management over SSH protocol.",
 
-		Example: `  Add a project:
+		Example: `  Register user:
+    syringe user register
+
+  Add a project:
     syringe project add my_cool_project
 
   Add an environment:
@@ -39,13 +38,17 @@ func Execute(
   List secrets:
     syringe secret list -p my_cool_project -e dev
 
-  For more examples, go to https://syringe.sh/examples
-		`,
+  For more examples, go to https://syringe.sh/examples`,
 
 		// SilenceErrors: true,
 	}
 
-	additionalHelp := "\nFor more help on how to use Syringe, go to https://syringe.sh/help\n"
+	additionalHelp := `
+Please note: some commands are only available (and listed above) once registered and authenticated. Trying to use one of these while not authenticated will result in an 'unknown command' error.
+
+For more help on how to use Syringe, go to https://syringe.sh/help
+
+`
 
 	rootCmd.SetHelpTemplate(rootCmd.HelpTemplate() + additionalHelp)
 
@@ -65,7 +68,7 @@ func Execute(
 
 	ctx := context.Background()
 
-	ctx = context.WithValue(ctx, dbCtxKey, db)
+	ctx = context.WithValue(ctx, ctxkeys.DB, db)
 
 	// f, err := os.Create("./docs.md")
 	// if err != nil {

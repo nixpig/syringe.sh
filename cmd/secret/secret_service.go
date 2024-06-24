@@ -1,9 +1,8 @@
-package services
+package secret
 
 import (
 	"github.com/go-playground/validator/v10"
-	"github.com/nixpig/syringe.sh/server/internal/stores"
-	"github.com/nixpig/syringe.sh/server/pkg"
+	"github.com/nixpig/syringe.sh/server/pkg/serrors"
 )
 
 type SetSecretRequest struct {
@@ -57,12 +56,12 @@ type SecretService interface {
 }
 
 type SecretServiceImpl struct {
-	store    stores.SecretStore
+	store    SecretStore
 	validate *validator.Validate
 }
 
 func NewSecretServiceImpl(
-	store stores.SecretStore,
+	store SecretStore,
 	validate *validator.Validate,
 ) SecretService {
 	return SecretServiceImpl{
@@ -81,7 +80,7 @@ func (s SecretServiceImpl) CreateTables() error {
 
 func (s SecretServiceImpl) Set(secret SetSecretRequest) error {
 	if err := s.validate.Struct(secret); err != nil {
-		return pkg.ValidationError(err)
+		return serrors.ValidationError(err)
 	}
 
 	if err := s.store.Set(
@@ -98,7 +97,7 @@ func (s SecretServiceImpl) Set(secret SetSecretRequest) error {
 
 func (s SecretServiceImpl) Get(request GetSecretRequest) (*GetSecretResponse, error) {
 	if err := s.validate.Struct(request); err != nil {
-		return nil, pkg.ValidationError(err)
+		return nil, serrors.ValidationError(err)
 	}
 
 	secret, err := s.store.Get(
@@ -121,7 +120,7 @@ func (s SecretServiceImpl) Get(request GetSecretRequest) (*GetSecretResponse, er
 
 func (s SecretServiceImpl) List(request ListSecretsRequest) (*ListSecretsResponse, error) {
 	if err := s.validate.Struct(request); err != nil {
-		return nil, pkg.ValidationError(err)
+		return nil, serrors.ValidationError(err)
 	}
 
 	secrets, err := s.store.List(request.Project, request.Environment)
@@ -156,7 +155,7 @@ func (s SecretServiceImpl) List(request ListSecretsRequest) (*ListSecretsRespons
 
 func (s SecretServiceImpl) Remove(request RemoveSecretRequest) error {
 	if err := s.validate.Struct(request); err != nil {
-		return pkg.ValidationError(err)
+		return serrors.ValidationError(err)
 	}
 
 	if err := s.store.Remove(
