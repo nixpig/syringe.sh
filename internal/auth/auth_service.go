@@ -50,7 +50,6 @@ func (a AuthServiceImpl) AuthenticateUser(
 	}
 
 	for _, v := range *publicKeysDetails {
-		fmt.Println(" >>> iterating over public keys")
 		parsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(v.PublicKey))
 		if err != nil {
 			fmt.Println(" >>> failed to parse authorised key")
@@ -61,7 +60,6 @@ func (a AuthServiceImpl) AuthenticateUser(
 			authDetails.PublicKey,
 			parsed,
 		) {
-			fmt.Println(" >>> keys don't match")
 			return &AuthenticateUserResponse{Auth: true}, nil
 		}
 	}

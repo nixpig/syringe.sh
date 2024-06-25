@@ -5,8 +5,10 @@ import (
 	"errors"
 
 	"github.com/charmbracelet/ssh"
+	"github.com/charmbracelet/wish"
 	"github.com/nixpig/syringe.sh/server/cmd"
 	"github.com/nixpig/syringe.sh/server/cmd/environment"
+	"github.com/nixpig/syringe.sh/server/cmd/inject"
 	"github.com/nixpig/syringe.sh/server/cmd/project"
 	"github.com/nixpig/syringe.sh/server/cmd/secret"
 	"github.com/nixpig/syringe.sh/server/cmd/user"
@@ -55,6 +57,7 @@ func NewCommandHandler(
 				defer db.Close()
 
 				commands = []*cobra.Command{
+					inject.InjectCommand(),
 					project.ProjectCommand(),
 					environment.EnvironmentCommand(),
 					secret.SecretCommand(),
@@ -73,6 +76,10 @@ func NewCommandHandler(
 					Str("session", sess.Context().SessionID()).
 					Any("command", sess.Command()).
 					Msg("failed to execute command")
+
+				wish.Fatal(sess)
+				next(sess)
+				return
 			}
 
 			logger.Info().
@@ -81,6 +88,7 @@ func NewCommandHandler(
 				Msg("executed command")
 
 			next(sess)
+			return
 		}
 	}
 }

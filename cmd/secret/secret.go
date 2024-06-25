@@ -62,7 +62,10 @@ func secretSetRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	secretService := cmd.Context().Value(ctxkeys.SecretService).(SecretService)
+	secretService, ok := cmd.Context().Value(ctxkeys.SecretService).(SecretService)
+	if !ok {
+		return fmt.Errorf("unable to get secret service from context")
+	}
 
 	if err := secretService.Set(SetSecretRequest{
 		Project:     project,

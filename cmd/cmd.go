@@ -38,6 +38,9 @@ func Execute(
   List secrets:
     syringe secret list -p my_cool_project -e dev
 
+  Inject into command:
+    syringe inject -p my_cool_project -e dev ./startserver
+
   For more examples, go to https://syringe.sh/examples`,
 
 		// SilenceErrors: true,
