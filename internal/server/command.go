@@ -88,7 +88,6 @@ func NewCommandHandler(
 				Msg("executed command")
 
 			next(sess)
-			return
 		}
 	}
 }
