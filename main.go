@@ -41,7 +41,7 @@ func main() {
 	log.Info().Msg("building app components")
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	authStore := auth.NewSqliteAuthStore(appDB)
-	authService := auth.NewAuthService(authStore, validate, &log)
+	authService := auth.NewAuthService(authStore, validate)
 
 	commandHandler := server.NewCommandHandler(&log, appDB)
 	authHandler := server.NewAuthHandler(&log, authService)

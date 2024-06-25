@@ -22,7 +22,7 @@ func UserCommand(sess ssh.Session) *cobra.Command {
 	}
 
 	userCmd.AddCommand(userRegisterCommand(sess))
-	userCmd.AddCommand(UserDeleteCommand())
+	// userCmd.AddCommand(UserDeleteCommand())
 
 	return userCmd
 }

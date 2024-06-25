@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"fmt"
+
 	"github.com/charmbracelet/ssh"
 	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog"
@@ -28,12 +30,10 @@ type AuthServiceImpl struct {
 func NewAuthService(
 	store AuthStore,
 	validate *validator.Validate,
-	logger *zerolog.Logger,
 ) AuthServiceImpl {
 	return AuthServiceImpl{
 		store:    store,
 		validate: validate,
-		logger:   logger,
 	}
 }
 
@@ -50,8 +50,10 @@ func (a AuthServiceImpl) AuthenticateUser(
 	}
 
 	for _, v := range *publicKeysDetails {
+		fmt.Println(" >>> iterating over public keys")
 		parsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(v.PublicKey))
 		if err != nil {
+			fmt.Println(" >>> failed to parse authorised key")
 			return nil, err
 		}
 
@@ -59,6 +61,7 @@ func (a AuthServiceImpl) AuthenticateUser(
 			authDetails.PublicKey,
 			parsed,
 		) {
+			fmt.Println(" >>> keys don't match")
 			return &AuthenticateUserResponse{Auth: true}, nil
 		}
 	}
