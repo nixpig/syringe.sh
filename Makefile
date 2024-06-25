@@ -32,7 +32,7 @@ build:
 	go build -o tmp/bin/${APP_BINARY_NAME} ${APP_PACKAGE_PATH}
 
 .PHONY: run_watch
-run: 
+run_watch: 
 	go run github.com/cosmtrek/air@v1.43.0 \
 		--build.cmd "make build" \
 		--build.bin "tmp/bin/${APP_BINARY_NAME}" \

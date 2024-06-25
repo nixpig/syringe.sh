@@ -35,6 +35,9 @@ func (s *SSHClient) Run(cmd string, w io.Writer) error {
 
 	output, err := session.CombinedOutput(cmd)
 	if err != nil {
+		if _, err := w.Write(output); err != nil {
+			return err
+		}
 		return err
 	}
 
@@ -129,7 +132,7 @@ func IdentityAuthMethod(identity string) (gossh.AuthMethod, error) {
 			return nil, err
 		}
 
-		fmt.Printf("Enter passphrase for key '%s': ", identity)
+		fmt.Printf("Enter passphrase for %s: ", identity)
 		passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
 		fmt.Print("\n")
 		if err != nil {

@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"os/user"
 	"strings"
@@ -24,6 +26,7 @@ func Execute() error {
 		SilenceUsage:       true,
 		DisableSuggestions: true,
 		RunE:               rootRunE,
+		SilenceErrors:      true,
 	}
 
 	ctx := context.Background()
@@ -53,7 +56,12 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	} else {
-		authMethod, err = ssh.AgentAuthMethod(os.Getenv("SSH_AUTH_SOCK"))
+		sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
+		if sshAuthSock == "" {
+			return errors.New("SSH_AUTH_SOCK not set")
+		}
+
+		authMethod, err = ssh.AgentAuthMethod(sshAuthSock)
 		if err != nil {
 			return err
 		}
@@ -71,7 +79,10 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 
 	defer client.Close()
 
-	client.Run(strings.Join(args, " "), cmd.OutOrStdout())
+	fmt.Println("args: ", args)
+	if err := client.Run(strings.Join(args, " "), cmd.OutOrStdout()); err != nil {
+		return err
+	}
 
 	return nil
 }
