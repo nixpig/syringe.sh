@@ -22,7 +22,6 @@ func UserCommand(sess ssh.Session) *cobra.Command {
 	}
 
 	userCmd.AddCommand(userRegisterCommand(sess))
-	// userCmd.AddCommand(UserDeleteCommand())
 
 	return userCmd
 }
@@ -56,25 +55,6 @@ func userRegisterCommand(sess ssh.Session) *cobra.Command {
 	}
 
 	return userRegisterCmd
-}
-
-func UserDeleteCommand() *cobra.Command {
-	userDeleteCmd := &cobra.Command{
-		Use:     "delete [flags] [USERNAME]",
-		Aliases: []string{"d"},
-		Short:   "Delete a user",
-		Example: "syringe user delete -i ~/.ssh/id_rsa",
-		Args:    cobra.NoArgs,
-		RunE:    userDeleteRunE,
-	}
-
-	return userDeleteCmd
-}
-
-func userDeleteRunE(cmd *cobra.Command, args []string) error {
-	fmt.Println("delete user...")
-
-	return nil
 }
 
 func initUserContext(cmd *cobra.Command, args []string) error {
