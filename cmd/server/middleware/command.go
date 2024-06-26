@@ -1,16 +1,16 @@
-package server
+package middleware
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"io"
 
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
-	"github.com/nixpig/syringe.sh/cmd/server/servercmd"
 	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/environment"
 	"github.com/nixpig/syringe.sh/internal/inject"
-	"github.com/nixpig/syringe.sh/internal/project"
 	"github.com/nixpig/syringe.sh/internal/secret"
 	"github.com/nixpig/syringe.sh/internal/user"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
@@ -18,10 +18,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type Executor func(
+	rootCmd *cobra.Command,
+	args []string,
+	cmdIn io.Reader,
+	cmdOut io.Writer,
+	cmdErr io.ReadWriter,
+	db *sql.DB,
+) error
+
 func NewCommandHandler(
+	rootCmd *cobra.Command,
 	logger *zerolog.Logger,
 	appDB *sql.DB,
 ) func(next ssh.Handler) ssh.Handler {
+
 	return func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
 			authenticated, ok := sess.Context().Value(ctxkeys.Authenticated).(bool)
@@ -34,18 +45,18 @@ func NewCommandHandler(
 				return
 			}
 
-			var commands []*cobra.Command
 			var db *sql.DB
 			var err error
+			ctx := context.Background()
 
 			if !authenticated {
 				db = appDB
 
-				commands = []*cobra.Command{
-					user.UserCommand(sess),
-				}
+				rootCmd.AddCommand(user.UserCommand(sess))
+
 			} else {
 				db, err = database.NewUserDBConnection(sess.PublicKey())
+
 				if err != nil {
 					logger.Err(err).
 						Str("session", sess.Context().SessionID()).
@@ -56,22 +67,23 @@ func NewCommandHandler(
 
 				defer db.Close()
 
-				commands = []*cobra.Command{
-					inject.InjectCommand(),
-					project.ProjectCommand(),
-					environment.EnvironmentCommand(),
-					secret.SecretCommand(),
-				}
+				ctx = context.WithValue(ctx, ctxkeys.DB, db)
+				rootCmd.AddCommand(inject.InjectCommand())
+				rootCmd.AddCommand(environment.EnvironmentCommand())
+				rootCmd.AddCommand(secret.SecretCommand())
 			}
 
-			if err := servercmd.Execute(
-				commands,
-				sess.Command(),
-				sess,
-				sess,
-				sess.Stderr(),
-				db,
-			); err != nil {
+			rootCmd.SetArgs(sess.Command())
+			rootCmd.SetIn(sess)
+			rootCmd.SetOut(sess)
+			rootCmd.SetErr(sess.Stderr())
+			rootCmd.CompletionOptions.DisableDefaultCmd = true
+
+			// walk(rootCmd, func(c *cobra.Command) {
+			// 	c.Flags().BoolP("help", "h", false, "Help for the "+c.Name()+" command")
+			// })
+
+			if err := rootCmd.ExecuteContext(ctx); err != nil {
 				logger.Err(errors.Unwrap(err)).
 					Str("session", sess.Context().SessionID()).
 					Any("command", sess.Command()).
@@ -89,5 +101,12 @@ func NewCommandHandler(
 
 			next(sess)
 		}
+	}
+}
+
+func walk(c *cobra.Command, f func(*cobra.Command)) {
+	f(c)
+	for _, c := range c.Commands() {
+		walk(c, f)
 	}
 }

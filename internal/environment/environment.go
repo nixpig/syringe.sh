@@ -11,6 +11,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func New() *cobra.Command {
+	environmentCmd := &cobra.Command{
+		Use:               "environment",
+		Aliases:           []string{"e"},
+		Short:             "Manage environments",
+		Long:              "Manage your environments.",
+		PersistentPreRunE: initEnvironmentContext,
+	}
+
+	return environmentCmd
+}
+
 func EnvironmentCommand() *cobra.Command {
 	environmentCmd := &cobra.Command{
 		Use:               "environment",
@@ -119,7 +131,7 @@ func environmentRenameCommand() *cobra.Command {
 		Short:   "Rename an environment",
 		Example: "syringe environment rename -p my_cool_project staging prod",
 		Args:    cobra.MatchAll(cobra.ExactArgs(2)),
-		RunE:    environmentRenameE,
+		RunE:    environmentRenameRunE,
 	}
 
 	environmentRenameCmd.Flags().StringP("project", "p", "", "Project name")
@@ -128,7 +140,7 @@ func environmentRenameCommand() *cobra.Command {
 	return environmentRenameCmd
 }
 
-func environmentRenameE(cmd *cobra.Command, args []string) error {
+func environmentRenameRunE(cmd *cobra.Command, args []string) error {
 	name := args[0]
 	newName := args[1]
 
@@ -162,7 +174,7 @@ func environmentListCommand() *cobra.Command {
 		Short:   "List environments",
 		Example: "syringe environment list -p my_cool_project",
 		Args:    cobra.MatchAll(cobra.ExactArgs(0)),
-		RunE:    environmentListE,
+		RunE:    environmentListRunE,
 	}
 
 	environmentListCmd.Flags().StringP("project", "p", "", "Project name")
@@ -171,7 +183,7 @@ func environmentListCommand() *cobra.Command {
 	return environmentListCmd
 }
 
-func environmentListE(cmd *cobra.Command, args []string) error {
+func environmentListRunE(cmd *cobra.Command, args []string) error {
 	project, err := cmd.Flags().GetString("project")
 	if err != nil {
 		return err

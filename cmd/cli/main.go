@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/nixpig/syringe.sh/cmd/cli/clicmd"
 )
 
 const (
@@ -14,7 +12,7 @@ const (
 
 // TODO: sort this out!!
 func main() {
-	if err := clicmd.Execute(); err != nil {
+	if err := execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}

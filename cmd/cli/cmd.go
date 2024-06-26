@@ -1,4 +1,4 @@
-package clicmd
+package main
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	gossh "golang.org/x/crypto/ssh"
 )
 
-func Execute() error {
+func execute() error {
 	rootCmd := &cobra.Command{
 		Use: "syringe",
 		// defers to commands defined on server, therefore these values should never be displayed

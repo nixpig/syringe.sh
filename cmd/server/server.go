@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"context"
@@ -19,7 +19,7 @@ type Server struct {
 	middleware []wish.Middleware
 }
 
-func NewServer(
+func newServer(
 	logger *zerolog.Logger,
 	middleware []wish.Middleware,
 ) Server {
