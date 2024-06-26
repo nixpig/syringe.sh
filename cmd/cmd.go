@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"io"
 
-	"github.com/nixpig/syringe.sh/server/pkg/ctxkeys"
+	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/spf13/cobra"
 	// "github.com/spf13/cobra/doc"
 )

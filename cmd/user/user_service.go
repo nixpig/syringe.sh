@@ -10,9 +10,9 @@ import (
 
 	"github.com/charmbracelet/ssh"
 	"github.com/go-playground/validator/v10"
-	"github.com/nixpig/syringe.sh/server/cmd/secret"
-	"github.com/nixpig/syringe.sh/server/internal/database"
-	"github.com/nixpig/syringe.sh/server/pkg/turso"
+	"github.com/nixpig/syringe.sh/cmd/secret"
+	"github.com/nixpig/syringe.sh/internal/database"
+	"github.com/nixpig/syringe.sh/pkg/turso"
 	gossh "golang.org/x/crypto/ssh"
 )
 

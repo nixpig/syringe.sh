@@ -2,7 +2,7 @@ package project
 
 import (
 	"github.com/go-playground/validator/v10"
-	"github.com/nixpig/syringe.sh/server/pkg/serrors"
+	"github.com/nixpig/syringe.sh/pkg/serrors"
 )
 
 type AddProjectRequest struct {

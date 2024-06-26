@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/nixpig/syringe.sh/server/internal/database"
+	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/stretchr/testify/require"
 )
 

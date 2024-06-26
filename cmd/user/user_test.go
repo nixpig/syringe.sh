@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/nixpig/syringe.sh/server/cmd"
-	"github.com/nixpig/syringe.sh/server/cmd/user"
+	"github.com/nixpig/syringe.sh/cmd"
+	"github.com/nixpig/syringe.sh/cmd/user"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )

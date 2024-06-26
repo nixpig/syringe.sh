@@ -8,8 +8,8 @@ import (
 	"os"
 
 	"github.com/charmbracelet/ssh"
-	"github.com/nixpig/syringe.sh/server/pkg/ctxkeys"
-	"github.com/nixpig/syringe.sh/server/pkg/validation"
+	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
+	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/spf13/cobra"
 )
 

@@ -8,8 +8,8 @@ import (
 	"os"
 
 	"github.com/charmbracelet/ssh"
-	"github.com/nixpig/syringe.sh/server/pkg/serrors"
-	"github.com/nixpig/syringe.sh/server/pkg/turso"
+	"github.com/nixpig/syringe.sh/pkg/serrors"
+	"github.com/nixpig/syringe.sh/pkg/turso"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	gossh "golang.org/x/crypto/ssh"
 )

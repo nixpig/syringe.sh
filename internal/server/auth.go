@@ -2,8 +2,8 @@ package server
 
 import (
 	"github.com/charmbracelet/ssh"
-	"github.com/nixpig/syringe.sh/server/internal/auth"
-	"github.com/nixpig/syringe.sh/server/pkg/ctxkeys"
+	"github.com/nixpig/syringe.sh/internal/auth"
+	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/rs/zerolog"
 )
 

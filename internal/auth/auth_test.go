@@ -13,7 +13,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/charmbracelet/ssh"
 	"github.com/go-playground/validator/v10"
-	"github.com/nixpig/syringe.sh/server/internal/auth"
+	"github.com/nixpig/syringe.sh/internal/auth"
 	"github.com/stretchr/testify/require"
 	gossh "golang.org/x/crypto/ssh"
 )

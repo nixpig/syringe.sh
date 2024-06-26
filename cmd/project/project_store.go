@@ -3,7 +3,7 @@ package project
 import (
 	"database/sql"
 
-	"github.com/nixpig/syringe.sh/server/pkg/serrors"
+	"github.com/nixpig/syringe.sh/pkg/serrors"
 )
 
 type Project struct {

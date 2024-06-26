@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/nixpig/syringe.sh/server/cmd"
-	"github.com/nixpig/syringe.sh/server/cmd/project"
-	"github.com/nixpig/syringe.sh/server/test"
+	"github.com/nixpig/syringe.sh/cmd"
+	"github.com/nixpig/syringe.sh/cmd/project"
+	"github.com/nixpig/syringe.sh/test"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )

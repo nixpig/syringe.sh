@@ -1,4 +1,4 @@
-module github.com/nixpig/syringe.sh/server
+module github.com/nixpig/syringe.sh
 
 go 1.22.4
 
