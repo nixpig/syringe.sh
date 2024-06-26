@@ -9,7 +9,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func ProjectListHandler(cmd *cobra.Command, args []string) error {
+func NewProjectListHandler() project.CobraHandler {
+	return projectListHandler
+}
+
+func NewProjectAddHandler() project.CobraHandler {
+	return projectAddHandler
+}
+
+func NewProjectRemoveHandler() project.CobraHandler {
+	return projectRemoveHandler
+}
+
+func NewProjectRenameHandler() project.CobraHandler {
+	return projectRenameHandler
+}
+
+func projectListHandler(cmd *cobra.Command, args []string) error {
 	projectService, ok := cmd.Context().Value(ctxkeys.ProjectService).(project.ProjectService)
 	if !ok {
 		return fmt.Errorf("unable to get project service from context")
@@ -30,7 +46,7 @@ func ProjectListHandler(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func ProjectAddHandler(cmd *cobra.Command, args []string) error {
+func projectAddHandler(cmd *cobra.Command, args []string) error {
 	projectName := args[0]
 
 	projectService, ok := cmd.Context().Value(ctxkeys.ProjectService).(project.ProjectService)
@@ -49,7 +65,7 @@ func ProjectAddHandler(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func ProjectRemoveHandler(cmd *cobra.Command, args []string) error {
+func projectRemoveHandler(cmd *cobra.Command, args []string) error {
 	projectName := args[0]
 
 	projectService, ok := cmd.Context().Value(ctxkeys.ProjectService).(project.ProjectService)
@@ -68,7 +84,7 @@ func ProjectRemoveHandler(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func ProjectRenameHandler(cmd *cobra.Command, args []string) error {
+func projectRenameHandler(cmd *cobra.Command, args []string) error {
 	name := args[0]
 	newName := args[1]
 

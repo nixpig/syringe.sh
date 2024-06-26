@@ -6,12 +6,9 @@ import (
 	"github.com/charmbracelet/wish"
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
-	"github.com/nixpig/syringe.sh/cmd/server/handlers"
 	"github.com/nixpig/syringe.sh/cmd/server/middleware"
 	"github.com/nixpig/syringe.sh/internal/auth"
 	"github.com/nixpig/syringe.sh/internal/database"
-	"github.com/nixpig/syringe.sh/internal/project"
-	"github.com/nixpig/syringe.sh/internal/root"
 	"github.com/rs/zerolog"
 )
 
@@ -46,21 +43,10 @@ func main() {
 	authStore := auth.NewSqliteAuthStore(appDB)
 	authService := auth.NewAuthService(authStore, validate)
 
-	rootCmd := root.New()
-
-	projectCmd := project.New()
-
-	projectCmd.AddCommand(project.ProjectRemoveCommand(handlers.ProjectRemoveHandler))
-	projectCmd.AddCommand(project.ProjectRenameCommand(handlers.ProjectRenameHandler))
-	projectCmd.AddCommand(project.ProjectAddCommand(handlers.ProjectAddHandler))
-	projectCmd.AddCommand(project.ProjectListCommand(handlers.ProjectListHandler))
-
-	rootCmd.AddCommand(projectCmd)
-
 	sshServer := newServer(
 		&log,
 		[]wish.Middleware{
-			middleware.NewCommandHandler(rootCmd, &log, appDB),
+			middleware.NewCommandHandler(&log, appDB),
 			middleware.NewAuthHandler(&log, authService),
 			middleware.NewLoggingHandler(&log),
 		},

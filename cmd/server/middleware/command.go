@@ -8,9 +8,12 @@ import (
 
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
+	"github.com/nixpig/syringe.sh/cmd/server/handlers"
 	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/environment"
 	"github.com/nixpig/syringe.sh/internal/inject"
+	"github.com/nixpig/syringe.sh/internal/project"
+	"github.com/nixpig/syringe.sh/internal/root"
 	"github.com/nixpig/syringe.sh/internal/secret"
 	"github.com/nixpig/syringe.sh/internal/user"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
@@ -28,13 +31,27 @@ type Executor func(
 ) error
 
 func NewCommandHandler(
-	rootCmd *cobra.Command,
 	logger *zerolog.Logger,
 	appDB *sql.DB,
 ) func(next ssh.Handler) ssh.Handler {
-
 	return func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
+
+			rootCmd := root.New()
+
+			projectCmd := project.New()
+
+			projectCmd.AddCommand(project.ProjectRemoveCommand(handlers.NewProjectRemoveHandler()))
+			projectCmd.AddCommand(project.ProjectRenameCommand(handlers.NewProjectRenameHandler()))
+			projectCmd.AddCommand(project.ProjectAddCommand(handlers.NewProjectAddHandler()))
+			projectCmd.AddCommand(project.ProjectListCommand(handlers.NewProjectListHandler()))
+
+			rootCmd.AddCommand(inject.InjectCommand())
+			rootCmd.AddCommand(environment.EnvironmentCommand())
+			rootCmd.AddCommand(secret.SecretCommand())
+
+			rootCmd.AddCommand(projectCmd)
+
 			authenticated, ok := sess.Context().Value(ctxkeys.Authenticated).(bool)
 			if !ok {
 				logger.Warn().
@@ -53,7 +70,6 @@ func NewCommandHandler(
 				db = appDB
 
 				rootCmd.AddCommand(user.UserCommand(sess))
-
 			} else {
 				db, err = database.NewUserDBConnection(sess.PublicKey())
 
@@ -68,9 +84,6 @@ func NewCommandHandler(
 				defer db.Close()
 
 				ctx = context.WithValue(ctx, ctxkeys.DB, db)
-				rootCmd.AddCommand(inject.InjectCommand())
-				rootCmd.AddCommand(environment.EnvironmentCommand())
-				rootCmd.AddCommand(secret.SecretCommand())
 			}
 
 			rootCmd.SetArgs(sess.Command())
