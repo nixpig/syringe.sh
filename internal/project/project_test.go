@@ -11,8 +11,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/nixpig/syringe.sh/cmd"
-	"github.com/nixpig/syringe.sh/cmd/project"
+	"github.com/nixpig/syringe.sh/cmd/server/servercmd"
+	"github.com/nixpig/syringe.sh/internal/project"
 	"github.com/nixpig/syringe.sh/test"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
@@ -68,7 +68,7 @@ func testProjectAddCmdWithNoArgs(
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "add"},
 		cmdIn,
@@ -96,7 +96,7 @@ func testProjectAddCmdWithTooManyArgs(
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "add", "foo", "bar"},
 		cmdIn,
@@ -127,7 +127,7 @@ func testProjectAddCommandHappyPath(
 		insert into projects_ (name_) values ($name)
 	`)).WithArgs("my_cool_project").WillReturnResult(sqlmock.NewResult(1, 1))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "add", "my_cool_project"},
 		cmdIn,
@@ -166,7 +166,7 @@ func testProjectAddCmdDatabaseError(
 	`)).WithArgs("my_cool_project").
 		WillReturnError(fmt.Errorf("database_error"))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "add", "my_cool_project"},
 		cmdIn,
@@ -203,7 +203,7 @@ func testProjectRemoveCmdHappyPath(
 		delete from projects_ where name_ = $name
 	`)).WillReturnResult(sqlmock.NewResult(1, 1))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "remove", "my_cool_project"},
 		cmdIn,
@@ -233,7 +233,7 @@ func testProjectRemoveCmdWithNoArgs(
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "remove"},
 		cmdIn,
@@ -261,7 +261,7 @@ func testProjectRemoveCmdWithTooManyArgs(
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "remove", "foo", "bar"},
 		cmdIn,
@@ -293,7 +293,7 @@ func testProjectRemoveCmdDatabaseError(
 		delete from projects_ where name_ = $name
 	`)).WillReturnError(fmt.Errorf("database_error"))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "remove", "my_cool_project"},
 		cmdIn,
@@ -326,7 +326,7 @@ func testProjectRemoveCmdRowError(
 		delete from projects_ where name_ = $name
 	`)).WillReturnResult(sqlmock.NewErrorResult(fmt.Errorf("rows_error")))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "remove", "my_cool_project"},
 		cmdIn,
@@ -352,7 +352,7 @@ func testProjectRemoveCmdZeroAffectedRows(
 		delete from projects_ where name_ = $name
 	`)).WillReturnResult(sqlmock.NewResult(0, 0))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "remove", "my_cool_project"},
 		cmdIn,
@@ -388,7 +388,7 @@ func testProjectRenameCmdHappyPath(
 		WithArgs("my_cool_project", "my_awesome_project").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "rename", "my_cool_project", "my_awesome_project"},
 		cmdIn,
@@ -422,7 +422,7 @@ func testProjectRenameCmdWithNoArgs(
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "rename"},
 		cmdIn,
@@ -450,7 +450,7 @@ func testProjectRenameCmdWithTooFewArgs(
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "rename", "foo"},
 		cmdIn,
@@ -478,7 +478,7 @@ func testProjectRenameCmdWithTooManyArgs(
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "rename", "foo", "bar", "baz"},
 		cmdIn,
@@ -511,7 +511,7 @@ func testProjectRenameCmdDatabaseError(
 	`)).WithArgs("my_cool_project", "my_awesome_project").
 		WillReturnError(fmt.Errorf("database_error"))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "rename", "my_cool_project", "my_awesome_project"},
 		cmdIn,
@@ -542,7 +542,7 @@ func testProjectListCmdHappyPath(
 				AddRow(3, "my_super_project"),
 		)
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "list"},
 		cmdIn,
@@ -579,7 +579,7 @@ func testProjectListCmdZeroResults(
 		ExpectQuery(regexp.QuoteMeta(`select id_, name_ from projects_`)).
 		WillReturnError(sql.ErrNoRows)
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "list"},
 		cmdIn,
@@ -612,7 +612,7 @@ func testProjectListCmdDatabaseError(
 		ExpectQuery(regexp.QuoteMeta(`select id_, name_ from projects_`)).
 		WillReturnError(fmt.Errorf("database_error"))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "list"},
 		cmdIn,
@@ -633,7 +633,7 @@ func testProjectListCmdWithTooManyArgs(
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{"project", "list", "foo"},
 		cmdIn,
@@ -656,7 +656,7 @@ func testProjectAddCmdValidationError(
 
 	var err error
 
-	err = cmd.Execute(
+	err = servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{
 			"project",
@@ -694,7 +694,7 @@ func testProjectRemoveCmdValidationError(
 
 	var err error
 
-	err = cmd.Execute(
+	err = servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{
 			"project",
@@ -732,7 +732,7 @@ func testProjectRenameCmdValidationError(
 
 	var err error
 
-	err = cmd.Execute(
+	err = servercmd.Execute(
 		[]*cobra.Command{project.ProjectCommand()},
 		[]string{
 			"project",

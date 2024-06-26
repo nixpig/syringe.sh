@@ -3,9 +3,9 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-SERVER_APP_PACKAGE_PATH := main.go
+SERVER_APP_PACKAGE_PATH := cmd/server/main.go
 SERVER_APP_BINARY_NAME := syringeserver
-CLI_APP_PACKAGE_PATH := cli.go
+CLI_APP_PACKAGE_PATH := cmd/cli/main.go
 CLI_APP_BINARY_NAME := syringe
 
 .PHONY: tidy

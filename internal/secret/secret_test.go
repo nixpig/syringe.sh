@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/nixpig/syringe.sh/cmd"
-	"github.com/nixpig/syringe.sh/cmd/secret"
+	"github.com/nixpig/syringe.sh/cmd/server/servercmd"
+	"github.com/nixpig/syringe.sh/internal/secret"
 	"github.com/nixpig/syringe.sh/test"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
@@ -95,7 +95,7 @@ func testSecretSetCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -135,7 +135,7 @@ func testSecretSetCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql.
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -170,7 +170,7 @@ func testSecretSetCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -201,7 +201,7 @@ func testSecretSetCmdTooFewArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) 
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -235,7 +235,7 @@ func testSecretSetCmdTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB)
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -298,7 +298,7 @@ func testSecretSetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 		).
 		WillReturnError(fmt.Errorf("database_error"))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -333,7 +333,7 @@ func testSecretSetCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -411,7 +411,7 @@ func testSecretGetCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 			"staging",
 		))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -450,7 +450,7 @@ func testSecretGetCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql.
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -480,7 +480,7 @@ func testSecretGetCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db *
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -510,7 +510,7 @@ func testSecretGetCmdMissingKey(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) 
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -563,7 +563,7 @@ func testSecretGetCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 		).
 		WillReturnError(fmt.Errorf("database_error"))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -597,7 +597,7 @@ func testSecretGetCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -666,7 +666,7 @@ func testSecretListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) 
 				AddRow(2, "key_2", "value_2", "my_cool_project", "staging"),
 		)
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{"secret", "list", "-p", "my_cool_project", "-e", "staging"},
 		cmdIn,
@@ -712,7 +712,7 @@ func testSecretRemoveCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB
 		"my_cool_project", "staging", "key_1",
 	).WillReturnResult(sqlmock.NewResult(23, 1))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -763,7 +763,7 @@ func testSecretListCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.
 		"my_cool_project", "staging",
 	).WillReturnError(errors.New("database_error"))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -796,7 +796,7 @@ func testSecretListCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *sql
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -825,7 +825,7 @@ func testSecretListCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, db 
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -854,7 +854,7 @@ func testSecretListCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sq
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -884,7 +884,7 @@ func testSecretListCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sq
 		string(out),
 	)
 
-	err = cmd.Execute(
+	err = servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -939,7 +939,7 @@ func testSecretRemoveCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sq
 		"my_cool_project", "staging", "key_1",
 	).WillReturnError(errors.New("database_error"))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -973,7 +973,7 @@ func testSecretRemoveCmdMissingProject(t *testing.T, mock sqlmock.Sqlmock, db *s
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -1003,7 +1003,7 @@ func testSecretRemoveCmdMissingEnvironment(t *testing.T, mock sqlmock.Sqlmock, d
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -1033,7 +1033,7 @@ func testSecretRemoveCmdMissingKey(t *testing.T, mock sqlmock.Sqlmock, db *sql.D
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -1064,7 +1064,7 @@ func testSecretRemoveCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -1090,7 +1090,7 @@ func testSecretRemoveCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *
 
 	require.Equal(t, test.ErrorMsg(test.MaxLengthValidationErrorMsg("project name", 256)), string(out))
 
-	err = cmd.Execute(
+	err = servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",
@@ -1140,7 +1140,7 @@ func testSecretListCmdZeroResults(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB
 		WithArgs("my_cool_project", "staging").
 		WillReturnError(sql.ErrNoRows)
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{"secret", "list", "-p", "my_cool_project", "-e", "staging"},
 		cmdIn,
@@ -1186,7 +1186,7 @@ func testSecretRemoveCmdZeroResults(t *testing.T, mock sqlmock.Sqlmock, db *sql.
 		"my_cool_project", "staging", "key_1",
 	).WillReturnResult(sqlmock.NewResult(0, 0))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{secret.SecretCommand()},
 		[]string{
 			"secret",

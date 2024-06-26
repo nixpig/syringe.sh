@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/nixpig/syringe.sh/cmd"
-	"github.com/nixpig/syringe.sh/cmd/environment"
+	"github.com/nixpig/syringe.sh/cmd/server/servercmd"
+	"github.com/nixpig/syringe.sh/internal/environment"
 	"github.com/nixpig/syringe.sh/test"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
@@ -76,7 +76,7 @@ func testEnvironmentAddCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.
 		WithArgs("staging", "my_cool_project").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -111,7 +111,7 @@ func testEnvironmentAddCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmock,
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -131,7 +131,7 @@ func testEnvironmentAddCmdWithNoArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -152,7 +152,7 @@ func testEnvironmentAddCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -184,7 +184,7 @@ func testEnvironmentAddCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *
 		WithArgs("staging", "my_cool_project").
 		WillReturnError(fmt.Errorf("database_error"))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -210,7 +210,7 @@ func testEnvironmentAddCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db
 
 	var err error
 
-	err = cmd.Execute(
+	err = servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -227,7 +227,7 @@ func testEnvironmentAddCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db
 
 	require.Error(t, err)
 
-	err = cmd.Execute(
+	err = servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -244,7 +244,7 @@ func testEnvironmentAddCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db
 
 	require.Error(t, err)
 
-	err = cmd.Execute(
+	err = servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -280,7 +280,7 @@ func testEnvironmentRemoveCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *s
 		WithArgs("staging", "my_cool_project").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -329,7 +329,7 @@ func testEnvironmentRemoveCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, d
 		WithArgs("staging", "my_cool_project").
 		WillReturnError(fmt.Errorf("database_error"))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -354,7 +354,7 @@ func testEnvironmentRemoveCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmo
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -387,7 +387,7 @@ func testEnvironmentRemoveCmdWithNoArgs(t *testing.T, mock sqlmock.Sqlmock, db *
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -410,7 +410,7 @@ func testEnvironmentRemoveCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock,
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -435,7 +435,7 @@ func testEnvironmentRemoveCmdValidationError(t *testing.T, mock sqlmock.Sqlmock,
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -476,7 +476,7 @@ func testEnvironmentRenameCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *s
 		"my_cool_project",
 	).WillReturnResult(sqlmock.NewResult(23, 1))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -530,7 +530,7 @@ func testEnvironmentRenameCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, d
 		"my_cool_project",
 	).WillReturnError(errors.New("database_error"))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -567,7 +567,7 @@ func testEnvironmentRenameCmdValidationError(t *testing.T, mock sqlmock.Sqlmock,
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -606,7 +606,7 @@ func testEnvironmentRenameCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmo
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -640,7 +640,7 @@ func testEnvironmentRenameCmdWithNoArgs(t *testing.T, mock sqlmock.Sqlmock, db *
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -673,7 +673,7 @@ func testEnvironmentRenameCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock,
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -726,7 +726,7 @@ func testEnvironmentListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql
 				AddRow(3, "prod", "my_cool_project"),
 		)
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -771,7 +771,7 @@ func testEnvironmentListCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db 
 			errors.New("database_error"),
 		)
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -802,7 +802,7 @@ func testEnvironmentListCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, d
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -835,7 +835,7 @@ func testEnvironmentListCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmock
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -862,7 +862,7 @@ func testEnvironmentListCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, d
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -904,7 +904,7 @@ func testEnvironmentListCmdZeroResults(t *testing.T, mock sqlmock.Sqlmock, db *s
 		WithArgs("my_cool_project").
 		WillReturnError(sql.ErrNoRows)
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",
@@ -949,7 +949,7 @@ func testEnvironmentRemoveCmdZeroAffectedRows(t *testing.T, mock sqlmock.Sqlmock
 		WithArgs("staging", "my_cool_project").
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{environment.EnvironmentCommand()},
 		[]string{
 			"environment",

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nixpig/syringe.sh/cmd/secret"
+	"github.com/nixpig/syringe.sh/internal/secret"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/spf13/cobra"

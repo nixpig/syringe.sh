@@ -6,13 +6,13 @@ import (
 
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
-	"github.com/nixpig/syringe.sh/cmd"
-	"github.com/nixpig/syringe.sh/cmd/environment"
-	"github.com/nixpig/syringe.sh/cmd/inject"
-	"github.com/nixpig/syringe.sh/cmd/project"
-	"github.com/nixpig/syringe.sh/cmd/secret"
-	"github.com/nixpig/syringe.sh/cmd/user"
+	"github.com/nixpig/syringe.sh/cmd/server/servercmd"
 	"github.com/nixpig/syringe.sh/internal/database"
+	"github.com/nixpig/syringe.sh/internal/environment"
+	"github.com/nixpig/syringe.sh/internal/inject"
+	"github.com/nixpig/syringe.sh/internal/project"
+	"github.com/nixpig/syringe.sh/internal/secret"
+	"github.com/nixpig/syringe.sh/internal/user"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
@@ -64,7 +64,7 @@ func NewCommandHandler(
 				}
 			}
 
-			if err := cmd.Execute(
+			if err := servercmd.Execute(
 				commands,
 				sess.Command(),
 				sess,

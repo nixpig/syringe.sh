@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/nixpig/syringe.sh/cmd"
-	"github.com/nixpig/syringe.sh/cmd/user"
+	"github.com/nixpig/syringe.sh/cmd/server/servercmd"
+	"github.com/nixpig/syringe.sh/internal/user"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
@@ -35,7 +35,7 @@ func testUserCmdInitialiseCmd(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 
-	err := cmd.Execute(
+	err := servercmd.Execute(
 		[]*cobra.Command{user.UserCommand(nil)},
 		[]string{"user"},
 		cmdIn,

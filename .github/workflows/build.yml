@@ -39,5 +39,8 @@ jobs:
           go install github.com/mattn/goveralls@latest \
             && goveralls -coverprofile=coverage.out -service=github
 
-      - name: Build
-        run: make build
+      - name: Build server
+        run: make build_server
+
+      - name: Build CLI
+        run: make build_cli
