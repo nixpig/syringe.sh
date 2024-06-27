@@ -22,6 +22,8 @@ const (
 func main() {
 	rootCmd := root.New(context.Background())
 
+	rootCmd.PersistentFlags().StringP("identity", "i", "", "Path to SSH key (if not provided, SSH agent is used)")
+
 	projectCmd := project.New(nil)
 	projectCmd.AddCommand(project.ListCmd(run))
 	projectCmd.AddCommand(project.AddCmd(run))

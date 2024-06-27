@@ -14,16 +14,22 @@ import (
 )
 
 func run(cmd *cobra.Command, args []string) error {
-	var err error
 	var authMethod gossh.AuthMethod
 
 	// identity := "/home/nixpig/.ssh/id_rsa"
-	identity := ""
+
+	// don't care if errors, since will fallback to using ssh agent in case of empty identity
+	identity, err := cmd.Flags().GetString("identity")
+	if err != nil {
+		fmt.Println("failed to get identity: ", err)
+	}
 
 	currentUser, err := user.Current()
 	if err != nil || currentUser.Username == "" {
 		return err
 	}
+
+	fmt.Println("IDENTITY: ", identity)
 
 	if identity != "" {
 		authMethod, err = ssh.IdentityAuthMethod(identity)
@@ -57,6 +63,10 @@ func run(cmd *cobra.Command, args []string) error {
 	var flags string
 
 	cmd.Flags().Visit(func(flag *pflag.Flag) {
+		if flag.Name == "identity" {
+			return
+		}
+
 		flags = fmt.Sprintf("%s --%s %s", flags, flag.Name, flag.Value)
 	})
 
