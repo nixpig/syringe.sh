@@ -26,8 +26,18 @@ func NewCommandHandler(
 ) func(next ssh.Handler) ssh.Handler {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
+			ctx, ok := sess.Context().(context.Context)
+			if !ok {
+				logger.Err(errors.New("context error")).Msg("failed to get session context")
+				sess.Stderr().Write([]byte("failed to get context from session"))
+				return
+			}
 
-			rootCmd := root.New(sess.Context())
+			ctx = context.WithValue(ctx, ctxkeys.APP_DB, appDB)
+			ctx = context.WithValue(ctx, ctxkeys.Username, sess.User())
+			ctx = context.WithValue(ctx, ctxkeys.PublicKey, sess.PublicKey())
+
+			rootCmd := root.New(ctx)
 
 			projectCmd := project.New(project.InitContext)
 			projectCmd.AddCommand(project.AddCmd(project.AddCmdHandler))
@@ -50,29 +60,23 @@ func NewCommandHandler(
 			secretCmd.AddCommand(secret.RemoveCmd(secret.RemoveCmdHandler))
 			rootCmd.AddCommand(secretCmd)
 
+			userCmd := user.New(user.InitContext)
+			userCmd.AddCommand(user.RegisterCmd(user.RegisterCmdHandler))
+			rootCmd.AddCommand(userCmd)
+
 			rootCmd.AddCommand(inject.InjectCommand())
-			rootCmd.AddCommand(user.UserCommand(sess))
 
 			authenticated, ok := sess.Context().Value(ctxkeys.Authenticated).(bool)
 			if !ok {
 				logger.Warn().
 					Str("session", sess.Context().SessionID()).
 					Msg("failed to get authentication status from context")
-
 				sess.Stderr().Write([]byte("Failed to establish authentication status"))
 				return
 			}
 
-			var db *sql.DB
-			var err error
-			ctx := context.Background()
-
-			if !authenticated {
-				db = appDB
-
-			} else {
-				db, err = database.NewUserDBConnection(sess.PublicKey())
-
+			if authenticated {
+				userDB, err := database.NewUserDBConnection(sess.PublicKey())
 				if err != nil {
 					logger.Err(err).
 						Str("session", sess.Context().SessionID()).
@@ -82,8 +86,8 @@ func NewCommandHandler(
 				}
 
 				// database connection is tightly coupled to and lasts only for the duration of the request
-				defer db.Close()
-				ctx = context.WithValue(ctx, ctxkeys.DB, db)
+				defer userDB.Close()
+				ctx = context.WithValue(ctx, ctxkeys.USER_DB, userDB)
 			}
 
 			rootCmd.SetArgs(sess.Command())
@@ -92,7 +96,7 @@ func NewCommandHandler(
 			rootCmd.SetErr(sess.Stderr())
 			rootCmd.CompletionOptions.DisableDefaultCmd = true
 
-			helpers.CmdWalker(rootCmd, func(c *cobra.Command) {
+			helpers.WalkCmd(rootCmd, func(c *cobra.Command) {
 				c.Flags().BoolP("help", "h", false, "Help for the "+c.Name()+" command")
 			})
 

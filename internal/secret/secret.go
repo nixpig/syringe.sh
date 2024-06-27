@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/nixpig/syringe.sh/internal/project"
+	"github.com/nixpig/syringe.sh/pkg"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/spf13/cobra"
 )
 
-func New(init project.CobraHandler) *cobra.Command {
+func New(init pkg.CobraHandler) *cobra.Command {
 	secretCmd := &cobra.Command{
 		Use:               "secret",
 		Aliases:           []string{"s"},
@@ -23,7 +23,7 @@ func New(init project.CobraHandler) *cobra.Command {
 	return secretCmd
 }
 
-func SetCmd(handler project.CobraHandler) *cobra.Command {
+func SetCmd(handler pkg.CobraHandler) *cobra.Command {
 	setCmd := &cobra.Command{
 		Use:     "set [flags] SECRET_KEY SECRET_VALUE",
 		Aliases: []string{"s"},
@@ -44,7 +44,7 @@ func SetCmd(handler project.CobraHandler) *cobra.Command {
 	return setCmd
 }
 
-func GetCmd(handler project.CobraHandler) *cobra.Command {
+func GetCmd(handler pkg.CobraHandler) *cobra.Command {
 	getCmd := &cobra.Command{
 		Use:     "get [flags] SECRET_KEY",
 		Aliases: []string{"g"},
@@ -65,7 +65,7 @@ func GetCmd(handler project.CobraHandler) *cobra.Command {
 	return getCmd
 }
 
-func ListCmd(handler project.CobraHandler) *cobra.Command {
+func ListCmd(handler pkg.CobraHandler) *cobra.Command {
 	listCmd := &cobra.Command{
 		Use:     "list [flags]",
 		Aliases: []string{"l"},
@@ -84,7 +84,7 @@ func ListCmd(handler project.CobraHandler) *cobra.Command {
 	return listCmd
 }
 
-func RemoveCmd(handler project.CobraHandler) *cobra.Command {
+func RemoveCmd(handler pkg.CobraHandler) *cobra.Command {
 	removeCmd := &cobra.Command{
 		Use:     "remove [flags] SECRET_KEY",
 		Aliases: []string{"r"},
@@ -106,7 +106,7 @@ func RemoveCmd(handler project.CobraHandler) *cobra.Command {
 func InitContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	db, ok := ctx.Value(ctxkeys.DB).(*sql.DB)
+	db, ok := ctx.Value(ctxkeys.USER_DB).(*sql.DB)
 	if !ok {
 		return fmt.Errorf("unable to get database from context")
 	}

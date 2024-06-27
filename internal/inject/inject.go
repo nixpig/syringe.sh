@@ -70,7 +70,7 @@ func injectRunE(cmd *cobra.Command, args []string) error {
 func initInjectContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	db, ok := ctx.Value(ctxkeys.DB).(*sql.DB)
+	db, ok := ctx.Value(ctxkeys.APP_DB).(*sql.DB)
 	if !ok {
 		return fmt.Errorf("failed to get database from context")
 	}

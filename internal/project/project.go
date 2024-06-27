@@ -5,14 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/nixpig/syringe.sh/pkg"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/spf13/cobra"
 )
 
-type CobraHandler func(cmd *cobra.Command, args []string) error
-
-func New(init CobraHandler) *cobra.Command {
+func New(init pkg.CobraHandler) *cobra.Command {
 	projectCmd := &cobra.Command{
 		Use:               "project",
 		Aliases:           []string{"p"},
@@ -23,7 +22,7 @@ func New(init CobraHandler) *cobra.Command {
 	return projectCmd
 }
 
-func AddCmd(handler CobraHandler) *cobra.Command {
+func AddCmd(handler pkg.CobraHandler) *cobra.Command {
 	addCmd := &cobra.Command{
 		Use:     "add [flags] PROJECT_NAME",
 		Aliases: []string{"a"},
@@ -36,7 +35,7 @@ func AddCmd(handler CobraHandler) *cobra.Command {
 	return addCmd
 }
 
-func RemoveCmd(handler CobraHandler) *cobra.Command {
+func RemoveCmd(handler pkg.CobraHandler) *cobra.Command {
 	removeCmd := &cobra.Command{
 		Use:     "remove [flags] PROJECT_NAME",
 		Aliases: []string{"r"},
@@ -49,7 +48,7 @@ func RemoveCmd(handler CobraHandler) *cobra.Command {
 	return removeCmd
 }
 
-func RenameCmd(handler CobraHandler) *cobra.Command {
+func RenameCmd(handler pkg.CobraHandler) *cobra.Command {
 	renameCmd := &cobra.Command{
 		Use:     "rename [flags] CURRENT_PROJECT_NAME NEW_PROJECT_NAME",
 		Aliases: []string{"u"},
@@ -62,7 +61,7 @@ func RenameCmd(handler CobraHandler) *cobra.Command {
 	return renameCmd
 }
 
-func ListCmd(handler CobraHandler) *cobra.Command {
+func ListCmd(handler pkg.CobraHandler) *cobra.Command {
 	listCmd := &cobra.Command{
 		Use:     "list [flags]",
 		Aliases: []string{"l"},
@@ -78,7 +77,7 @@ func ListCmd(handler CobraHandler) *cobra.Command {
 func InitContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	db, ok := ctx.Value(ctxkeys.DB).(*sql.DB)
+	db, ok := ctx.Value(ctxkeys.USER_DB).(*sql.DB)
 	if !ok {
 		return fmt.Errorf("unable to get database from context")
 	}

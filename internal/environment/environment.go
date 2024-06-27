@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/nixpig/syringe.sh/internal/project"
+	"github.com/nixpig/syringe.sh/pkg"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/spf13/cobra"
 )
 
-func New(init project.CobraHandler) *cobra.Command {
+func New(init pkg.CobraHandler) *cobra.Command {
 	environmentCmd := &cobra.Command{
 		Use:               "environment",
 		Aliases:           []string{"e"},
@@ -23,7 +23,7 @@ func New(init project.CobraHandler) *cobra.Command {
 	return environmentCmd
 }
 
-func AddCmd(handler project.CobraHandler) *cobra.Command {
+func AddCmd(handler pkg.CobraHandler) *cobra.Command {
 	addCmd := &cobra.Command{
 		Use:     "add [flags] ENVIRONMENT_NAME",
 		Aliases: []string{"a"},
@@ -41,7 +41,7 @@ func AddCmd(handler project.CobraHandler) *cobra.Command {
 	return addCmd
 }
 
-func RemoveCmd(handler project.CobraHandler) *cobra.Command {
+func RemoveCmd(handler pkg.CobraHandler) *cobra.Command {
 	removeCmd := &cobra.Command{
 		Use:     "remove [flags] ENVIRONMENT_NAME",
 		Aliases: []string{"r"},
@@ -57,7 +57,7 @@ func RemoveCmd(handler project.CobraHandler) *cobra.Command {
 	return removeCmd
 }
 
-func RenameCmd(handler project.CobraHandler) *cobra.Command {
+func RenameCmd(handler pkg.CobraHandler) *cobra.Command {
 	renameCmd := &cobra.Command{
 		Use:     "rename [flags] CURRENT_ENVIRONMENT_NAME NEW_ENVIRONMENT_NAME",
 		Aliases: []string{"u"},
@@ -73,7 +73,7 @@ func RenameCmd(handler project.CobraHandler) *cobra.Command {
 	return renameCmd
 }
 
-func ListCmd(handler project.CobraHandler) *cobra.Command {
+func ListCmd(handler pkg.CobraHandler) *cobra.Command {
 	listCmd := &cobra.Command{
 		Use:     "list [flags]",
 		Aliases: []string{"l"},
@@ -92,7 +92,7 @@ func ListCmd(handler project.CobraHandler) *cobra.Command {
 func InitContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
-	db, ok := ctx.Value(ctxkeys.DB).(*sql.DB)
+	db, ok := ctx.Value(ctxkeys.USER_DB).(*sql.DB)
 	if !ok {
 		return fmt.Errorf("unable to get database from context")
 	}

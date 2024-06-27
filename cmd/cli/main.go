@@ -9,6 +9,7 @@ import (
 	"github.com/nixpig/syringe.sh/internal/project"
 	"github.com/nixpig/syringe.sh/internal/root"
 	"github.com/nixpig/syringe.sh/internal/secret"
+	"github.com/nixpig/syringe.sh/internal/user"
 	"github.com/nixpig/syringe.sh/pkg/helpers"
 	"github.com/spf13/cobra"
 )
@@ -42,7 +43,11 @@ func main() {
 	secretCmd.AddCommand(secret.RemoveCmd(run))
 	rootCmd.AddCommand(secretCmd)
 
-	helpers.CmdWalker(rootCmd, func(c *cobra.Command) {
+	userCmd := user.New(nil)
+	userCmd.AddCommand(user.RegisterCmd(run))
+	rootCmd.AddCommand(userCmd)
+
+	helpers.WalkCmd(rootCmd, func(c *cobra.Command) {
 		c.Flags().BoolP("help", "h", false, "Help for the "+c.Name()+" command")
 	})
 
