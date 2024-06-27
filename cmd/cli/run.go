@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -9,36 +8,12 @@ import (
 	"strings"
 
 	"github.com/nixpig/syringe.sh/pkg/ssh"
-
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	gossh "golang.org/x/crypto/ssh"
 )
 
-func execute() error {
-	rootCmd := &cobra.Command{
-		Use: "syringe",
-		// defers to commands defined on server, therefore these values should never be displayed
-		Short:              "",
-		Long:               "",
-		Example:            "",
-		DisableFlagParsing: true,
-		Hidden:             true,
-		SilenceUsage:       true,
-		DisableSuggestions: true,
-		RunE:               rootRunE,
-		SilenceErrors:      true,
-	}
-
-	ctx := context.Background()
-
-	if err := rootCmd.ExecuteContext(ctx); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func rootRunE(cmd *cobra.Command, args []string) error {
+func run(cmd *cobra.Command, args []string) error {
 	var err error
 	var authMethod gossh.AuthMethod
 
@@ -79,8 +54,19 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 
 	defer client.Close()
 
-	fmt.Println("args: ", args)
-	if err := client.Run(strings.Join(args, " "), cmd.OutOrStdout()); err != nil {
+	var flags string
+
+	cmd.Flags().Visit(func(flag *pflag.Flag) {
+		flags = fmt.Sprintf("%s --%s %s", flags, flag.Name, flag.Value)
+	})
+
+	scmd := []string{
+		strings.Join(strings.Split(cmd.CommandPath(), " ")[1:], " "),
+		strings.Join(args, " "),
+		flags,
+	}
+
+	if err := client.Run(strings.Join(scmd, " "), cmd.OutOrStdout()); err != nil {
 		return err
 	}
 

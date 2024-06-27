@@ -1,8 +1,11 @@
 package root
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
+)
 
-func New() *cobra.Command {
+func New(ctx context.Context) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "syringe",
 		Short: "🔐 Distributed database-per-user encrypted secrets management over SSH protocol.",
@@ -32,13 +35,13 @@ func New() *cobra.Command {
 	}
 
 	additionalHelp := `
-Please note: some commands are only available (and listed above) once registered and authenticated. Trying to use one of these while not authenticated will result in an 'unknown command' error.
-
 For more help on how to use Syringe, go to https://syringe.sh/help
 
 `
 
 	rootCmd.SetHelpTemplate(rootCmd.HelpTemplate() + additionalHelp)
+
+	rootCmd.SetContext(ctx)
 
 	return rootCmd
 }

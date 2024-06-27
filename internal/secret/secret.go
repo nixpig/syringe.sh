@@ -4,236 +4,106 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 
+	"github.com/nixpig/syringe.sh/internal/project"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/spf13/cobra"
 )
 
-func SecretCommand() *cobra.Command {
+func New(init project.CobraHandler) *cobra.Command {
 	secretCmd := &cobra.Command{
 		Use:               "secret",
 		Aliases:           []string{"s"},
 		Short:             "Manage secrets",
-		PersistentPreRunE: initSecretContext,
+		Long:              "Manage your secrets",
+		PersistentPreRunE: init,
 	}
-
-	secretCmd.AddCommand(secretSetCommand())
-	secretCmd.AddCommand(secretGetCommand())
-	secretCmd.AddCommand(secretListCommand())
-	secretCmd.AddCommand(secretRemoveCommand())
 
 	return secretCmd
 }
 
-func secretSetCommand() *cobra.Command {
-	secretSetCmd := &cobra.Command{
+func SetCmd(handler project.CobraHandler) *cobra.Command {
+	setCmd := &cobra.Command{
 		Use:     "set [flags] SECRET_KEY SECRET_VALUE",
 		Aliases: []string{"s"},
 		Short:   "Set a secret",
 		Example: "syringe secret set -p my_cool_project -e local AWS_ACCESS_KEY_ID AKIAIOSFODNN7EXAMPLE",
 		Args:    cobra.MatchAll(cobra.ExactArgs(2)),
-		RunE:    secretSetRunE,
+		RunE:    handler,
 	}
 
-	secretSetCmd.Flags().StringP("project", "p", "", "Project to use")
-	secretSetCmd.MarkFlagRequired("project")
+	setCmd.Flags().StringP("project", "p", "", "Project to use")
+	setCmd.MarkFlagRequired("project")
 
-	secretSetCmd.Flags().StringP("environment", "e", "", "Environment to use")
-	secretSetCmd.MarkFlagRequired("environment")
+	setCmd.Flags().StringP("environment", "e", "", "Environment to use")
+	setCmd.MarkFlagRequired("environment")
 
-	secretSetCmd.Flags().BoolP("secret", "s", false, "Is secret?")
+	setCmd.Flags().BoolP("secret", "s", false, "Is secret?")
 
-	return secretSetCmd
+	return setCmd
 }
 
-func secretSetRunE(cmd *cobra.Command, args []string) error {
-	key := args[0]
-	value := args[1]
-
-	project, err := cmd.Flags().GetString("project")
-	if err != nil {
-		return err
-	}
-
-	environment, err := cmd.Flags().GetString("environment")
-	if err != nil {
-		return err
-	}
-
-	secretService, ok := cmd.Context().Value(ctxkeys.SecretService).(SecretService)
-	if !ok {
-		return fmt.Errorf("unable to get secret service from context")
-	}
-
-	if err := secretService.Set(SetSecretRequest{
-		Project:     project,
-		Environment: environment,
-		Key:         key,
-		Value:       value,
-	}); err != nil {
-		return err
-	}
-
-	cmd.Print("")
-	return nil
-}
-
-func secretGetCommand() *cobra.Command {
-	secretGetCmd := &cobra.Command{
+func GetCmd(handler project.CobraHandler) *cobra.Command {
+	getCmd := &cobra.Command{
 		Use:     "get [flags] SECRET_KEY",
 		Aliases: []string{"g"},
 		Short:   "Get a secret",
 		Example: "syringe get -p my_cool_project -e local AWS_ACCESS_KEY_ID",
 		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
-		RunE:    secretGetRunE,
+		RunE:    handler,
 	}
 
-	secretGetCmd.Flags().StringP("project", "p", "", "Project")
-	secretGetCmd.MarkFlagRequired("project")
+	getCmd.Flags().StringP("project", "p", "", "Project")
+	getCmd.MarkFlagRequired("project")
 
-	secretGetCmd.Flags().StringP("environment", "e", "", "Environment")
-	secretGetCmd.MarkFlagRequired("environment")
+	getCmd.Flags().StringP("environment", "e", "", "Environment")
+	getCmd.MarkFlagRequired("environment")
 
-	secretGetCmd.Flags().BoolP("secret", "s", false, "Is secret?")
+	getCmd.Flags().BoolP("secret", "s", false, "Is secret?")
 
-	return secretGetCmd
+	return getCmd
 }
 
-func secretGetRunE(cmd *cobra.Command, args []string) error {
-	key := args[0]
-
-	project, err := cmd.Flags().GetString("project")
-	if err != nil {
-		return err
-	}
-
-	environment, err := cmd.Flags().GetString("environment")
-	if err != nil {
-		return err
-	}
-
-	secretService := cmd.Context().Value(ctxkeys.SecretService).(SecretService)
-
-	secret, err := secretService.Get(GetSecretRequest{
-		Project:     project,
-		Environment: environment,
-		Key:         key,
-	})
-	if err != nil {
-		return err
-	}
-
-	cmd.Print(secret.Value)
-
-	return nil
-}
-
-func secretListCommand() *cobra.Command {
-	secretListCmd := &cobra.Command{
+func ListCmd(handler project.CobraHandler) *cobra.Command {
+	listCmd := &cobra.Command{
 		Use:     "list [flags]",
 		Aliases: []string{"l"},
 		Short:   "List all secrets",
 		Example: "syringe secret list -p my_cool_project -e staging",
 		Args:    cobra.MatchAll(cobra.ExactArgs(0)),
-		RunE:    secretListRunE,
+		RunE:    handler,
 	}
 
-	secretListCmd.Flags().StringP("project", "p", "", "Project name")
-	secretListCmd.MarkFlagRequired("project")
+	listCmd.Flags().StringP("project", "p", "", "Project name")
+	listCmd.MarkFlagRequired("project")
 
-	secretListCmd.Flags().StringP("environment", "e", "", "Environment name")
-	secretListCmd.MarkFlagRequired("environment")
+	listCmd.Flags().StringP("environment", "e", "", "Environment name")
+	listCmd.MarkFlagRequired("environment")
 
-	return secretListCmd
+	return listCmd
 }
 
-func secretListRunE(cmd *cobra.Command, args []string) error {
-	project, err := cmd.Flags().GetString("project")
-	if err != nil {
-		return err
-	}
-
-	environment, err := cmd.Flags().GetString("environment")
-	if err != nil {
-		return err
-	}
-
-	secretService, ok := cmd.Context().Value(ctxkeys.SecretService).(SecretService)
-	if !ok {
-		return fmt.Errorf("unable to load secret service from context")
-	}
-
-	secrets, err := secretService.List(ListSecretsRequest{
-		Project:     project,
-		Environment: environment,
-	})
-	if err != nil {
-		return err
-	}
-
-	secretsList := make([]string, len(secrets.Secrets))
-	for i, s := range secrets.Secrets {
-		secretsList[i] = fmt.Sprintf("%s=%s", s.Key, s.Value)
-	}
-
-	cmd.Print(strings.Join(secretsList, "\n"))
-
-	return nil
-}
-
-func secretRemoveCommand() *cobra.Command {
-	secretRemoveCmd := &cobra.Command{
+func RemoveCmd(handler project.CobraHandler) *cobra.Command {
+	removeCmd := &cobra.Command{
 		Use:     "remove [flags] SECRET_KEY",
 		Aliases: []string{"r"},
 		Short:   "Remove a secret",
 		Example: "syringe secret remove -p my_cool_project -e staging AWS_ACCESS_KEY_ID",
 		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
-		RunE:    secretRemoveRunE,
+		RunE:    handler,
 	}
 
-	secretRemoveCmd.Flags().StringP("project", "p", "", "Project name")
-	secretRemoveCmd.MarkFlagRequired("project")
+	removeCmd.Flags().StringP("project", "p", "", "Project name")
+	removeCmd.MarkFlagRequired("project")
 
-	secretRemoveCmd.Flags().StringP("environment", "e", "", "Environment name")
-	secretRemoveCmd.MarkFlagRequired("environment")
+	removeCmd.Flags().StringP("environment", "e", "", "Environment name")
+	removeCmd.MarkFlagRequired("environment")
 
-	return secretRemoveCmd
+	return removeCmd
 }
 
-func secretRemoveRunE(cmd *cobra.Command, args []string) error {
-	key := args[0]
-
-	project, err := cmd.Flags().GetString("project")
-	if err != nil {
-		return err
-	}
-
-	environment, err := cmd.Flags().GetString("environment")
-	if err != nil {
-		return err
-	}
-
-	secretService, ok := cmd.Context().Value(ctxkeys.SecretService).(SecretService)
-	if !ok {
-		return fmt.Errorf("unable to get secret service from context")
-	}
-
-	if err := secretService.Remove(RemoveSecretRequest{
-		Project:     project,
-		Environment: environment,
-		Key:         key,
-	}); err != nil {
-		return err
-	}
-
-	cmd.Print("")
-
-	return nil
-}
-
-func initSecretContext(cmd *cobra.Command, args []string) error {
+func InitContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
 	db, ok := ctx.Value(ctxkeys.DB).(*sql.DB)

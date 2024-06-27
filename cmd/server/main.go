@@ -6,9 +6,9 @@ import (
 	"github.com/charmbracelet/wish"
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
-	"github.com/nixpig/syringe.sh/cmd/server/middleware"
 	"github.com/nixpig/syringe.sh/internal/auth"
 	"github.com/nixpig/syringe.sh/internal/database"
+	"github.com/nixpig/syringe.sh/internal/middleware"
 	"github.com/rs/zerolog"
 )
 

@@ -12,19 +12,19 @@ import (
 
 type CobraHandler func(cmd *cobra.Command, args []string) error
 
-func New() *cobra.Command {
+func New(init CobraHandler) *cobra.Command {
 	projectCmd := &cobra.Command{
 		Use:               "project",
 		Aliases:           []string{"p"},
 		Short:             "Manage projects",
-		PersistentPreRunE: initProjectContext,
+		PersistentPreRunE: init,
 	}
 
 	return projectCmd
 }
 
-func ProjectAddCommand(handler CobraHandler) *cobra.Command {
-	projectAddCmd := &cobra.Command{
+func AddCmd(handler CobraHandler) *cobra.Command {
+	addCmd := &cobra.Command{
 		Use:     "add [flags] PROJECT_NAME",
 		Aliases: []string{"a"},
 		Short:   "Add a project",
@@ -33,11 +33,11 @@ func ProjectAddCommand(handler CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	return projectAddCmd
+	return addCmd
 }
 
-func ProjectRemoveCommand(handler CobraHandler) *cobra.Command {
-	projectRemoveCmd := &cobra.Command{
+func RemoveCmd(handler CobraHandler) *cobra.Command {
+	removeCmd := &cobra.Command{
 		Use:     "remove [flags] PROJECT_NAME",
 		Aliases: []string{"r"},
 		Short:   "Remove a project",
@@ -46,11 +46,11 @@ func ProjectRemoveCommand(handler CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	return projectRemoveCmd
+	return removeCmd
 }
 
-func ProjectRenameCommand(handler CobraHandler) *cobra.Command {
-	projectRenameCmd := &cobra.Command{
+func RenameCmd(handler CobraHandler) *cobra.Command {
+	renameCmd := &cobra.Command{
 		Use:     "rename [flags] CURRENT_PROJECT_NAME NEW_PROJECT_NAME",
 		Aliases: []string{"u"},
 		Short:   "Rename a project",
@@ -59,11 +59,11 @@ func ProjectRenameCommand(handler CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	return projectRenameCmd
+	return renameCmd
 }
 
-func ProjectListCommand(handler CobraHandler) *cobra.Command {
-	projectListCmd := &cobra.Command{
+func ListCmd(handler CobraHandler) *cobra.Command {
+	listCmd := &cobra.Command{
 		Use:     "list [flags]",
 		Aliases: []string{"l"},
 		Short:   "List projects",
@@ -72,10 +72,10 @@ func ProjectListCommand(handler CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	return projectListCmd
+	return listCmd
 }
 
-func initProjectContext(cmd *cobra.Command, args []string) error {
+func InitContext(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
 	db, ok := ctx.Value(ctxkeys.DB).(*sql.DB)
