@@ -64,7 +64,9 @@ func NewCommandHandler(
 			userCmd.AddCommand(user.RegisterCmd(user.RegisterCmdHandler))
 			rootCmd.AddCommand(userCmd)
 
-			rootCmd.AddCommand(inject.InjectCommand())
+			injectCmd := inject.New(inject.InitContext)
+			injectCmd.RunE = inject.InjectCmdHandler
+			rootCmd.AddCommand(injectCmd)
 
 			authenticated, ok := sess.Context().Value(ctxkeys.Authenticated).(bool)
 			if !ok {

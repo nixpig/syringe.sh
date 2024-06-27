@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/nixpig/syringe.sh/internal/environment"
+	"github.com/nixpig/syringe.sh/internal/inject"
 	"github.com/nixpig/syringe.sh/internal/project"
 	"github.com/nixpig/syringe.sh/internal/root"
 	"github.com/nixpig/syringe.sh/internal/secret"
@@ -48,6 +49,10 @@ func main() {
 	userCmd := user.New(nil)
 	userCmd.AddCommand(user.RegisterCmd(run))
 	rootCmd.AddCommand(userCmd)
+
+	injectCmd := inject.New(nil)
+	injectCmd.RunE = run
+	rootCmd.AddCommand(injectCmd)
 
 	helpers.WalkCmd(rootCmd, func(c *cobra.Command) {
 		c.Flags().BoolP("help", "h", false, "Help for the "+c.Name()+" command")
