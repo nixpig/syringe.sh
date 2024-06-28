@@ -6,7 +6,6 @@ import (
 	"errors"
 
 	"github.com/charmbracelet/ssh"
-	"github.com/charmbracelet/wish"
 	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/environment"
 	"github.com/nixpig/syringe.sh/internal/inject"
@@ -28,7 +27,7 @@ func NewCommandHandler(
 		return func(sess ssh.Session) {
 			ctx, ok := sess.Context().(context.Context)
 			if !ok {
-				logger.Err(errors.New("context error")).Msg("failed to get session context")
+				logger.Error().Err(errors.New("context error")).Msg("failed to get session context")
 				sess.Stderr().Write([]byte("failed to get context from session"))
 				return
 			}
@@ -80,7 +79,7 @@ func NewCommandHandler(
 			if authenticated {
 				userDB, err := database.NewUserDBConnection(sess.PublicKey())
 				if err != nil {
-					logger.Err(err).
+					logger.Error().Err(err).
 						Str("session", sess.Context().SessionID()).
 						Msg("failed to obtain user database connection")
 					sess.Stderr().Write([]byte("Failed to obtain database connection using the provided public key"))
@@ -100,15 +99,19 @@ func NewCommandHandler(
 
 			helpers.WalkCmd(rootCmd, func(c *cobra.Command) {
 				c.Flags().BoolP("help", "h", false, "Help for the "+c.Name()+" command")
+
+				c.FParseErrWhitelist = cobra.FParseErrWhitelist{
+					UnknownFlags: true,
+				}
 			})
 
 			if err := rootCmd.ExecuteContext(ctx); err != nil {
-				logger.Err(errors.Unwrap(err)).
+				logger.Error().
+					Err(err).
 					Str("session", sess.Context().SessionID()).
 					Any("command", sess.Command()).
 					Msg("failed to execute command")
 
-				wish.Fatal(sess)
 				next(sess)
 				return
 			}

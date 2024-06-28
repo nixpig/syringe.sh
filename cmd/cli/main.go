@@ -71,12 +71,7 @@ func main() {
 
 		env := strings.Split(string(injection), " ")
 
-		out := fmt.Sprintf(
-			"%s",
-			strings.Join(args, " "),
-		)
-
-		hostCmd := exec.Command(out)
+		hostCmd := exec.Command(args[0], args[1:]...)
 		hostCmd.Env = append(hostCmd.Environ(), env...)
 		hostCmd.Stdout = cmd.OutOrStdout()
 
@@ -88,6 +83,10 @@ func main() {
 		return nil
 	})
 
+	injectCmd.FParseErrWhitelist = cobra.FParseErrWhitelist{
+		UnknownFlags: true,
+	}
+
 	rootCmd.AddCommand(injectCmd)
 
 	helpers.WalkCmd(rootCmd, func(c *cobra.Command) {
@@ -95,6 +94,7 @@ func main() {
 	})
 
 	if err := rootCmd.Execute(); err != nil {
+		fmt.Println("error in here...", err)
 		os.Exit(1)
 	}
 }
