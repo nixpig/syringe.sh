@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/internal/database"
@@ -63,8 +64,7 @@ func NewCommandHandler(
 			userCmd.AddCommand(user.RegisterCmd(user.RegisterCmdHandler))
 			rootCmd.AddCommand(userCmd)
 
-			injectCmd := inject.New(inject.InitContext)
-			injectCmd.RunE = inject.InjectCmdHandler
+			injectCmd := inject.NewWithHandler(inject.InitContext, inject.InjectCmdHandler)
 			rootCmd.AddCommand(injectCmd)
 
 			authenticated, ok := sess.Context().Value(ctxkeys.Authenticated).(bool)
@@ -98,11 +98,8 @@ func NewCommandHandler(
 			rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 			helpers.WalkCmd(rootCmd, func(c *cobra.Command) {
-				c.Flags().BoolP("help", "h", false, "Help for the "+c.Name()+" command")
-
-				c.FParseErrWhitelist = cobra.FParseErrWhitelist{
-					UnknownFlags: true,
-				}
+				c.Flags().BoolP("help", "h", false, fmt.Sprintf("Help for the '%s' command", c.Name()))
+				c.Flags().BoolP("version", "v", false, "Print version information")
 			})
 
 			if err := rootCmd.ExecuteContext(ctx); err != nil {

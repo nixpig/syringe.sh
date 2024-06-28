@@ -9,9 +9,9 @@ Distributed database-per-user encrypted secrets management over SSH protocol.
 
 - [x] Merge client and server codebases into one
 - [x] Share command configuration for both cli client and server
-- [ ] Secret injection and run passed command
-  - [ ] Pass a `io.Writer` into `run` so that we can read secrets from it to inject instead of directly printing to terminal out
-- [ ] Encryption of secrets
+- [x] Secret injection and run passed command
+  - [x] Pass a `io.Writer` into `run` so that we can read secrets from it to inject instead of directly printing to terminal out
+- [ ] Encryption and signing of secrets
 - [ ] E2E tests with an SSH client, including a couple like trying to create secrets for a non-existent project or environmnet
   - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?
 - [x] Explicit (not implicit) user registration

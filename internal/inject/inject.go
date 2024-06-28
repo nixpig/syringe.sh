@@ -21,11 +21,17 @@ func NewWithHandler(init pkg.CobraHandler, run pkg.CobraHandler) *cobra.Command 
 
 func New(init pkg.CobraHandler) *cobra.Command {
 	injectCmd := &cobra.Command{
-		Use:               "inject",
-		Aliases:           []string{"i"},
-		Short:             "Inject secrets",
-		Example:           "syringe inject -p my_cool_project -e dev ./startserver",
+		Use:     "inject [flags] -- SUBCOMMAND",
+		Aliases: []string{"i"},
+		Short:   "Inject secrets",
+		Long:    "Inject secrets into the specified subcommand.",
+		Example: `  Inject secrets from 'dev' environment in 'my_cool_project' project into 'startserver' command:
+    syringe inject -p my_cool_project -e dev -- startserver`,
 		PersistentPreRunE: init,
+		Args:              cobra.MinimumNArgs(1),
+		FParseErrWhitelist: cobra.FParseErrWhitelist{
+			UnknownFlags: true,
+		},
 	}
 
 	injectCmd.Flags().StringP("project", "p", "", "Project name")

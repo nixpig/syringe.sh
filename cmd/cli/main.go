@@ -56,45 +56,53 @@ func main() {
 	userCmd.AddCommand(user.RegisterCmd(handler))
 	rootCmd.AddCommand(userCmd)
 
-	injectCmd := inject.NewWithHandler(nil, func(cmd *cobra.Command, args []string) error {
-		w := bytes.NewBufferString("")
-		injectHandler := newCliHandler(w)
-
-		if err := injectHandler(cmd, args); err != nil {
-			return err
-		}
-
-		injection, err := io.ReadAll(w)
-		if err != nil {
-			return err
-		}
-
-		env := strings.Split(string(injection), " ")
-
-		hostCmd := exec.Command(args[0], args[1:]...)
-		hostCmd.Env = append(hostCmd.Environ(), env...)
-		hostCmd.Stdout = cmd.OutOrStdout()
-
-		if err := hostCmd.Run(); err != nil {
-			cmd.SilenceUsage = true
-			return err
-		}
-
-		return nil
-	})
-
-	injectCmd.FParseErrWhitelist = cobra.FParseErrWhitelist{
-		UnknownFlags: true,
-	}
-
+	injectCmd := inject.NewWithHandler(nil, injectCLIHandler)
 	rootCmd.AddCommand(injectCmd)
 
 	helpers.WalkCmd(rootCmd, func(c *cobra.Command) {
-		c.Flags().BoolP("help", "h", false, fmt.Sprintf("Help for the %s command", c.Name()))
+		c.Flags().BoolP("help", "h", false, fmt.Sprintf("Help for the '%s' command", c.Name()))
+		c.Flags().BoolP("version", "v", false, "Print version information")
 	})
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println("error in here...", err)
 		os.Exit(1)
 	}
+}
+
+func injectCLIHandler(cmd *cobra.Command, args []string) error {
+	w := bytes.NewBufferString("")
+	injectHandler := newCliHandler(w)
+
+	if err := injectHandler(cmd, args); err != nil {
+		return err
+	}
+
+	injection, err := io.ReadAll(w)
+	if err != nil {
+		return err
+	}
+
+	env := strings.Split(string(injection), " ")
+
+	var command string
+	var arguments []string
+
+	if len(args) > 0 {
+		command = args[0]
+	}
+
+	if len(args) > 1 {
+		arguments = args[1:]
+	}
+
+	hostCmd := exec.Command(command, arguments...)
+	hostCmd.Env = append(hostCmd.Environ(), env...)
+	hostCmd.Stdout = cmd.OutOrStdout()
+
+	if err := hostCmd.Run(); err != nil {
+		cmd.SilenceUsage = true
+		return err
+	}
+
+	return nil
 }
