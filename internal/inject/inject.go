@@ -12,6 +12,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func NewWithHandler(init pkg.CobraHandler, run pkg.CobraHandler) *cobra.Command {
+	injectCmd := New(init)
+	injectCmd.RunE = run
+
+	return injectCmd
+}
+
 func New(init pkg.CobraHandler) *cobra.Command {
 	injectCmd := &cobra.Command{
 		Use:               "inject",

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-echo FOO is $FOO
-echo BAR is $BAR
+echo HANGER is $HANGER
+echo REBELBASE is $REBELBASE
 
