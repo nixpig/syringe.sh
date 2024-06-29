@@ -25,12 +25,14 @@ type ListEnvironmentRequest struct {
 	Project string `name:"project name" validate:"required,min=1,max=256"`
 }
 
+type EnvironmentResponse struct {
+	ID   int
+	Name string
+}
+
 type ListEnvironmentsResponse struct {
 	Project      string
-	Environments []struct {
-		ID   int
-		Name string
-	}
+	Environments []EnvironmentResponse
 }
 
 type EnvironmentService interface {
@@ -119,16 +121,10 @@ func (e EnvironmentServiceImpl) List(
 		return nil, err
 	}
 
-	var environmentsResponseList []struct {
-		ID   int
-		Name string
-	}
+	var environmentsResponseList []EnvironmentResponse
 
 	for _, ev := range *environments {
-		environmentsResponseList = append(environmentsResponseList, struct {
-			ID   int
-			Name string
-		}{
+		environmentsResponseList = append(environmentsResponseList, EnvironmentResponse{
 			ID:   ev.ID,
 			Name: ev.Name,
 		},
