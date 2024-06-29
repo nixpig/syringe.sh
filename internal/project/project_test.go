@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -37,12 +36,12 @@ func TestProjectCmd(t *testing.T) {
 		// "test project remove command zero affected rows": testProjectRemoveCmdZeroAffectedRows,
 		// "test project remove command validation error":   testProjectRemoveCmdValidationError,
 
-		"test project rename command happy path": testProjectRenameCmdHappyPath,
-		// "test project rename command with no args":       testProjectRenameCmdWithNoArgs,
-		// "test project rename command with too few args":  testProjectRenameCmdWithTooFewArgs,
-		// "test project rename command with too many args": testProjectRenameCmdWithTooManyArgs,
-		// "test project rename command database error":     testProjectRenameCmdDatabaseError,
-		// "test project rename command validation error":   testProjectRenameCmdValidationError,
+		"test project rename command happy path":         testProjectRenameCmdHappyPath,
+		"test project rename command with no args":       testProjectRenameCmdWithNoArgs,
+		"test project rename command with too few args":  testProjectRenameCmdWithTooFewArgs,
+		"test project rename command with too many args": testProjectRenameCmdWithTooManyArgs,
+		"test project rename command database error":     testProjectRenameCmdDatabaseError,
+		"test project rename command validation error":   testProjectRenameCmdValidationError,
 
 		"test project list command happy path":         testProjectListCmdHappyPath,
 		"test project list command zero results":       testProjectListCmdZeroResults,
@@ -417,9 +416,8 @@ func testProjectRenameCmdHappyPath(
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	cmd.AddCommand(
-		project.NewCmdProjectRename(project.NewHandlerProjectRename(service)),
-	)
+	cmdRename := project.NewCmdProjectRename(project.NewHandlerProjectRename(service))
+	cmd.AddCommand(cmdRename)
 
 	cmd.SetArgs([]string{"rename", "my_cool_project", "my_awesome_project"})
 	cmd.SetIn(cmdIn)
@@ -447,117 +445,152 @@ func testProjectRenameCmdHappyPath(
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-// func testProjectRenameCmdWithNoArgs(
-// 	t *testing.T,
-// 	mock sqlmock.Sqlmock,
-// 	db *sql.DB,
-// ) {
-// 	cmdIn := bytes.NewReader([]byte{})
-// 	cmdOut := bytes.NewBufferString("")
-// 	errOut := bytes.NewBufferString("")
-//
-// 	err := servercmd.Execute(
-// 		[]*cobra.Command{project.ProjectCommand()},
-// 		[]string{"project", "rename"},
-// 		cmdIn,
-// 		cmdOut,
-// 		errOut,
-// 		db,
-// 	)
-//
-// 	require.Error(t, err)
-//
-// 	out, err := io.ReadAll(errOut)
-// 	if err != nil {
-// 		t.Errorf("failed to read from err out")
-// 	}
-//
-// 	require.Equal(t, test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(2, 0)), string(out))
-// }
-//
-// func testProjectRenameCmdWithTooFewArgs(
-// 	t *testing.T,
-// 	mock sqlmock.Sqlmock,
-// 	db *sql.DB,
-// ) {
-// 	cmdIn := bytes.NewReader([]byte{})
-// 	cmdOut := bytes.NewBufferString("")
-// 	errOut := bytes.NewBufferString("")
-//
-// 	err := servercmd.Execute(
-// 		[]*cobra.Command{project.ProjectCommand()},
-// 		[]string{"project", "rename", "foo"},
-// 		cmdIn,
-// 		cmdOut,
-// 		errOut,
-// 		db,
-// 	)
-//
-// 	require.Error(t, err)
-//
-// 	out, err := io.ReadAll(errOut)
-// 	if err != nil {
-// 		t.Errorf("failed to read from err out")
-// 	}
-//
-// 	require.Equal(t, test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(2, 1)), string(out))
-// }
-//
-// func testProjectRenameCmdWithTooManyArgs(
-// 	t *testing.T,
-// 	mock sqlmock.Sqlmock,
-// 	db *sql.DB,
-// ) {
-// 	cmdIn := bytes.NewReader([]byte{})
-// 	cmdOut := bytes.NewBufferString("")
-// 	errOut := bytes.NewBufferString("")
-//
-// 	err := servercmd.Execute(
-// 		[]*cobra.Command{project.ProjectCommand()},
-// 		[]string{"project", "rename", "foo", "bar", "baz"},
-// 		cmdIn,
-// 		cmdOut,
-// 		errOut,
-// 		db,
-// 	)
-//
-// 	require.Error(t, err)
-//
-// 	out, err := io.ReadAll(errOut)
-// 	if err != nil {
-// 		t.Errorf("failed to read from err out")
-// 	}
-//
-// 	require.Equal(t, test.ErrorMsg(test.IncorrectNumberOfArgsErrorMsg(2, 3)), string(out))
-// }
-//
-// func testProjectRenameCmdDatabaseError(
-// 	t *testing.T,
-// 	mock sqlmock.Sqlmock,
-// 	db *sql.DB,
-// ) {
-// 	cmdIn := bytes.NewReader([]byte{})
-// 	cmdOut := bytes.NewBufferString("")
-// 	errOut := bytes.NewBufferString("")
-//
-// 	mock.ExpectExec(regexp.QuoteMeta(`
-// 			update projects_ set name_ = $newName where name_ = $originalName
-// 	`)).WithArgs("my_cool_project", "my_awesome_project").
-// 		WillReturnError(fmt.Errorf("database_error"))
-//
-// 	err := servercmd.Execute(
-// 		[]*cobra.Command{project.ProjectCommand()},
-// 		[]string{"project", "rename", "my_cool_project", "my_awesome_project"},
-// 		cmdIn,
-// 		cmdOut,
-// 		errOut,
-// 		db,
-// 	)
-//
-// 	require.Error(t, err)
-//
-// 	require.NoError(t, mock.ExpectationsWereMet())
-// }
+func testProjectRenameCmdWithNoArgs(
+	t *testing.T,
+	cmd *cobra.Command,
+	service project.ProjectService,
+	mock sqlmock.Sqlmock,
+) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	cmdRename := project.NewCmdProjectRename(project.NewHandlerProjectRename(service))
+	cmd.AddCommand(cmdRename)
+
+	cmd.SetArgs([]string{"rename"})
+	cmd.SetIn(cmdIn)
+	cmd.SetOut(cmdOut)
+	cmd.SetErr(errOut)
+
+	err := cmd.Execute()
+
+	require.Error(t, err)
+
+	require.Equal(
+		t,
+		test.IncorrectNumberOfArgsErrorMsg(2, 0),
+		errOut.String(),
+	)
+
+	require.Equal(
+		t,
+		fmt.Sprintf("%s\n", cmdRename.UsageString()),
+		cmdOut.String(),
+	)
+}
+
+func testProjectRenameCmdWithTooFewArgs(
+	t *testing.T,
+	cmd *cobra.Command,
+	service project.ProjectService,
+	mock sqlmock.Sqlmock,
+) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	cmdRename := project.NewCmdProjectRename(project.NewHandlerProjectRename(service))
+	cmd.AddCommand(cmdRename)
+
+	cmd.SetArgs([]string{"rename", "my_cool_project"})
+	cmd.SetIn(cmdIn)
+	cmd.SetOut(cmdOut)
+	cmd.SetErr(errOut)
+
+	err := cmd.Execute()
+
+	require.Error(t, err)
+
+	require.Equal(
+		t,
+		test.IncorrectNumberOfArgsErrorMsg(2, 1),
+		errOut.String(),
+	)
+
+	require.Equal(
+		t,
+		fmt.Sprintf("%s\n", cmdRename.UsageString()),
+		cmdOut.String(),
+	)
+}
+
+func testProjectRenameCmdWithTooManyArgs(
+	t *testing.T,
+	cmd *cobra.Command,
+	service project.ProjectService,
+	mock sqlmock.Sqlmock,
+) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	cmdRename := project.NewCmdProjectRename(project.NewHandlerProjectRename(service))
+	cmd.AddCommand(cmdRename)
+
+	cmd.SetArgs([]string{"rename", "my_cool_project", "my_awesome_project", "my_super_project"})
+	cmd.SetIn(cmdIn)
+	cmd.SetOut(cmdOut)
+	cmd.SetErr(errOut)
+
+	err := cmd.Execute()
+
+	require.Error(t, err)
+
+	require.Equal(
+		t,
+		test.IncorrectNumberOfArgsErrorMsg(2, 3),
+		errOut.String(),
+	)
+
+	require.Equal(
+		t,
+		fmt.Sprintf("%s\n", cmdRename.UsageString()),
+		cmdOut.String(),
+	)
+}
+
+func testProjectRenameCmdDatabaseError(
+	t *testing.T,
+	cmd *cobra.Command,
+	service project.ProjectService,
+	mock sqlmock.Sqlmock,
+) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	cmdRename := project.NewCmdProjectRename(project.NewHandlerProjectRename(service))
+	cmd.AddCommand(cmdRename)
+
+	cmd.SetArgs([]string{"rename", "my_cool_project", "my_awesome_project"})
+	cmd.SetIn(cmdIn)
+	cmd.SetOut(cmdOut)
+	cmd.SetErr(errOut)
+
+	mock.ExpectExec(regexp.QuoteMeta(`
+			update projects_ set name_ = $newName where name_ = $originalName
+	`)).WithArgs("my_cool_project", "my_awesome_project").
+		WillReturnError(fmt.Errorf("database_error"))
+
+	err := cmd.Execute()
+
+	require.Error(t, err)
+
+	require.Equal(
+		t,
+		test.ErrorMsg("database exec error\n"),
+		errOut.String(),
+	)
+
+	require.Equal(
+		t,
+		fmt.Sprintf("%s\n", cmdRename.UsageString()),
+		cmdOut.String(),
+	)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
 
 func testProjectListCmdHappyPath(
 	t *testing.T,
@@ -795,9 +828,9 @@ func testProjectRenameCmdValidationError(
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
 
-	cmd.AddCommand(
-		project.NewCmdProjectRename(project.NewHandlerProjectRename(service)),
-	)
+	cmdRename := project.NewCmdProjectRename(project.NewHandlerProjectRename(service))
+
+	cmd.AddCommand(cmdRename)
 
 	cmd.SetArgs([]string{
 		"rename",
@@ -814,14 +847,7 @@ func testProjectRenameCmdValidationError(
 
 	require.Equal(
 		t,
-		test.ErrorMsg(strings.Join(
-			[]string{
-				test.MaxLengthValidationErrorMsg("project name", 256),
-				test.MaxLengthValidationErrorMsg("new project name", 256),
-			},
-			"",
-		),
-		),
+		fmt.Sprintf("%s\n", cmdRename.UsageString()),
 		cmdOut.String(),
 	)
 }
