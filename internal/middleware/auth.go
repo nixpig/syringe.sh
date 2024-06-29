@@ -7,7 +7,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func NewAuthHandler(
+func NewMiddlewareAuth(
 	logger *zerolog.Logger,
 	authService auth.AuthService,
 ) func(next ssh.Handler) ssh.Handler {

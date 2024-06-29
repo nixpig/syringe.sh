@@ -5,7 +5,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func NewLoggingHandler(logger *zerolog.Logger) func(next ssh.Handler) ssh.Handler {
+func NewMiddlewareLogging(logger *zerolog.Logger) func(next ssh.Handler) ssh.Handler {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
 			// log incoming connection

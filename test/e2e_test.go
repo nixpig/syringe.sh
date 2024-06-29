@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	HOST = "localhost"
-	PORT = "23234"
+	host = "localhost"
+	port = "23234"
 )
 
 func TestEndToEnd(t *testing.T) {

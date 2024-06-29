@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/ssh"
+	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/environment"
 	"github.com/nixpig/syringe.sh/internal/inject"
@@ -18,14 +19,14 @@ import (
 	"github.com/nixpig/syringe.sh/internal/user"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/nixpig/syringe.sh/pkg/helpers"
-	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 )
 
-func NewCommandHandler(
+func NewMiddlewareCommand(
 	logger *zerolog.Logger,
 	appDB *sql.DB,
+	validate *validator.Validate,
 ) func(next ssh.Handler) ssh.Handler {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
@@ -39,7 +40,6 @@ func NewCommandHandler(
 				return
 			}
 
-			ctx = context.WithValue(ctx, ctxkeys.APP_DB, appDB)
 			ctx = context.WithValue(ctx, ctxkeys.Username, sess.User())
 			ctx = context.WithValue(ctx, ctxkeys.PublicKey, sess.PublicKey())
 
@@ -66,11 +66,7 @@ func NewCommandHandler(
 
 				// database connection is tightly coupled to and lasts only for the duration of the request
 				defer userDB.Close()
-				ctx = context.WithValue(ctx, ctxkeys.USER_DB, userDB)
 			}
-
-			// --------------------------------------
-			validate := validation.NewValidator()
 
 			// -- USER CMD
 			cmdUser := user.NewCmdUser()

@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"errors"
@@ -15,7 +15,7 @@ import (
 	gossh "golang.org/x/crypto/ssh"
 )
 
-func newCliHandler(cmdOut io.Writer) pkg.CobraHandler {
+func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		var authMethod gossh.AuthMethod
 
@@ -46,8 +46,8 @@ func newCliHandler(cmdOut io.Writer) pkg.CobraHandler {
 
 		// TODO: pull this out and pass in as a dependency
 		client, err := ssh.NewSSHClient(
-			"localhost",
-			23234,
+			host,
+			port,
 			currentUser.Username,
 			authMethod,
 		)

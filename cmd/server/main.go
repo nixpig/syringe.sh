@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+	// -- LOGGING
 	log := zerolog.
 		New(os.Stdout).
 		Output(zerolog.ConsoleWriter{
@@ -21,12 +22,14 @@ func main() {
 			TimeFormat: "2006-01-02T15:04:05.999Z07:00",
 		}).With().Timestamp().Logger()
 
+	// -- ENV
 	log.Info().Msg("loading environment")
 	if err := godotenv.Load(".env"); err != nil {
 		log.Error().Err(err).Msg("failed to load '.env' file")
 		os.Exit(1)
 	}
 
+	// -- DATABASE
 	log.Info().Msg("connecting to database")
 	appDB, err := database.Connection(
 		os.Getenv("DATABASE_URL"),
@@ -39,17 +42,21 @@ func main() {
 
 	defer appDB.Close()
 
+	// -- DEPENDENCY CONSTRUCTION
 	log.Info().Msg("building app components")
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	authStore := auth.NewSqliteAuthStore(appDB)
 	authService := auth.NewAuthService(authStore, validate)
 
+	// -- CMD
+
+	// -- SERVER
 	sshServer := newServer(
 		&log,
 		[]wish.Middleware{
-			middleware.NewCommandHandler(&log, appDB),
-			middleware.NewAuthHandler(&log, authService),
-			middleware.NewLoggingHandler(&log),
+			middleware.NewMiddlewareCommand(&log, appDB, validate),
+			middleware.NewMiddlewareAuth(&log, authService),
+			middleware.NewMiddlewareLogging(&log),
 		},
 		time.Duration(time.Second*30),
 		".ssh/id_ed25519",
