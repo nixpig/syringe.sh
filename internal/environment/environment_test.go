@@ -1,316 +1,329 @@
 package environment_test
 
-// import (
-// 	"bytes"
-// 	"database/sql"
-// 	"errors"
-// 	"fmt"
-// 	"io"
-// 	"os"
-// 	"regexp"
-// 	"strings"
-// 	"testing"
+import (
+	"bytes"
+	"regexp"
+	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/nixpig/syringe.sh/internal/environment"
+	"github.com/nixpig/syringe.sh/pkg/validation"
+	"github.com/nixpig/syringe.sh/test"
+	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/require"
+)
+
+func TestEnvironmentCmd(t *testing.T) {
+	scenarios := map[string]func(
+		t *testing.T,
+		cmd *cobra.Command,
+		service environment.EnvironmentService,
+		mock sqlmock.Sqlmock,
+	){
+		"test environment add command happy path": testEnvironmentAddCmdHappyPath,
+		// 		"test environment add command missing project flag": testEnvironmentAddCmdMissingProjectFlag,
+		// 		"test environment add command with no args":         testEnvironmentAddCmdWithNoArgs,
+		// 		"test environment add command with too many args":   testEnvironmentAddCmdWithTooManyArgs,
+		// 		"test environment add command database error":       testEnvironmentAddCmdDatabaseError,
+		// 		"test environment add command validation error":     testEnvironmentAddCmdValidationError,
+
+		"test environment remove command happy path": testEnvironmentRemoveCmdHappyPath,
+		// 		"test environment remove command missing project flag": testEnvironmentRemoveCmdMissingProjectFlag,
+		// 		"test environment remove command with no args":         testEnvironmentRemoveCmdWithNoArgs,
+		// 		"test environment remove command with too many args":   testEnvironmentRemoveCmdWithTooManyArgs,
+		// 		"test environment remove command database error":       testEnvironmentRemoveCmdDatabaseError,
+		// 		"test environment remove command zero affected rows":   testEnvironmentRemoveCmdZeroAffectedRows,
+		// 		"test environment remove command validation error":     testEnvironmentRemoveCmdValidationError,
+		//
+		"test environment rename command happy path": testEnvironmentRenameCmdHappyPath,
+		// 		"test environment rename command database error":       testEnvironmentRenameCmdDatabaseError,
+		// 		"test environment rename command validation errors":    testEnvironmentRenameCmdValidationError,
+		// 		"test environment rename command missing project flag": testEnvironmentRenameCmdMissingProjectFlag,
+		// 		"test environment rename command with no args":         testEnvironmentRenameCmdWithNoArgs,
+		// 		"test environment rename command with too many args":   testEnvironmentRenameCmdWithTooManyArgs,
+		//
+		"test environment list command happy path": testEnvironmentListCmdHappyPath,
+		// 		"test environment list command zero results":         testEnvironmentListCmdZeroResults,
+		// 		"test environment list command database error":       testEnvironmentListCmdDatabaseError,
+		// 		"test environment list command validation errors":    testEnvironmentListCmdValidationError,
+		// 		"test environment list command missing project flag": testEnvironmentListCmdMissingProjectFlag,
+		// 		"test environment list command with too many args":   testEnvironmentListCmdWithTooManyArgs,
+	}
+
+	for scenario, fn := range scenarios {
+		t.Run(scenario, func(t *testing.T) {
+			db, mock, err := sqlmock.New()
+			if err != nil {
+				t.Fatalf("unable to create mock database:\n%s", err)
+			}
+
+			cmd := environment.NewCmdEnvironment()
+
+			service := environment.NewEnvironmentServiceImpl(
+				environment.NewSqliteEnvironmentStore(db),
+				validation.NewValidator(),
+			)
+
+			fn(t, cmd, service, mock)
+		})
+	}
+}
+
+func testEnvironmentAddCmdHappyPath(
+	t *testing.T,
+	cmd *cobra.Command,
+	service environment.EnvironmentService,
+	mock sqlmock.Sqlmock,
+) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	cmdAdd := environment.NewCmdEnvironmentAdd(
+		environment.NewHandlerEnvironmentAdd(service),
+	)
+
+	cmd.AddCommand(cmdAdd)
+	cmd.SetArgs([]string{
+		"add",
+		"-p",
+		"my_cool_project",
+		"staging",
+	})
+	cmd.SetIn(cmdIn)
+	cmd.SetOut(cmdOut)
+	cmd.SetErr(errOut)
+
+	mock.ExpectExec(regexp.QuoteMeta(`
+		insert into environments_ (name_, project_id_) values (
+			$name,
+			(select id_ from projects_ where name_ = $projectName)
+		)
+	`)).
+		WithArgs("staging", "my_cool_project").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err := cmd.Execute()
+
+	require.NoError(t, err)
+	require.Empty(t, errOut.String())
+
+	require.Equal(
+		t,
+		test.EnvironmentAddedSuccessMsg("staging", "my_cool_project"),
+		cmdOut.String(),
+	)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+//	func testEnvironmentAddCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+//		cmdIn := bytes.NewReader([]byte{})
+//		cmdOut := bytes.NewBufferString("")
 //
-// 	"github.com/DATA-DOG/go-sqlmock"
-// 	"github.com/nixpig/syringe.sh/cmd/server/servercmd"
-// 	"github.com/nixpig/syringe.sh/internal/environment"
-// 	"github.com/nixpig/syringe.sh/test"
-// 	"github.com/spf13/cobra"
-// 	"github.com/stretchr/testify/require"
-// )
+//		err := servercmd.Execute(
+//			[]*cobra.Command{environment.EnvironmentCommand()},
+//			[]string{
+//				"environment",
+//				"add",
+//				"staging",
+//			},
+//			cmdIn,
+//			cmdOut,
+//			os.Stderr,
+//			db,
+//		)
 //
-// func TestEnvironmentCmd(t *testing.T) {
-// 	scenarios := map[string]func(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB){
-// 		"test environment add command happy path":           testEnvironmentAddCmdHappyPath,
-// 		"test environment add command missing project flag": testEnvironmentAddCmdMissingProjectFlag,
-// 		"test environment add command with no args":         testEnvironmentAddCmdWithNoArgs,
-// 		"test environment add command with too many args":   testEnvironmentAddCmdWithTooManyArgs,
-// 		"test environment add command database error":       testEnvironmentAddCmdDatabaseError,
-// 		"test environment add command validation error":     testEnvironmentAddCmdValidationError,
+//		require.Error(t, err)
+//	}
 //
-// 		"test environment remove command happy path":           testEnvironmentRemoveCmdHappyPath,
-// 		"test environment remove command missing project flag": testEnvironmentRemoveCmdMissingProjectFlag,
-// 		"test environment remove command with no args":         testEnvironmentRemoveCmdWithNoArgs,
-// 		"test environment remove command with too many args":   testEnvironmentRemoveCmdWithTooManyArgs,
-// 		"test environment remove command database error":       testEnvironmentRemoveCmdDatabaseError,
-// 		"test environment remove command zero affected rows":   testEnvironmentRemoveCmdZeroAffectedRows,
-// 		"test environment remove command validation error":     testEnvironmentRemoveCmdValidationError,
+//	func testEnvironmentAddCmdWithNoArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+//		cmdIn := bytes.NewReader([]byte{})
+//		cmdOut := bytes.NewBufferString("")
 //
-// 		"test environment rename command happy path":           testEnvironmentRenameCmdHappyPath,
-// 		"test environment rename command database error":       testEnvironmentRenameCmdDatabaseError,
-// 		"test environment rename command validation errors":    testEnvironmentRenameCmdValidationError,
-// 		"test environment rename command missing project flag": testEnvironmentRenameCmdMissingProjectFlag,
-// 		"test environment rename command with no args":         testEnvironmentRenameCmdWithNoArgs,
-// 		"test environment rename command with too many args":   testEnvironmentRenameCmdWithTooManyArgs,
+//		err := servercmd.Execute(
+//			[]*cobra.Command{environment.EnvironmentCommand()},
+//			[]string{
+//				"environment",
+//				"add",
+//				"-p",
+//				"my_cool_project",
+//			},
+//			cmdIn,
+//			cmdOut,
+//			os.Stderr,
+//			db,
+//		)
 //
-// 		"test environment list command happy path":           testEnvironmentListCmdHappyPath,
-// 		"test environment list command zero results":         testEnvironmentListCmdZeroResults,
-// 		"test environment list command database error":       testEnvironmentListCmdDatabaseError,
-// 		"test environment list command validation errors":    testEnvironmentListCmdValidationError,
-// 		"test environment list command missing project flag": testEnvironmentListCmdMissingProjectFlag,
-// 		"test environment list command with too many args":   testEnvironmentListCmdWithTooManyArgs,
-// 	}
+//		require.Error(t, err)
+//	}
 //
-// 	for scenario, fn := range scenarios {
-// 		t.Run(scenario, func(t *testing.T) {
-// 			db, mock, err := sqlmock.New()
-// 			if err != nil {
-// 				t.Fatalf("unable to create mock database:\n%s", err)
-// 			}
+//	func testEnvironmentAddCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+//		cmdIn := bytes.NewReader([]byte{})
+//		cmdOut := bytes.NewBufferString("")
 //
-// 			fn(t, mock, db)
-// 		})
-// 	}
-// }
+//		err := servercmd.Execute(
+//			[]*cobra.Command{environment.EnvironmentCommand()},
+//			[]string{
+//				"environment",
+//				"add",
+//				"-p",
+//				"my_cool_project",
+//				"foo",
+//				"bar",
+//			},
+//			cmdIn,
+//			cmdOut,
+//			os.Stderr,
+//			db,
+//		)
 //
-// func testEnvironmentAddCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
-// 	cmdIn := bytes.NewReader([]byte{})
-// 	cmdOut := bytes.NewBufferString("")
+//		require.Error(t, err)
+//	}
 //
-// 	mock.ExpectExec(regexp.QuoteMeta(`
-// 		insert into environments_ (name_, project_id_) values (
-// 			$name,
-// 			(select id_ from projects_ where name_ = $projectName)
-// 		)
-// 	`)).
-// 		WithArgs("staging", "my_cool_project").
-// 		WillReturnResult(sqlmock.NewResult(1, 1))
+//	func testEnvironmentAddCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+//		cmdIn := bytes.NewReader([]byte{})
+//		cmdOut := bytes.NewBufferString("")
 //
-// 	err := servercmd.Execute(
-// 		[]*cobra.Command{environment.EnvironmentCommand()},
-// 		[]string{
-// 			"environment",
-// 			"add",
-// 			"-p",
-// 			"my_cool_project",
-// 			"staging",
-// 		},
-// 		cmdIn,
-// 		cmdOut,
-// 		os.Stderr,
-// 		db,
-// 	)
+//		mock.ExpectExec(regexp.QuoteMeta(`
+//			insert into environments_ (name_, project_id_) values (
+//				$name,
+//				(select id_ from projects_ where name_ = $projectName)
+//			)
+//		`)).
+//			WithArgs("staging", "my_cool_project").
+//			WillReturnError(fmt.Errorf("database_error"))
 //
-// 	require.NoError(t, err)
+//		err := servercmd.Execute(
+//			[]*cobra.Command{environment.EnvironmentCommand()},
+//			[]string{
+//				"environment",
+//				"add",
+//				"-p",
+//				"my_cool_project",
+//				"staging",
+//			},
+//			cmdIn,
+//			cmdOut,
+//			os.Stderr,
+//			db,
+//		)
 //
-// 	out, err := io.ReadAll(cmdOut)
-// 	if err != nil {
-// 		t.Errorf("failed to read from out")
-// 	}
+//		require.Error(t, err)
 //
-// 	require.Equal(
-// 		t,
-// 		test.EnvironmentAddedSuccessMsg("staging", "my_cool_project"),
-// 		string(out),
-// 	)
+//		require.NoError(t, mock.ExpectationsWereMet())
+//	}
 //
-// 	require.NoError(t, mock.ExpectationsWereMet())
-// }
+//	func testEnvironmentAddCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
+//		cmdIn := bytes.NewReader([]byte{})
+//		cmdOut := bytes.NewBufferString("")
 //
-// func testEnvironmentAddCmdMissingProjectFlag(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
-// 	cmdIn := bytes.NewReader([]byte{})
-// 	cmdOut := bytes.NewBufferString("")
+//		var err error
 //
-// 	err := servercmd.Execute(
-// 		[]*cobra.Command{environment.EnvironmentCommand()},
-// 		[]string{
-// 			"environment",
-// 			"add",
-// 			"staging",
-// 		},
-// 		cmdIn,
-// 		cmdOut,
-// 		os.Stderr,
-// 		db,
-// 	)
+//		err = servercmd.Execute(
+//			[]*cobra.Command{environment.EnvironmentCommand()},
+//			[]string{
+//				"environment",
+//				"add",
+//				"-p",
+//				"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+//				"stagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstaging",
+//			},
+//			cmdIn,
+//			cmdOut,
+//			os.Stderr,
+//			db,
+//		)
 //
-// 	require.Error(t, err)
-// }
+//		require.Error(t, err)
 //
-// func testEnvironmentAddCmdWithNoArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
-// 	cmdIn := bytes.NewReader([]byte{})
-// 	cmdOut := bytes.NewBufferString("")
+//		err = servercmd.Execute(
+//			[]*cobra.Command{environment.EnvironmentCommand()},
+//			[]string{
+//				"environment",
+//				"add",
+//				"-p",
+//				"my_cool_project",
+//				"stagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstaging",
+//			},
+//			cmdIn,
+//			cmdOut,
+//			os.Stderr,
+//			db,
+//		)
 //
-// 	err := servercmd.Execute(
-// 		[]*cobra.Command{environment.EnvironmentCommand()},
-// 		[]string{
-// 			"environment",
-// 			"add",
-// 			"-p",
-// 			"my_cool_project",
-// 		},
-// 		cmdIn,
-// 		cmdOut,
-// 		os.Stderr,
-// 		db,
-// 	)
+//		require.Error(t, err)
 //
-// 	require.Error(t, err)
-// }
+//		err = servercmd.Execute(
+//			[]*cobra.Command{environment.EnvironmentCommand()},
+//			[]string{
+//				"environment",
+//				"add",
+//				"-p",
+//				"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
+//				"staging",
+//			},
+//			cmdIn,
+//			cmdOut,
+//			os.Stderr,
+//			db,
+//		)
 //
-// func testEnvironmentAddCmdWithTooManyArgs(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
-// 	cmdIn := bytes.NewReader([]byte{})
-// 	cmdOut := bytes.NewBufferString("")
-//
-// 	err := servercmd.Execute(
-// 		[]*cobra.Command{environment.EnvironmentCommand()},
-// 		[]string{
-// 			"environment",
-// 			"add",
-// 			"-p",
-// 			"my_cool_project",
-// 			"foo",
-// 			"bar",
-// 		},
-// 		cmdIn,
-// 		cmdOut,
-// 		os.Stderr,
-// 		db,
-// 	)
-//
-// 	require.Error(t, err)
-// }
-//
-// func testEnvironmentAddCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
-// 	cmdIn := bytes.NewReader([]byte{})
-// 	cmdOut := bytes.NewBufferString("")
-//
-// 	mock.ExpectExec(regexp.QuoteMeta(`
-// 		insert into environments_ (name_, project_id_) values (
-// 			$name,
-// 			(select id_ from projects_ where name_ = $projectName)
-// 		)
-// 	`)).
-// 		WithArgs("staging", "my_cool_project").
-// 		WillReturnError(fmt.Errorf("database_error"))
-//
-// 	err := servercmd.Execute(
-// 		[]*cobra.Command{environment.EnvironmentCommand()},
-// 		[]string{
-// 			"environment",
-// 			"add",
-// 			"-p",
-// 			"my_cool_project",
-// 			"staging",
-// 		},
-// 		cmdIn,
-// 		cmdOut,
-// 		os.Stderr,
-// 		db,
-// 	)
-//
-// 	require.Error(t, err)
-//
-// 	require.NoError(t, mock.ExpectationsWereMet())
-// }
-//
-// func testEnvironmentAddCmdValidationError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
-// 	cmdIn := bytes.NewReader([]byte{})
-// 	cmdOut := bytes.NewBufferString("")
-//
-// 	var err error
-//
-// 	err = servercmd.Execute(
-// 		[]*cobra.Command{environment.EnvironmentCommand()},
-// 		[]string{
-// 			"environment",
-// 			"add",
-// 			"-p",
-// 			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
-// 			"stagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstaging",
-// 		},
-// 		cmdIn,
-// 		cmdOut,
-// 		os.Stderr,
-// 		db,
-// 	)
-//
-// 	require.Error(t, err)
-//
-// 	err = servercmd.Execute(
-// 		[]*cobra.Command{environment.EnvironmentCommand()},
-// 		[]string{
-// 			"environment",
-// 			"add",
-// 			"-p",
-// 			"my_cool_project",
-// 			"stagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstagingstaging",
-// 		},
-// 		cmdIn,
-// 		cmdOut,
-// 		os.Stderr,
-// 		db,
-// 	)
-//
-// 	require.Error(t, err)
-//
-// 	err = servercmd.Execute(
-// 		[]*cobra.Command{environment.EnvironmentCommand()},
-// 		[]string{
-// 			"environment",
-// 			"add",
-// 			"-p",
-// 			"my_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_projectmy_cool_project",
-// 			"staging",
-// 		},
-// 		cmdIn,
-// 		cmdOut,
-// 		os.Stderr,
-// 		db,
-// 	)
-//
-// 	require.Error(t, err)
-// }
-//
-// func testEnvironmentRemoveCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
-// 	cmdIn := bytes.NewReader([]byte{})
-// 	cmdOut := bytes.NewBufferString("")
-//
-// 	mock.ExpectExec(regexp.QuoteMeta(`
-// 		delete from environments_
-// 		where id_ in (
-// 			select e.id_ from environments_ e
-// 			inner join
-// 			projects_ p
-// 			on e.project_id_ = p.id_
-// 			where p.name_ = $projectName
-// 			and e.name_ = $name
-// 		)
-// 	`)).
-// 		WithArgs("staging", "my_cool_project").
-// 		WillReturnResult(sqlmock.NewResult(1, 1))
-//
-// 	err := servercmd.Execute(
-// 		[]*cobra.Command{environment.EnvironmentCommand()},
-// 		[]string{
-// 			"environment",
-// 			"remove",
-// 			"-p",
-// 			"my_cool_project",
-// 			"staging",
-// 		},
-// 		cmdIn,
-// 		cmdOut,
-// 		os.Stderr,
-// 		db,
-// 	)
-//
-// 	require.NoError(t, err)
-//
-// 	out, err := io.ReadAll(cmdOut)
-// 	if err != nil {
-// 		t.Errorf("failed to read from out")
-// 	}
-//
-// 	require.Equal(
-// 		t,
-// 		test.EnvironmentRemovedSuccessMsg("staging", "my_cool_project"),
-// 		string(out),
-// 	)
-//
-// 	require.NoError(t, mock.ExpectationsWereMet())
-// }
-//
+//		require.Error(t, err)
+//	}
+func testEnvironmentRemoveCmdHappyPath(
+	t *testing.T,
+	cmd *cobra.Command,
+	service environment.EnvironmentService,
+	mock sqlmock.Sqlmock,
+) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	cmdRemove := environment.NewCmdEnvironmentRemove(
+		environment.NewHandlerEnvironmentRemove(service),
+	)
+
+	cmd.AddCommand(cmdRemove)
+	cmd.SetArgs([]string{
+		"remove",
+		"-p",
+		"my_cool_project",
+		"staging",
+	})
+	cmd.SetIn(cmdIn)
+	cmd.SetOut(cmdOut)
+	cmd.SetErr(errOut)
+
+	mock.ExpectExec(regexp.QuoteMeta(`
+		delete from environments_
+		where id_ in (
+			select e.id_ from environments_ e
+			inner join
+			projects_ p
+			on e.project_id_ = p.id_
+			where p.name_ = $projectName
+			and e.name_ = $name
+		)
+	`)).
+		WithArgs("staging", "my_cool_project").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err := cmd.Execute()
+
+	require.NoError(t, err)
+	require.Empty(t, errOut.String())
+
+	require.Equal(
+		t,
+		test.EnvironmentRemovedSuccessMsg("staging", "my_cool_project"),
+		cmdOut.String(),
+	)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
 // func testEnvironmentRemoveCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 // 	cmdIn := bytes.NewReader([]byte{})
 // 	cmdOut := bytes.NewBufferString("")
@@ -454,60 +467,64 @@ package environment_test
 //
 // 	require.NoError(t, mock.ExpectationsWereMet())
 // }
-//
-// func testEnvironmentRenameCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
-// 	cmdIn := bytes.NewReader([]byte{})
-// 	cmdOut := bytes.NewBufferString("")
-//
-// 	mock.ExpectExec(regexp.QuoteMeta(`
-// 		update environments_ set name_ = $newName
-// 		where name_ = $originalName
-// 		and id_ in (
-// 			select e.id_ from environments_ e
-// 			inner join
-// 			projects_ p
-// 			on e.project_id_ = p.id_
-// 			where p.name_ = $projectName
-// 			and e.name_ = $originalName
-// 		)
-// 	`)).WithArgs(
-// 		"staging",
-// 		"prod",
-// 		"my_cool_project",
-// 	).WillReturnResult(sqlmock.NewResult(23, 1))
-//
-// 	err := servercmd.Execute(
-// 		[]*cobra.Command{environment.EnvironmentCommand()},
-// 		[]string{
-// 			"environment",
-// 			"rename",
-// 			"-p",
-// 			"my_cool_project",
-// 			"staging",
-// 			"prod",
-// 		},
-// 		cmdIn,
-// 		cmdOut,
-// 		os.Stderr,
-// 		db,
-// 	)
-//
-// 	require.NoError(t, err)
-//
-// 	out, err := io.ReadAll(cmdOut)
-// 	if err != nil {
-// 		t.Errorf("failed to read from out")
-// 	}
-//
-// 	require.Equal(
-// 		t,
-// 		test.EnvironmentRenamedSuccessMsg("staging", "prod", "my_cool_project"),
-// 		string(out),
-// 	)
-//
-// 	require.NoError(t, mock.ExpectationsWereMet())
-// }
-//
+
+func testEnvironmentRenameCmdHappyPath(
+	t *testing.T,
+	cmd *cobra.Command,
+	service environment.EnvironmentService,
+	mock sqlmock.Sqlmock,
+) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	cmdAdd := environment.NewCmdEnvironmentRename(
+		environment.NewHandlerEnvironmentRename(service),
+	)
+
+	cmd.AddCommand(cmdAdd)
+	cmd.SetArgs([]string{
+		"rename",
+		"-p",
+		"my_cool_project",
+		"staging",
+		"prod",
+	})
+	cmd.SetIn(cmdIn)
+	cmd.SetOut(cmdOut)
+	cmd.SetErr(errOut)
+
+	mock.ExpectExec(regexp.QuoteMeta(`
+		update environments_ set name_ = $newName
+		where name_ = $originalName
+		and id_ in (
+			select e.id_ from environments_ e
+			inner join
+			projects_ p
+			on e.project_id_ = p.id_
+			where p.name_ = $projectName
+			and e.name_ = $originalName
+		)
+	`)).WithArgs(
+		"staging",
+		"prod",
+		"my_cool_project",
+	).WillReturnResult(sqlmock.NewResult(23, 1))
+
+	err := cmd.Execute()
+
+	require.NoError(t, err)
+	require.Empty(t, errOut.String())
+
+	require.Equal(
+		t,
+		test.EnvironmentRenamedSuccessMsg("staging", "prod", "my_cool_project"),
+		cmdOut.String(),
+	)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
 // func testEnvironmentRenameCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 // 	cmdIn := bytes.NewReader([]byte{})
 // 	cmdOut := bytes.NewBufferString("")
@@ -703,55 +720,63 @@ package environment_test
 // 		string(out),
 // 	)
 // }
-//
-// func testEnvironmentListCmdHappyPath(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
-// 	cmdIn := bytes.NewReader([]byte{})
-// 	cmdOut := bytes.NewBufferString("")
-//
-// 	query := `
-// 		select e.id_, e.name_, p.name_ from environments_ e
-// 		inner join projects_ p
-// 		on e.project_id_ = p.id_
-// 		where p.name_ = $projectName
-// 	`
-//
-// 	mock.
-// 		ExpectQuery(regexp.QuoteMeta(query)).
-// 		WithArgs("my_cool_project").
-// 		WillReturnRows(
-// 			sqlmock.
-// 				NewRows([]string{"id_", "name_", "project_name_"}).
-// 				AddRow(1, "dev", "my_cool_project").
-// 				AddRow(2, "staging", "my_cool_project").
-// 				AddRow(3, "prod", "my_cool_project"),
-// 		)
-//
-// 	err := servercmd.Execute(
-// 		[]*cobra.Command{environment.EnvironmentCommand()},
-// 		[]string{
-// 			"environment",
-// 			"list",
-// 			"-p",
-// 			"my_cool_project",
-// 		},
-// 		cmdIn,
-// 		cmdOut,
-// 		os.Stderr,
-// 		db,
-// 	)
-//
-// 	require.NoError(t, err)
-//
-// 	out, err := io.ReadAll(cmdOut)
-// 	if err != nil {
-// 		t.Error("failed to read from stdout")
-// 	}
-//
-// 	require.Equal(t, string(out), "dev\nstaging\nprod")
-//
-// 	require.NoError(t, mock.ExpectationsWereMet())
-// }
-//
+
+func testEnvironmentListCmdHappyPath(
+	t *testing.T,
+	cmd *cobra.Command,
+	service environment.EnvironmentService,
+	mock sqlmock.Sqlmock,
+) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	cmdList := environment.NewCmdEnvironmentList(
+		environment.NewHandlerEnvironmentList(service),
+	)
+
+	cmd.AddCommand(cmdList)
+	cmd.SetArgs([]string{
+		"list",
+		"-p",
+		"my_cool_project",
+	})
+	cmd.SetIn(cmdIn)
+	cmd.SetOut(cmdOut)
+	cmd.SetErr(errOut)
+
+	query := `
+		select e.id_, e.name_, p.name_ from environments_ e
+		inner join projects_ p
+		on e.project_id_ = p.id_
+		where p.name_ = $projectName
+	`
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs("my_cool_project").
+		WillReturnRows(
+			sqlmock.
+				NewRows([]string{"id_", "name_", "project_name_"}).
+				AddRow(1, "dev", "my_cool_project").
+				AddRow(2, "staging", "my_cool_project").
+				AddRow(3, "prod", "my_cool_project"),
+		)
+
+	err := cmd.Execute()
+
+	require.NoError(t, err)
+	require.Empty(t, errOut.String())
+
+	require.Equal(
+		t,
+		"dev\nstaging\nprod",
+		cmdOut.String(),
+	)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
 // func testEnvironmentListCmdDatabaseError(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 // 	cmdIn := bytes.NewReader([]byte{})
 // 	cmdOut := bytes.NewBufferString("")
