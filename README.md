@@ -8,17 +8,20 @@ Distributed database-per-user encrypted secrets management over SSH protocol.
 ## TODO
 
 - [x] Confirm authentication before calling cmd, e.g. with unregistered user calling project command results in NPE
-- [ ] Accept spaces in secret values
 - [x] Merge client and server codebases into one
 - [x] Share command configuration for both cli client and server
 - [x] Secret injection and run passed command
   - [x] Pass a `io.Writer` into `run` so that we can read secrets from it to inject instead of directly printing to terminal out
 - [ ] Encryption and signing of secrets
+  - [ ] RSA
+  - [ ] ECDSA
+  - [ ] ED25519?
 - [ ] E2E tests with an SSH client, including a couple like trying to create secrets for a non-existent project or environmnet
   - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?
 - [x] Explicit (not implicit) user registration
 - [ ] Improve error handling, errors and messaging
 - [x] Exit codes on error
+- [ ] Accept spaces in secret values
 - [ ] Remove use of third-party package for SSH client (in CLI client)
 - [ ] Proper good refactor and tidy-up (primarily of database stuff)
 - [ ] Pull the Turso stuff out into separate SDK package??
