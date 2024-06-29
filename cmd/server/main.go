@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/charmbracelet/wish"
-	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 	"github.com/nixpig/syringe.sh/internal/auth"
 	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/middleware"
+	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/rs/zerolog"
 )
 
@@ -44,7 +44,7 @@ func main() {
 
 	// -- DEPENDENCY CONSTRUCTION
 	log.Info().Msg("building app components")
-	validate := validator.New(validator.WithRequiredStructEnabled())
+	validate := validation.New()
 	authStore := auth.NewSqliteAuthStore(appDB)
 	authService := auth.NewAuthService(authStore, validate)
 

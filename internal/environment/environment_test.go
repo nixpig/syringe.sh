@@ -61,7 +61,7 @@ func TestEnvironmentCmd(t *testing.T) {
 
 			service := environment.NewEnvironmentServiceImpl(
 				environment.NewSqliteEnvironmentStore(db),
-				validation.NewValidator(),
+				validation.New(),
 			)
 
 			fn(t, cmd, service, mock)

@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/charmbracelet/ssh"
-	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/environment"
 	"github.com/nixpig/syringe.sh/internal/inject"
@@ -19,6 +18,7 @@ import (
 	"github.com/nixpig/syringe.sh/internal/user"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/nixpig/syringe.sh/pkg/helpers"
+	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +26,7 @@ import (
 func NewMiddlewareCommand(
 	logger *zerolog.Logger,
 	appDB *sql.DB,
-	validate *validator.Validate,
+	validate validation.Validator,
 ) func(next ssh.Handler) ssh.Handler {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
@@ -62,7 +62,7 @@ func NewMiddlewareCommand(
 					return
 				}
 
-				// database connection is tightly coupled to and lasts only for the duration of the request
+				// database connection is tightly coupled to, and lasts only for the duration of, the request
 				defer userDB.Close()
 			}
 

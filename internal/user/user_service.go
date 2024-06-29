@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/charmbracelet/ssh"
-	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/secret"
 	"github.com/nixpig/syringe.sh/pkg/turso"
+	"github.com/nixpig/syringe.sh/pkg/validation"
 	gossh "golang.org/x/crypto/ssh"
 )
 
@@ -68,14 +68,14 @@ type UserService interface {
 
 type UserServiceImpl struct {
 	store            UserStore
-	validate         *validator.Validate
+	validate         validation.Validator
 	httpClient       http.Client
 	tursoAPISettings TursoAPISettings
 }
 
 func NewUserServiceImpl(
 	store UserStore,
-	validate *validator.Validate,
+	validate validation.Validator,
 	httpClient http.Client,
 	tursoAPISettings TursoAPISettings,
 ) UserServiceImpl {
@@ -195,7 +195,7 @@ func (u UserServiceImpl) CreateDatabase(
 	}
 
 	envStore := secret.NewSqliteSecretStore(userDB)
-	envService := secret.NewSecretServiceImpl(envStore, validator.New())
+	envService := secret.NewSecretServiceImpl(envStore, validation.New())
 
 	var count time.Duration
 	increment := time.Second * 5

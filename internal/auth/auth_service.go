@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/ssh"
-	"github.com/go-playground/validator/v10"
+	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/rs/zerolog"
 )
 
@@ -23,13 +23,13 @@ type AuthService interface {
 
 type AuthServiceImpl struct {
 	store    AuthStore
-	validate *validator.Validate
+	validate validation.Validator
 	logger   *zerolog.Logger
 }
 
 func NewAuthService(
 	store AuthStore,
-	validate *validator.Validate,
+	validate validation.Validator,
 ) AuthServiceImpl {
 	return AuthServiceImpl{
 		store:    store,

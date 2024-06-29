@@ -6,7 +6,11 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func NewValidator() *validator.Validate {
+type Validator interface {
+	Struct(s interface{}) error
+}
+
+func New() Validate {
 	v := validator.
 		New(validator.WithRequiredStructEnabled())
 
@@ -14,5 +18,15 @@ func NewValidator() *validator.Validate {
 		return fld.Tag.Get("name")
 	})
 
-	return v
+	return Validate{
+		structValidator: v.Struct,
+	}
+}
+
+type Validate struct {
+	structValidator func(s interface{}) error
+}
+
+func (v Validate) Struct(s interface{}) error {
+	return v.structValidator(s)
 }

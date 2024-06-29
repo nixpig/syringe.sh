@@ -1,8 +1,8 @@
 package project
 
 import (
-	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/pkg/serrors"
+	"github.com/nixpig/syringe.sh/pkg/validation"
 )
 
 type AddProjectRequest struct {
@@ -34,7 +34,7 @@ type ProjectService interface {
 
 func NewProjectServiceImpl(
 	store ProjectStore,
-	validate *validator.Validate,
+	validate validation.Validator,
 ) ProjectService {
 	return ProjectServiceImpl{
 		store:    store,
@@ -44,7 +44,7 @@ func NewProjectServiceImpl(
 
 type ProjectServiceImpl struct {
 	store    ProjectStore
-	validate *validator.Validate
+	validate validation.Validator
 }
 
 func (p ProjectServiceImpl) Add(project AddProjectRequest) error {

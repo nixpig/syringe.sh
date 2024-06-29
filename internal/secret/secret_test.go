@@ -59,7 +59,7 @@ func TestSecretCmd(t *testing.T) {
 
 			service := secret.NewSecretServiceImpl(
 				secret.NewSqliteSecretStore(db),
-				validation.NewValidator(),
+				validation.New(),
 			)
 
 			cmd := secret.NewCmdSecret()

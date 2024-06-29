@@ -60,7 +60,7 @@ func TestProjectCmd(t *testing.T) {
 
 			service := project.NewProjectServiceImpl(
 				project.NewSqliteProjectStore(db),
-				validation.NewValidator(),
+				validation.New(),
 			)
 
 			fn(t, cmd, service, mock)

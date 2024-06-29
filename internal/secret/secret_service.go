@@ -1,8 +1,8 @@
 package secret
 
 import (
-	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/pkg/serrors"
+	"github.com/nixpig/syringe.sh/pkg/validation"
 )
 
 type SetSecretRequest struct {
@@ -57,12 +57,12 @@ type SecretService interface {
 
 type SecretServiceImpl struct {
 	store    SecretStore
-	validate *validator.Validate
+	validate validation.Validator
 }
 
 func NewSecretServiceImpl(
 	store SecretStore,
-	validate *validator.Validate,
+	validate validation.Validator,
 ) SecretService {
 	return SecretServiceImpl{
 		store:    store,

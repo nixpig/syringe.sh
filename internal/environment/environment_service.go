@@ -1,8 +1,8 @@
 package environment
 
 import (
-	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/pkg/serrors"
+	"github.com/nixpig/syringe.sh/pkg/validation"
 )
 
 type AddEnvironmentRequest struct {
@@ -44,7 +44,7 @@ type EnvironmentService interface {
 
 func NewEnvironmentServiceImpl(
 	store EnvironmentStore,
-	validate *validator.Validate,
+	validate validation.Validator,
 ) EnvironmentService {
 	return EnvironmentServiceImpl{
 		store:    store,
@@ -54,7 +54,7 @@ func NewEnvironmentServiceImpl(
 
 type EnvironmentServiceImpl struct {
 	store    EnvironmentStore
-	validate *validator.Validate
+	validate validation.Validator
 }
 
 func (e EnvironmentServiceImpl) Add(

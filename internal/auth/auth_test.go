@@ -12,8 +12,8 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/charmbracelet/ssh"
-	"github.com/go-playground/validator/v10"
 	"github.com/nixpig/syringe.sh/internal/auth"
+	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/stretchr/testify/require"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -39,7 +39,7 @@ func TestAuthInternalPkg(t *testing.T) {
 
 			service := auth.NewAuthService(
 				store,
-				validator.New(),
+				validation.New(),
 			)
 
 			fn(t, mock, db, service)
