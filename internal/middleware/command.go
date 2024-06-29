@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
 
 	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/internal/database"
@@ -57,10 +59,6 @@ func NewCommandHandler(
 			secretCmd.AddCommand(secret.NewCmdSecretRemove(secret.RemoveCmdHandler))
 			rootCmd.AddCommand(secretCmd)
 
-			userCmd := user.NewCmdUser(user.InitContext)
-			userCmd.AddCommand(user.NewCmdUserRegister(user.RegisterCmdHandler))
-			rootCmd.AddCommand(userCmd)
-
 			injectCmd := inject.NewCmdInjectWithHandler(inject.InitContext, inject.InjectCmdHandler)
 			rootCmd.AddCommand(injectCmd)
 
@@ -91,6 +89,24 @@ func NewCommandHandler(
 			// --------------------------------------
 			validate := validation.NewValidator()
 
+			// -- USER CMD
+			cmdUser := user.NewCmdUser()
+
+			userService := user.NewUserServiceImpl(
+				user.NewSqliteUserStore(appDB),
+				validate,
+				http.Client{},
+				user.TursoAPISettings{
+					URL:   os.Getenv("API_BASE_URL"),
+					Token: os.Getenv("API_TOKEN"),
+				},
+			)
+
+			handlerUserRegister := user.NewHandlerUserRegister(userService)
+			cmdUser.AddCommand(user.NewCmdUserRegister(handlerUserRegister))
+			rootCmd.AddCommand(cmdUser)
+
+			// -- PROJECT CMD
 			cmdProject := project.NewCmdProject()
 
 			projectService := project.NewProjectServiceImpl(
@@ -116,6 +132,11 @@ func NewCommandHandler(
 
 			rootCmd.AddCommand(cmdProject)
 
+			helpers.WalkCmd(rootCmd, func(c *cobra.Command) {
+				c.Flags().BoolP("help", "h", false, fmt.Sprintf("Help for the '%s' command", c.Name()))
+				c.Flags().BoolP("version", "v", false, "Print version information")
+			})
+
 			// --------------------------------------
 
 			rootCmd.SetArgs(sess.Command())
@@ -123,11 +144,6 @@ func NewCommandHandler(
 			rootCmd.SetOut(sess)
 			rootCmd.SetErr(sess.Stderr())
 			rootCmd.CompletionOptions.DisableDefaultCmd = true
-
-			helpers.WalkCmd(rootCmd, func(c *cobra.Command) {
-				c.Flags().BoolP("help", "h", false, fmt.Sprintf("Help for the '%s' command", c.Name()))
-				c.Flags().BoolP("version", "v", false, "Print version information")
-			})
 
 			if err := rootCmd.ExecuteContext(ctx); err != nil {
 				logger.Error().

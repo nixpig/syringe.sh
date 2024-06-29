@@ -52,7 +52,7 @@ func main() {
 	secretCmd.AddCommand(secret.NewCmdSecretRemove(handler))
 	rootCmd.AddCommand(secretCmd)
 
-	userCmd := user.NewCmdUser(nil)
+	userCmd := user.NewCmdUser()
 	userCmd.AddCommand(user.NewCmdUserRegister(handler))
 	rootCmd.AddCommand(userCmd)
 
