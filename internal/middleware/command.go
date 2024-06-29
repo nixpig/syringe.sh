@@ -45,13 +45,6 @@ func NewCommandHandler(
 
 			rootCmd := root.New(ctx)
 
-			secretCmd := secret.NewCmdSecret(secret.InitContext)
-			secretCmd.AddCommand(secret.NewCmdSecretSet(secret.SetCmdHandler))
-			secretCmd.AddCommand(secret.NewCmdSecretGet(secret.GetCmdHandler))
-			secretCmd.AddCommand(secret.NewCmdSecretList(secret.ListCmdHandler))
-			secretCmd.AddCommand(secret.NewCmdSecretRemove(secret.RemoveCmdHandler))
-			rootCmd.AddCommand(secretCmd)
-
 			injectCmd := inject.NewCmdInjectWithHandler(inject.InitContext, inject.InjectCmdHandler)
 			rootCmd.AddCommand(injectCmd)
 
@@ -125,7 +118,7 @@ func NewCommandHandler(
 
 			rootCmd.AddCommand(cmdProject)
 
-			// -- ENVIRONMENT
+			// -- ENVIRONMENT CMD
 			cmdEnvironment := environment.NewCmdEnvironment()
 
 			environmentService := environment.NewEnvironmentServiceImpl(
@@ -150,6 +143,32 @@ func NewCommandHandler(
 			cmdEnvironment.AddCommand(cmdEnvironmentList)
 
 			rootCmd.AddCommand(cmdEnvironment)
+
+			// -- SECRET CMD
+			secretCmd := secret.NewCmdSecret()
+
+			secretService := secret.NewSecretServiceImpl(
+				secret.NewSqliteSecretStore(userDB),
+				validate,
+			)
+
+			handlerSecretSet := secret.NewHandlerSecretSet(secretService)
+			cmdSecretSet := secret.NewCmdSecretSet(handlerSecretSet)
+			secretCmd.AddCommand(cmdSecretSet)
+
+			handlerSecretGet := secret.NewHandlerSecretGet(secretService)
+			cmdSecretGet := secret.NewCmdSecretGet(handlerSecretGet)
+			secretCmd.AddCommand(cmdSecretGet)
+
+			handlerSecretList := secret.NewHandlerSecretList(secretService)
+			cmdSecretList := secret.NewCmdSecretList(handlerSecretList)
+			secretCmd.AddCommand(cmdSecretList)
+
+			handlerSecretRemove := secret.NewHandlerSecretRemove(secretService)
+			cmdSecretRemove := secret.NewCmdSecretRemove(handlerSecretRemove)
+			secretCmd.AddCommand(cmdSecretRemove)
+
+			rootCmd.AddCommand(secretCmd)
 
 			helpers.WalkCmd(rootCmd, func(c *cobra.Command) {
 				c.Flags().BoolP("help", "h", false, fmt.Sprintf("Help for the '%s' command", c.Name()))

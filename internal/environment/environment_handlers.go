@@ -10,13 +10,9 @@ import (
 
 func NewHandlerEnvironmentAdd(environmentService EnvironmentService) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
-
 		environmentName := args[0]
 
-		project, err := cmd.Flags().GetString("project")
-		if err != nil {
-			return err
-		}
+		project, _ := cmd.Flags().GetString("project")
 
 		if err := environmentService.Add(AddEnvironmentRequest{
 			Name:    environmentName,
@@ -35,10 +31,7 @@ func NewHandlerEnvironmentRemove(environmentService EnvironmentService) pkg.Cobr
 	return func(cmd *cobra.Command, args []string) error {
 		environmentName := args[0]
 
-		project, err := cmd.Flags().GetString("project")
-		if err != nil {
-			return err
-		}
+		project, _ := cmd.Flags().GetString("project")
 
 		if err := environmentService.Remove(RemoveEnvironmentRequest{
 			Name:    environmentName,
@@ -58,10 +51,7 @@ func NewHandlerEnvironmentRename(environmentService EnvironmentService) pkg.Cobr
 		name := args[0]
 		newName := args[1]
 
-		project, err := cmd.Flags().GetString("project")
-		if err != nil {
-			return err
-		}
+		project, _ := cmd.Flags().GetString("project")
 
 		if err := environmentService.Rename(RenameEnvironmentRequest{
 			Name:    name,
@@ -79,10 +69,7 @@ func NewHandlerEnvironmentRename(environmentService EnvironmentService) pkg.Cobr
 
 func NewHandlerEnvironmentList(environmentService EnvironmentService) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
-		project, err := cmd.Flags().GetString("project")
-		if err != nil {
-			return err
-		}
+		project, _ := cmd.Flags().GetString("project")
 
 		environments, err := environmentService.List(ListEnvironmentRequest{
 			Project: project,

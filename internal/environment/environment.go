@@ -1,13 +1,7 @@
 package environment
 
 import (
-	"context"
-	"database/sql"
-	"fmt"
-
 	"github.com/nixpig/syringe.sh/pkg"
-	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
-	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/spf13/cobra"
 )
 
@@ -86,24 +80,4 @@ func NewCmdEnvironmentList(handler pkg.CobraHandler) *cobra.Command {
 	listCmd.MarkFlagRequired("project")
 
 	return listCmd
-}
-
-func InitContext(cmd *cobra.Command, args []string) error {
-	ctx := cmd.Context()
-
-	db, ok := ctx.Value(ctxkeys.USER_DB).(*sql.DB)
-	if !ok {
-		return fmt.Errorf("unable to get database from context")
-	}
-
-	environmentService := NewEnvironmentServiceImpl(
-		NewSqliteEnvironmentStore(db),
-		validation.NewValidator(),
-	)
-
-	ctx = context.WithValue(ctx, ctxkeys.EnvironmentService, environmentService)
-
-	cmd.SetContext(ctx)
-
-	return nil
 }

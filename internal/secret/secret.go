@@ -1,23 +1,16 @@
 package secret
 
 import (
-	"context"
-	"database/sql"
-	"fmt"
-
 	"github.com/nixpig/syringe.sh/pkg"
-	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
-	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/spf13/cobra"
 )
 
-func NewCmdSecret(init pkg.CobraHandler) *cobra.Command {
+func NewCmdSecret() *cobra.Command {
 	secretCmd := &cobra.Command{
-		Use:               "secret",
-		Aliases:           []string{"s"},
-		Short:             "Manage secrets",
-		Long:              "Manage your secrets",
-		PersistentPreRunE: init,
+		Use:     "secret",
+		Aliases: []string{"s"},
+		Short:   "Manage secrets",
+		Long:    "Manage your secrets",
 	}
 
 	return secretCmd
@@ -101,25 +94,4 @@ func NewCmdSecretRemove(handler pkg.CobraHandler) *cobra.Command {
 	removeCmd.MarkFlagRequired("environment")
 
 	return removeCmd
-}
-
-func InitContext(cmd *cobra.Command, args []string) error {
-	ctx := cmd.Context()
-
-	db, ok := ctx.Value(ctxkeys.USER_DB).(*sql.DB)
-	if !ok {
-		return fmt.Errorf("unable to get database from context")
-	}
-
-	secretStore := NewSqliteSecretStore(db)
-	secretService := NewSecretServiceImpl(
-		secretStore,
-		validation.NewValidator(),
-	)
-
-	ctx = context.WithValue(ctx, ctxkeys.SecretService, secretService)
-
-	cmd.SetContext(ctx)
-
-	return nil
 }

@@ -45,7 +45,7 @@ func main() {
 	environmentCmd.AddCommand(environment.NewCmdEnvironmentRemove(handler))
 	rootCmd.AddCommand(environmentCmd)
 
-	secretCmd := secret.NewCmdSecret(nil)
+	secretCmd := secret.NewCmdSecret()
 	secretCmd.AddCommand(secret.NewCmdSecretList(handler))
 	secretCmd.AddCommand(secret.NewCmdSecretSet(handler))
 	secretCmd.AddCommand(secret.NewCmdSecretGet(handler))
