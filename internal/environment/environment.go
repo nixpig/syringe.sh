@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func New(init pkg.CobraHandler) *cobra.Command {
+func NewCmdEnvironment(init pkg.CobraHandler) *cobra.Command {
 	environmentCmd := &cobra.Command{
 		Use:               "environment",
 		Aliases:           []string{"e"},
@@ -23,7 +23,7 @@ func New(init pkg.CobraHandler) *cobra.Command {
 	return environmentCmd
 }
 
-func AddCmd(handler pkg.CobraHandler) *cobra.Command {
+func NewCmdEnvironmentAdd(handler pkg.CobraHandler) *cobra.Command {
 	addCmd := &cobra.Command{
 		Use:     "add [flags] ENVIRONMENT_NAME",
 		Aliases: []string{"a"},
@@ -41,7 +41,7 @@ func AddCmd(handler pkg.CobraHandler) *cobra.Command {
 	return addCmd
 }
 
-func RemoveCmd(handler pkg.CobraHandler) *cobra.Command {
+func NewCmdEnvironmentRemove(handler pkg.CobraHandler) *cobra.Command {
 	removeCmd := &cobra.Command{
 		Use:     "remove [flags] ENVIRONMENT_NAME",
 		Aliases: []string{"r"},
@@ -57,7 +57,7 @@ func RemoveCmd(handler pkg.CobraHandler) *cobra.Command {
 	return removeCmd
 }
 
-func RenameCmd(handler pkg.CobraHandler) *cobra.Command {
+func NewCmdEnvironmentRename(handler pkg.CobraHandler) *cobra.Command {
 	renameCmd := &cobra.Command{
 		Use:     "rename [flags] CURRENT_ENVIRONMENT_NAME NEW_ENVIRONMENT_NAME",
 		Aliases: []string{"u"},
@@ -73,7 +73,7 @@ func RenameCmd(handler pkg.CobraHandler) *cobra.Command {
 	return renameCmd
 }
 
-func ListCmd(handler pkg.CobraHandler) *cobra.Command {
+func NewCmdEnvironmentList(handler pkg.CobraHandler) *cobra.Command {
 	listCmd := &cobra.Command{
 		Use:     "list [flags]",
 		Aliases: []string{"l"},

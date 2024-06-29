@@ -15,25 +15,31 @@ import (
 )
 
 type Server struct {
-	logger     *zerolog.Logger
-	middleware []wish.Middleware
+	logger      *zerolog.Logger
+	middleware  []wish.Middleware
+	timeout     time.Duration
+	hostKeyPath string
 }
 
 func newServer(
 	logger *zerolog.Logger,
 	middleware []wish.Middleware,
+	timeout time.Duration,
+	hostKeyPath string,
 ) Server {
 	return Server{
-		logger:     logger,
-		middleware: middleware,
+		logger:      logger,
+		middleware:  middleware,
+		timeout:     timeout,
+		hostKeyPath: hostKeyPath,
 	}
 }
 
 func (s Server) Start(host, port string) error {
 	server, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, port)),
-		wish.WithHostKeyPath(".ssh/id_ed25519"),
-		wish.WithMaxTimeout(time.Duration(time.Second*30)),
+		wish.WithHostKeyPath(s.hostKeyPath),
+		wish.WithMaxTimeout(s.timeout),
 		wish.WithPublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
 			return key.Type() == "ssh-ed25519" || key.Type() == "ssh-rsa"
 		}),

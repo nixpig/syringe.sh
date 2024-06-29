@@ -44,6 +44,7 @@ func newCliHandler(cmdOut io.Writer) pkg.CobraHandler {
 			}
 		}
 
+		// TODO: pull this out and pass in as a dependency
 		client, err := ssh.NewSSHClient(
 			"localhost",
 			23234,
@@ -54,6 +55,7 @@ func newCliHandler(cmdOut io.Writer) pkg.CobraHandler {
 			return err
 		}
 
+		// TODO: probably need to use a channel to close the client once done
 		defer client.Close()
 
 		var flags string

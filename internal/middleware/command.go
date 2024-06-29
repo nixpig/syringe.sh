@@ -16,6 +16,7 @@ import (
 	"github.com/nixpig/syringe.sh/internal/user"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/nixpig/syringe.sh/pkg/helpers"
+	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 )
@@ -26,6 +27,9 @@ func NewCommandHandler(
 ) func(next ssh.Handler) ssh.Handler {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
+			var userDB *sql.DB
+			var err error
+
 			ctx, ok := sess.Context().(context.Context)
 			if !ok {
 				logger.Error().Err(errors.New("context error")).Msg("failed to get session context")
@@ -39,32 +43,25 @@ func NewCommandHandler(
 
 			rootCmd := root.New(ctx)
 
-			projectCmd := project.New(project.InitContext)
-			projectCmd.AddCommand(project.AddCmd(project.AddCmdHandler))
-			projectCmd.AddCommand(project.RemoveCmd(project.RemoveCmdHandler))
-			projectCmd.AddCommand(project.RenameCmd(project.RenameCmdHandler))
-			projectCmd.AddCommand(project.ListCmd(project.ListCmdHandler))
-			rootCmd.AddCommand(projectCmd)
-
-			environmentCmd := environment.New(environment.InitContext)
-			environmentCmd.AddCommand(environment.AddCmd(environment.AddCmdHandler))
-			environmentCmd.AddCommand(environment.RemoveCmd(environment.RemoveCmdHandler))
-			environmentCmd.AddCommand(environment.RenameCmd(environment.RenameCmdHandler))
-			environmentCmd.AddCommand(environment.ListCmd(environment.ListCmdHandler))
+			environmentCmd := environment.NewCmdEnvironment(environment.InitContext)
+			environmentCmd.AddCommand(environment.NewCmdEnvironmentAdd(environment.AddCmdHandler))
+			environmentCmd.AddCommand(environment.NewCmdEnvironmentRemove(environment.RemoveCmdHandler))
+			environmentCmd.AddCommand(environment.NewCmdEnvironmentRename(environment.RenameCmdHandler))
+			environmentCmd.AddCommand(environment.NewCmdEnvironmentList(environment.ListCmdHandler))
 			rootCmd.AddCommand(environmentCmd)
 
-			secretCmd := secret.New(secret.InitContext)
-			secretCmd.AddCommand(secret.SetCmd(secret.SetCmdHandler))
-			secretCmd.AddCommand(secret.GetCmd(secret.GetCmdHandler))
-			secretCmd.AddCommand(secret.ListCmd(secret.ListCmdHandler))
-			secretCmd.AddCommand(secret.RemoveCmd(secret.RemoveCmdHandler))
+			secretCmd := secret.NewCmdSecret(secret.InitContext)
+			secretCmd.AddCommand(secret.NewCmdSecretSet(secret.SetCmdHandler))
+			secretCmd.AddCommand(secret.NewCmdSecretGet(secret.GetCmdHandler))
+			secretCmd.AddCommand(secret.NewCmdSecretList(secret.ListCmdHandler))
+			secretCmd.AddCommand(secret.NewCmdSecretRemove(secret.RemoveCmdHandler))
 			rootCmd.AddCommand(secretCmd)
 
-			userCmd := user.New(user.InitContext)
-			userCmd.AddCommand(user.RegisterCmd(user.RegisterCmdHandler))
+			userCmd := user.NewCmdUser(user.InitContext)
+			userCmd.AddCommand(user.NewCmdUserRegister(user.RegisterCmdHandler))
 			rootCmd.AddCommand(userCmd)
 
-			injectCmd := inject.NewWithHandler(inject.InitContext, inject.InjectCmdHandler)
+			injectCmd := inject.NewCmdInjectWithHandler(inject.InitContext, inject.InjectCmdHandler)
 			rootCmd.AddCommand(injectCmd)
 
 			authenticated, ok := sess.Context().Value(ctxkeys.Authenticated).(bool)
@@ -77,7 +74,7 @@ func NewCommandHandler(
 			}
 
 			if authenticated {
-				userDB, err := database.NewUserDBConnection(sess.PublicKey())
+				userDB, err = database.NewUserDBConnection(sess.PublicKey())
 				if err != nil {
 					logger.Error().Err(err).
 						Str("session", sess.Context().SessionID()).
@@ -90,6 +87,36 @@ func NewCommandHandler(
 				defer userDB.Close()
 				ctx = context.WithValue(ctx, ctxkeys.USER_DB, userDB)
 			}
+
+			// --------------------------------------
+			validate := validation.NewValidator()
+
+			cmdProject := project.NewCmdProject()
+
+			projectService := project.NewProjectServiceImpl(
+				project.NewSqliteProjectStore(userDB),
+				validate,
+			)
+
+			handlerProjectAdd := project.NewHandlerProjectAdd(projectService)
+			cmdProjectAdd := project.NewCmdProjectAdd(handlerProjectAdd)
+			cmdProject.AddCommand(cmdProjectAdd)
+
+			handlerProjectRemove := project.NewHandlerProjectRemove(projectService)
+			cmdProjectRemove := project.NewCmdProjectRemove(handlerProjectRemove)
+			cmdProject.AddCommand(cmdProjectRemove)
+
+			handlerProjectRename := project.NewHandlerProjectRename(projectService)
+			cmdProjectRename := project.NewCmdProjectRename(handlerProjectRename)
+			cmdProject.AddCommand(cmdProjectRename)
+
+			handlerProjectList := project.NewHandlerProjectList(projectService)
+			cmdProjectList := project.NewCmdProjectList(handlerProjectList)
+			cmdProject.AddCommand(cmdProjectList)
+
+			rootCmd.AddCommand(cmdProject)
+
+			// --------------------------------------
 
 			rootCmd.SetArgs(sess.Command())
 			rootCmd.SetIn(sess)

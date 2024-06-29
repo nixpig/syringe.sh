@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func New(init pkg.CobraHandler) *cobra.Command {
+func NewCmdUser(init pkg.CobraHandler) *cobra.Command {
 	userCmd := &cobra.Command{
 		Use:               "user",
 		Aliases:           []string{"u"},
@@ -24,7 +24,7 @@ func New(init pkg.CobraHandler) *cobra.Command {
 	return userCmd
 }
 
-func RegisterCmd(handler pkg.CobraHandler) *cobra.Command {
+func NewCmdUserRegister(handler pkg.CobraHandler) *cobra.Command {
 	registerCmd := &cobra.Command{
 		Use:     "register [flags] [USERNAME]",
 		Aliases: []string{"r"},

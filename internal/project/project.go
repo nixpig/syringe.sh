@@ -1,28 +1,21 @@
 package project
 
 import (
-	"context"
-	"database/sql"
-	"fmt"
-
 	"github.com/nixpig/syringe.sh/pkg"
-	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
-	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/spf13/cobra"
 )
 
-func New(init pkg.CobraHandler) *cobra.Command {
+func NewCmdProject() *cobra.Command {
 	projectCmd := &cobra.Command{
-		Use:               "project",
-		Aliases:           []string{"p"},
-		Short:             "Manage projects",
-		PersistentPreRunE: init,
+		Use:     "project",
+		Aliases: []string{"p"},
+		Short:   "Manage projects",
 	}
 
 	return projectCmd
 }
 
-func AddCmd(handler pkg.CobraHandler) *cobra.Command {
+func NewCmdProjectAdd(handler pkg.CobraHandler) *cobra.Command {
 	addCmd := &cobra.Command{
 		Use:     "add [flags] PROJECT_NAME",
 		Aliases: []string{"a"},
@@ -35,7 +28,7 @@ func AddCmd(handler pkg.CobraHandler) *cobra.Command {
 	return addCmd
 }
 
-func RemoveCmd(handler pkg.CobraHandler) *cobra.Command {
+func NewCmdProjectRemove(handler pkg.CobraHandler) *cobra.Command {
 	removeCmd := &cobra.Command{
 		Use:     "remove [flags] PROJECT_NAME",
 		Aliases: []string{"r"},
@@ -48,7 +41,7 @@ func RemoveCmd(handler pkg.CobraHandler) *cobra.Command {
 	return removeCmd
 }
 
-func RenameCmd(handler pkg.CobraHandler) *cobra.Command {
+func NewCmdProjectRename(handler pkg.CobraHandler) *cobra.Command {
 	renameCmd := &cobra.Command{
 		Use:     "rename [flags] CURRENT_PROJECT_NAME NEW_PROJECT_NAME",
 		Aliases: []string{"u"},
@@ -61,7 +54,7 @@ func RenameCmd(handler pkg.CobraHandler) *cobra.Command {
 	return renameCmd
 }
 
-func ListCmd(handler pkg.CobraHandler) *cobra.Command {
+func NewCmdProjectList(handler pkg.CobraHandler) *cobra.Command {
 	listCmd := &cobra.Command{
 		Use:     "list [flags]",
 		Aliases: []string{"l"},
@@ -72,24 +65,4 @@ func ListCmd(handler pkg.CobraHandler) *cobra.Command {
 	}
 
 	return listCmd
-}
-
-func InitContext(cmd *cobra.Command, args []string) error {
-	ctx := cmd.Context()
-
-	db, ok := ctx.Value(ctxkeys.USER_DB).(*sql.DB)
-	if !ok {
-		return fmt.Errorf("unable to get database from context")
-	}
-
-	projectService := NewProjectServiceImpl(
-		NewSqliteProjectStore(db),
-		validation.NewValidator(),
-	)
-
-	ctx = context.WithValue(ctx, ctxkeys.ProjectService, projectService)
-
-	cmd.SetContext(ctx)
-
-	return nil
 }

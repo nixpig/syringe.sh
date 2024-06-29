@@ -4,86 +4,74 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
+	"github.com/nixpig/syringe.sh/pkg"
 	"github.com/spf13/cobra"
 )
 
-func ListCmdHandler(cmd *cobra.Command, args []string) error {
-	projectService, ok := cmd.Context().Value(ctxkeys.ProjectService).(ProjectService)
-	if !ok {
-		return fmt.Errorf("unable to get project service from context")
+func NewHandlerProjectList(projectService ProjectService) pkg.CobraHandler {
+	return func(cmd *cobra.Command, args []string) error {
+		projects, err := projectService.List()
+		if err != nil {
+			return err
+		}
+
+		projectNames := make([]string, len(projects.Projects))
+		for i, p := range projects.Projects {
+			projectNames[i] = p.Name
+		}
+
+		cmd.Print(strings.Join(projectNames, "\n"))
+
+		return nil
 	}
-
-	projects, err := projectService.List()
-	if err != nil {
-		return err
-	}
-
-	projectNames := make([]string, len(projects.Projects))
-	for i, p := range projects.Projects {
-		projectNames[i] = p.Name
-	}
-
-	cmd.Print(strings.Join(projectNames, "\n"))
-
-	return nil
 }
 
-func AddCmdHandler(cmd *cobra.Command, args []string) error {
-	projectName := args[0]
+func NewHandlerProjectAdd(projectService ProjectService) pkg.CobraHandler {
+	return func(cmd *cobra.Command, args []string) error {
+		projectName := args[0]
 
-	projectService, ok := cmd.Context().Value(ctxkeys.ProjectService).(ProjectService)
-	if !ok {
-		return fmt.Errorf("unable to get project service from context")
+		if err := projectService.Add(AddProjectRequest{
+			Name: projectName,
+		}); err != nil {
+			return err
+		}
+
+		cmd.Println(fmt.Sprintf("Project '%s' added", projectName))
+
+		return nil
 	}
-
-	if err := projectService.Add(AddProjectRequest{
-		Name: projectName,
-	}); err != nil {
-		return err
-	}
-
-	cmd.Println(fmt.Sprintf("Project '%s' added", projectName))
-
-	return nil
 }
 
-func RemoveCmdHandler(cmd *cobra.Command, args []string) error {
-	projectName := args[0]
+func NewHandlerProjectRemove(projectService ProjectService) pkg.CobraHandler {
+	return func(cmd *cobra.Command, args []string) error {
+		projectName := args[0]
 
-	projectService, ok := cmd.Context().Value(ctxkeys.ProjectService).(ProjectService)
-	if !ok {
-		return fmt.Errorf("unable to get project service from context")
+		if err := projectService.Remove(RemoveProjectRequest{
+			Name: projectName,
+		}); err != nil {
+			return err
+		}
+
+		cmd.Println(fmt.Sprintf("Project '%s' removed", projectName))
+
+		return nil
 	}
-
-	if err := projectService.Remove(RemoveProjectRequest{
-		Name: projectName,
-	}); err != nil {
-		return err
-	}
-
-	cmd.Println(fmt.Sprintf("Project '%s' removed", projectName))
-
-	return nil
 }
 
-func RenameCmdHandler(cmd *cobra.Command, args []string) error {
-	name := args[0]
-	newName := args[1]
+func NewHandlerProjectRename(projectService ProjectService) pkg.CobraHandler {
+	return func(cmd *cobra.Command, args []string) error {
+		name := args[0]
+		newName := args[1]
 
-	projectService, ok := cmd.Context().Value(ctxkeys.ProjectService).(ProjectService)
-	if !ok {
-		return fmt.Errorf("unable to get project service from context")
+		if err := projectService.Rename(RenameProjectRequest{
+			Name:    name,
+			NewName: newName,
+		}); err != nil {
+			return err
+		}
+
+		cmd.Println(fmt.Sprintf("Project '%s' renamed to '%s'", name, newName))
+
+		return nil
 	}
-
-	if err := projectService.Rename(RenameProjectRequest{
-		Name:    name,
-		NewName: newName,
-	}); err != nil {
-		return err
-	}
-
-	cmd.Println(fmt.Sprintf("Project '%s' renamed to '%s'", name, newName))
-
-	return nil
 }

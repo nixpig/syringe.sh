@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"time"
 
 	"github.com/charmbracelet/wish"
 	"github.com/go-playground/validator/v10"
@@ -50,6 +51,8 @@ func main() {
 			middleware.NewAuthHandler(&log, authService),
 			middleware.NewLoggingHandler(&log),
 		},
+		time.Duration(time.Second*30),
+		".ssh/id_ed25519",
 	)
 
 	if err := sshServer.Start(

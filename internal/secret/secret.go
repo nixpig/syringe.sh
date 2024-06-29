@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func New(init pkg.CobraHandler) *cobra.Command {
+func NewCmdSecret(init pkg.CobraHandler) *cobra.Command {
 	secretCmd := &cobra.Command{
 		Use:               "secret",
 		Aliases:           []string{"s"},
@@ -23,7 +23,7 @@ func New(init pkg.CobraHandler) *cobra.Command {
 	return secretCmd
 }
 
-func SetCmd(handler pkg.CobraHandler) *cobra.Command {
+func NewCmdSecretSet(handler pkg.CobraHandler) *cobra.Command {
 	setCmd := &cobra.Command{
 		Use:     "set [flags] SECRET_KEY SECRET_VALUE",
 		Aliases: []string{"s"},
@@ -44,7 +44,7 @@ func SetCmd(handler pkg.CobraHandler) *cobra.Command {
 	return setCmd
 }
 
-func GetCmd(handler pkg.CobraHandler) *cobra.Command {
+func NewCmdSecretGet(handler pkg.CobraHandler) *cobra.Command {
 	getCmd := &cobra.Command{
 		Use:     "get [flags] SECRET_KEY",
 		Aliases: []string{"g"},
@@ -65,7 +65,7 @@ func GetCmd(handler pkg.CobraHandler) *cobra.Command {
 	return getCmd
 }
 
-func ListCmd(handler pkg.CobraHandler) *cobra.Command {
+func NewCmdSecretList(handler pkg.CobraHandler) *cobra.Command {
 	listCmd := &cobra.Command{
 		Use:     "list [flags]",
 		Aliases: []string{"l"},
@@ -84,7 +84,7 @@ func ListCmd(handler pkg.CobraHandler) *cobra.Command {
 	return listCmd
 }
 
-func RemoveCmd(handler pkg.CobraHandler) *cobra.Command {
+func NewCmdSecretRemove(handler pkg.CobraHandler) *cobra.Command {
 	removeCmd := &cobra.Command{
 		Use:     "remove [flags] SECRET_KEY",
 		Aliases: []string{"r"},
