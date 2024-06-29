@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -46,6 +47,7 @@ func TestProjectCmd(t *testing.T) {
 		"test project list command happy path":         testProjectListCmdHappyPath,
 		"test project list command zero results":       testProjectListCmdZeroResults,
 		"test project list command database error":     testProjectListCmdDatabaseError,
+		"test project list command scan error":         testProjectListCmdScanError,
 		"test project list command with too many args": testProjectListCmdWithTooManyArgs,
 	}
 
@@ -749,6 +751,52 @@ func testProjectListCmdDatabaseError(
 		t,
 		test.ErrorMsg("database query error\n"),
 		errOut.String(),
+	)
+
+	require.Equal(
+		t,
+		fmt.Sprintf("%s\n", cmdList.UsageString()),
+		cmdOut.String(),
+	)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testProjectListCmdScanError(
+	t *testing.T,
+	cmd *cobra.Command,
+	service project.ProjectService,
+	mock sqlmock.Sqlmock,
+) {
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	cmdList := project.NewCmdProjectList(
+		project.NewHandlerProjectList(service),
+	)
+
+	cmd.AddCommand(cmdList)
+
+	cmd.SetArgs([]string{"list"})
+	cmd.SetIn(cmdIn)
+	cmd.SetOut(cmdOut)
+	cmd.SetErr(errOut)
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(`select id_, name_ from projects_`)).
+		WillReturnRows(
+			sqlmock.
+				NewRows([]string{"id_", "name_"}).
+				AddRow("invalid id", nil),
+		)
+
+	err := cmd.Execute()
+
+	require.Error(t, err)
+	require.True(
+		t,
+		strings.HasPrefix(errOut.String(), "Error: sql: Scan error"),
 	)
 
 	require.Equal(
