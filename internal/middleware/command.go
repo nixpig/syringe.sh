@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/ssh"
+	"github.com/nixpig/syringe.sh/internal/auth"
 	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/environment"
 	"github.com/nixpig/syringe.sh/internal/inject"
@@ -88,6 +89,7 @@ func NewMiddlewareCommand(
 
 			// -- PROJECT CMD
 			cmdProject := project.NewCmdProject()
+			cmdProject.PersistentPreRunE = auth.PreRunE
 
 			projectService := project.NewProjectServiceImpl(
 				project.NewSqliteProjectStore(userDB),
@@ -114,6 +116,7 @@ func NewMiddlewareCommand(
 
 			// -- ENVIRONMENT CMD
 			cmdEnvironment := environment.NewCmdEnvironment()
+			cmdEnvironment.PersistentPreRunE = auth.PreRunE
 
 			environmentService := environment.NewEnvironmentServiceImpl(
 				environment.NewSqliteEnvironmentStore(userDB),
@@ -140,6 +143,7 @@ func NewMiddlewareCommand(
 
 			// -- SECRET CMD
 			cmdSecret := secret.NewCmdSecret()
+			cmdSecret.PersistentPreRunE = auth.PreRunE
 
 			secretService := secret.NewSecretServiceImpl(
 				secret.NewSqliteSecretStore(userDB),
@@ -167,6 +171,7 @@ func NewMiddlewareCommand(
 			// -- INJECT CMD
 			handlerInject := inject.NewHandlerInject(secretService)
 			cmdInject := inject.NewCmdInject(handlerInject)
+			cmdInject.PersistentPreRunE = auth.PreRunE
 			cmdRoot.AddCommand(cmdInject)
 
 			helpers.WalkCmd(cmdRoot, func(c *cobra.Command) {

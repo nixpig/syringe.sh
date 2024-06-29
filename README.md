@@ -7,7 +7,7 @@ Distributed database-per-user encrypted secrets management over SSH protocol.
 
 ## TODO
 
-- [ ] Confirm authentication before calling cmd, e.g. with unregistered user calling project command results in NPE
+- [x] Confirm authentication before calling cmd, e.g. with unregistered user calling project command results in NPE
 - [ ] Accept spaces in secret values
 - [x] Merge client and server codebases into one
 - [x] Share command configuration for both cli client and server

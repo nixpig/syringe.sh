@@ -10,6 +10,7 @@ func NewCmdProject() *cobra.Command {
 		Use:     "project",
 		Aliases: []string{"p"},
 		Short:   "Manage projects",
+		// PreRunE: auth.PreRunE,
 	}
 
 	return cmdProject
