@@ -43,10 +43,7 @@ func NewCommandHandler(
 			ctx = context.WithValue(ctx, ctxkeys.Username, sess.User())
 			ctx = context.WithValue(ctx, ctxkeys.PublicKey, sess.PublicKey())
 
-			rootCmd := root.New(ctx)
-
-			injectCmd := inject.NewCmdInjectWithHandler(inject.InitContext, inject.InjectCmdHandler)
-			rootCmd.AddCommand(injectCmd)
+			cmdRoot := root.New(ctx)
 
 			authenticated, ok := sess.Context().Value(ctxkeys.Authenticated).(bool)
 			if !ok {
@@ -90,7 +87,7 @@ func NewCommandHandler(
 
 			handlerUserRegister := user.NewHandlerUserRegister(userService)
 			cmdUser.AddCommand(user.NewCmdUserRegister(handlerUserRegister))
-			rootCmd.AddCommand(cmdUser)
+			cmdRoot.AddCommand(cmdUser)
 
 			// -- PROJECT CMD
 			cmdProject := project.NewCmdProject()
@@ -116,7 +113,7 @@ func NewCommandHandler(
 			cmdProjectList := project.NewCmdProjectList(handlerProjectList)
 			cmdProject.AddCommand(cmdProjectList)
 
-			rootCmd.AddCommand(cmdProject)
+			cmdRoot.AddCommand(cmdProject)
 
 			// -- ENVIRONMENT CMD
 			cmdEnvironment := environment.NewCmdEnvironment()
@@ -142,10 +139,10 @@ func NewCommandHandler(
 			cmdEnvironmentList := environment.NewCmdEnvironmentList(handlerEnvironmentList)
 			cmdEnvironment.AddCommand(cmdEnvironmentList)
 
-			rootCmd.AddCommand(cmdEnvironment)
+			cmdRoot.AddCommand(cmdEnvironment)
 
 			// -- SECRET CMD
-			secretCmd := secret.NewCmdSecret()
+			cmdSecret := secret.NewCmdSecret()
 
 			secretService := secret.NewSecretServiceImpl(
 				secret.NewSqliteSecretStore(userDB),
@@ -154,36 +151,41 @@ func NewCommandHandler(
 
 			handlerSecretSet := secret.NewHandlerSecretSet(secretService)
 			cmdSecretSet := secret.NewCmdSecretSet(handlerSecretSet)
-			secretCmd.AddCommand(cmdSecretSet)
+			cmdSecret.AddCommand(cmdSecretSet)
 
 			handlerSecretGet := secret.NewHandlerSecretGet(secretService)
 			cmdSecretGet := secret.NewCmdSecretGet(handlerSecretGet)
-			secretCmd.AddCommand(cmdSecretGet)
+			cmdSecret.AddCommand(cmdSecretGet)
 
 			handlerSecretList := secret.NewHandlerSecretList(secretService)
 			cmdSecretList := secret.NewCmdSecretList(handlerSecretList)
-			secretCmd.AddCommand(cmdSecretList)
+			cmdSecret.AddCommand(cmdSecretList)
 
 			handlerSecretRemove := secret.NewHandlerSecretRemove(secretService)
 			cmdSecretRemove := secret.NewCmdSecretRemove(handlerSecretRemove)
-			secretCmd.AddCommand(cmdSecretRemove)
+			cmdSecret.AddCommand(cmdSecretRemove)
 
-			rootCmd.AddCommand(secretCmd)
+			cmdRoot.AddCommand(cmdSecret)
 
-			helpers.WalkCmd(rootCmd, func(c *cobra.Command) {
+			// -- INJECT CMD
+			handlerInject := inject.NewHandlerInject(secretService)
+			cmdInject := inject.NewCmdInject(handlerInject)
+			cmdRoot.AddCommand(cmdInject)
+
+			helpers.WalkCmd(cmdRoot, func(c *cobra.Command) {
 				c.Flags().BoolP("help", "h", false, fmt.Sprintf("Help for the '%s' command", c.Name()))
 				c.Flags().BoolP("version", "v", false, "Print version information")
 			})
 
 			// --------------------------------------
 
-			rootCmd.SetArgs(sess.Command())
-			rootCmd.SetIn(sess)
-			rootCmd.SetOut(sess)
-			rootCmd.SetErr(sess.Stderr())
-			rootCmd.CompletionOptions.DisableDefaultCmd = true
+			cmdRoot.SetArgs(sess.Command())
+			cmdRoot.SetIn(sess)
+			cmdRoot.SetOut(sess)
+			cmdRoot.SetErr(sess.Stderr())
+			cmdRoot.CompletionOptions.DisableDefaultCmd = true
 
-			if err := rootCmd.ExecuteContext(ctx); err != nil {
+			if err := cmdRoot.ExecuteContext(ctx); err != nil {
 				logger.Error().
 					Err(err).
 					Str("session", sess.Context().SessionID()).

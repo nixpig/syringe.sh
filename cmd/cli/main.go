@@ -25,46 +25,46 @@ const (
 )
 
 func main() {
-	rootCmd := root.New(context.Background())
+	cmdRoot := root.New(context.Background())
 
-	handler := newCliHandler(rootCmd.OutOrStdout())
+	handler := newCliHandler(cmdRoot.OutOrStdout())
 
-	rootCmd.PersistentFlags().StringP("identity", "i", "", "Path to SSH key (if not provided, SSH agent is used)")
+	cmdRoot.PersistentFlags().StringP("identity", "i", "", "Path to SSH key (if not provided, SSH agent is used)")
 
-	projectCmd := project.NewCmdProject()
-	projectCmd.AddCommand(project.NewCmdProjectList(handler))
-	projectCmd.AddCommand(project.NewCmdProjectAdd(handler))
-	projectCmd.AddCommand(project.NewCmdProjectRename(handler))
-	projectCmd.AddCommand(project.NewCmdProjectRemove(handler))
-	rootCmd.AddCommand(projectCmd)
+	cmdProject := project.NewCmdProject()
+	cmdProject.AddCommand(project.NewCmdProjectList(handler))
+	cmdProject.AddCommand(project.NewCmdProjectAdd(handler))
+	cmdProject.AddCommand(project.NewCmdProjectRename(handler))
+	cmdProject.AddCommand(project.NewCmdProjectRemove(handler))
+	cmdRoot.AddCommand(cmdProject)
 
-	environmentCmd := environment.NewCmdEnvironment()
-	environmentCmd.AddCommand(environment.NewCmdEnvironmentList(handler))
-	environmentCmd.AddCommand(environment.NewCmdEnvironmentAdd(handler))
-	environmentCmd.AddCommand(environment.NewCmdEnvironmentRename(handler))
-	environmentCmd.AddCommand(environment.NewCmdEnvironmentRemove(handler))
-	rootCmd.AddCommand(environmentCmd)
+	cmdEnvironment := environment.NewCmdEnvironment()
+	cmdEnvironment.AddCommand(environment.NewCmdEnvironmentList(handler))
+	cmdEnvironment.AddCommand(environment.NewCmdEnvironmentAdd(handler))
+	cmdEnvironment.AddCommand(environment.NewCmdEnvironmentRename(handler))
+	cmdEnvironment.AddCommand(environment.NewCmdEnvironmentRemove(handler))
+	cmdRoot.AddCommand(cmdEnvironment)
 
-	secretCmd := secret.NewCmdSecret()
-	secretCmd.AddCommand(secret.NewCmdSecretList(handler))
-	secretCmd.AddCommand(secret.NewCmdSecretSet(handler))
-	secretCmd.AddCommand(secret.NewCmdSecretGet(handler))
-	secretCmd.AddCommand(secret.NewCmdSecretRemove(handler))
-	rootCmd.AddCommand(secretCmd)
+	cmdSecret := secret.NewCmdSecret()
+	cmdSecret.AddCommand(secret.NewCmdSecretList(handler))
+	cmdSecret.AddCommand(secret.NewCmdSecretSet(handler))
+	cmdSecret.AddCommand(secret.NewCmdSecretGet(handler))
+	cmdSecret.AddCommand(secret.NewCmdSecretRemove(handler))
+	cmdRoot.AddCommand(cmdSecret)
 
-	userCmd := user.NewCmdUser()
-	userCmd.AddCommand(user.NewCmdUserRegister(handler))
-	rootCmd.AddCommand(userCmd)
+	cmdUser := user.NewCmdUser()
+	cmdUser.AddCommand(user.NewCmdUserRegister(handler))
+	cmdRoot.AddCommand(cmdUser)
 
-	injectCmd := inject.NewCmdInjectWithHandler(nil, injectCLIHandler)
-	rootCmd.AddCommand(injectCmd)
+	cmdInject := inject.NewCmdInject(injectCLIHandler)
+	cmdRoot.AddCommand(cmdInject)
 
-	helpers.WalkCmd(rootCmd, func(c *cobra.Command) {
+	helpers.WalkCmd(cmdRoot, func(c *cobra.Command) {
 		c.Flags().BoolP("help", "h", false, fmt.Sprintf("Help for the '%s' command", c.Name()))
 		c.Flags().BoolP("version", "v", false, "Print version information")
 	})
 
-	if err := rootCmd.Execute(); err != nil {
+	if err := cmdRoot.Execute(); err != nil {
 		os.Exit(1)
 	}
 }

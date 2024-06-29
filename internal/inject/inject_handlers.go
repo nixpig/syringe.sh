@@ -5,42 +5,32 @@ import (
 	"strings"
 
 	"github.com/nixpig/syringe.sh/internal/secret"
-	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
+	"github.com/nixpig/syringe.sh/pkg"
 	"github.com/spf13/cobra"
 )
 
-func InjectCmdHandler(cmd *cobra.Command, args []string) error {
-	project, err := cmd.Flags().GetString("project")
-	if err != nil {
-		return err
+func NewHandlerInject(secretService secret.SecretService) pkg.CobraHandler {
+	return func(cmd *cobra.Command, args []string) error {
+		project, _ := cmd.Flags().GetString("project")
+		environment, _ := cmd.Flags().GetString("environment")
+
+		secrets, err := secretService.List(secret.ListSecretsRequest{
+			Project:     project,
+			Environment: environment,
+		})
+		if err != nil {
+			return err
+		}
+
+		secretsList := make([]string, len(secrets.Secrets))
+		for i, s := range secrets.Secrets {
+
+			secretsList[i] = fmt.Sprintf("%s=%s", s.Key, s.Value)
+		}
+		injectableSecrets := strings.Join(secretsList, " ")
+
+		cmd.Println(injectableSecrets)
+
+		return nil
 	}
-
-	environment, err := cmd.Flags().GetString("environment")
-	if err != nil {
-		return err
-	}
-
-	secretService, ok := cmd.Context().Value(ctxkeys.SecretService).(secret.SecretService)
-	if !ok {
-		return fmt.Errorf("unable to get secret service from context")
-	}
-
-	secrets, err := secretService.List(secret.ListSecretsRequest{
-		Project:     project,
-		Environment: environment,
-	})
-	if err != nil {
-		return err
-	}
-
-	secretsList := make([]string, len(secrets.Secrets))
-	for i, s := range secrets.Secrets {
-		secretsList[i] = fmt.Sprintf("%s=%s", s.Key, s.Value)
-	}
-
-	injectableSecrets := strings.Join(secretsList, " ")
-
-	cmd.Println(injectableSecrets)
-
-	return nil
 }
