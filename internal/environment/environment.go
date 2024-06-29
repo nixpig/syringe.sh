@@ -6,14 +6,17 @@ import (
 )
 
 func NewCmdEnvironment() *cobra.Command {
-	environmentCmd := &cobra.Command{
+	cmdEnvironment := &cobra.Command{
 		Use:     "environment",
 		Aliases: []string{"e"},
 		Short:   "Manage environments",
 		Long:    "Manage your environments.",
 	}
 
-	return environmentCmd
+	cmdEnvironment.PersistentFlags().StringP("project", "p", "", "Project name")
+	cmdEnvironment.MarkFlagRequired("project")
+
+	return cmdEnvironment
 }
 
 func NewCmdEnvironmentAdd(handler pkg.CobraHandler) *cobra.Command {
@@ -25,11 +28,6 @@ func NewCmdEnvironmentAdd(handler pkg.CobraHandler) *cobra.Command {
 		Args:    cobra.MatchAll(cobra.ExactArgs(1)),
 		RunE:    handler,
 	}
-
-	addCmd.Flags().StringP("project", "p", "", "Project name")
-	addCmd.MarkFlagRequired("project")
-
-	addCmd.MarkFlagRequired("project")
 
 	return addCmd
 }
@@ -44,9 +42,6 @@ func NewCmdEnvironmentRemove(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	removeCmd.Flags().StringP("project", "p", "", "Project name")
-	removeCmd.MarkFlagRequired("project")
-
 	return removeCmd
 }
 
@@ -60,9 +55,6 @@ func NewCmdEnvironmentRename(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	renameCmd.Flags().StringP("project", "p", "", "Project name")
-	renameCmd.MarkFlagRequired("project")
-
 	return renameCmd
 }
 
@@ -75,9 +67,6 @@ func NewCmdEnvironmentList(handler pkg.CobraHandler) *cobra.Command {
 		Args:    cobra.MatchAll(cobra.ExactArgs(0)),
 		RunE:    handler,
 	}
-
-	listCmd.Flags().StringP("project", "p", "", "Project name")
-	listCmd.MarkFlagRequired("project")
 
 	return listCmd
 }

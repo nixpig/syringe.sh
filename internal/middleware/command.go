@@ -43,8 +43,6 @@ func NewMiddlewareCommand(
 			ctx = context.WithValue(ctx, ctxkeys.Username, sess.User())
 			ctx = context.WithValue(ctx, ctxkeys.PublicKey, sess.PublicKey())
 
-			cmdRoot := root.New(ctx)
-
 			authenticated, ok := sess.Context().Value(ctxkeys.Authenticated).(bool)
 			if !ok {
 				logger.Warn().
@@ -67,6 +65,9 @@ func NewMiddlewareCommand(
 				// database connection is tightly coupled to and lasts only for the duration of the request
 				defer userDB.Close()
 			}
+
+			// -- COMMANDS
+			cmdRoot := root.New(ctx)
 
 			// -- USER CMD
 			cmdUser := user.NewCmdUser()

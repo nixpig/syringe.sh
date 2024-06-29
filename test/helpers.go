@@ -2,16 +2,20 @@ package test
 
 import "fmt"
 
+func UnknownCommandErrorMsg(command, parent string) string {
+	return fmt.Sprintf("Error: unknown command \"%s\" for \"%s\"\n", command, parent)
+}
+
 func IncorrectNumberOfArgsErrorMsg(accepts, received int) string {
-	return fmt.Sprintf("accepts %d arg(s), received %d\n", accepts, received)
+	return fmt.Sprintf("Error: accepts %d arg(s), received %d\n", accepts, received)
 }
 
 func MaxLengthValidationErrorMsg(field string, length int) string {
-	return fmt.Sprintf("\"%s\" exceeds max length of %d characters\n", field, length)
+	return fmt.Sprintf("Error: \"%s\" exceeds max length of %d characters\n", field, length)
 }
 
 func RequiredFlagsErrorMsg(flag string) string {
-	return fmt.Sprintf("required flag(s) \"%s\" not set\n", flag)
+	return fmt.Sprintf("Error: required flag(s) \"%s\" not set\n", flag)
 }
 
 func ErrorMsg(e string) string {

@@ -6,7 +6,7 @@ import (
 )
 
 func NewCmdInject(handler pkg.CobraHandler) *cobra.Command {
-	injectCmd := &cobra.Command{
+	cmdInject := &cobra.Command{
 		Use:     "inject [flags] -- SUBCOMMAND",
 		Aliases: []string{"i"},
 		Short:   "Inject secrets",
@@ -20,11 +20,11 @@ func NewCmdInject(handler pkg.CobraHandler) *cobra.Command {
 		RunE: handler,
 	}
 
-	injectCmd.Flags().StringP("project", "p", "", "Project name")
-	injectCmd.MarkFlagRequired("project")
+	cmdInject.Flags().StringP("project", "p", "", "Project name")
+	cmdInject.MarkFlagRequired("project")
 
-	injectCmd.Flags().StringP("environment", "e", "", "Environment name")
-	injectCmd.MarkFlagRequired("environment")
+	cmdInject.Flags().StringP("environment", "e", "", "Environment name")
+	cmdInject.MarkFlagRequired("environment")
 
-	return injectCmd
+	return cmdInject
 }
