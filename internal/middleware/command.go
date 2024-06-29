@@ -45,13 +45,6 @@ func NewCommandHandler(
 
 			rootCmd := root.New(ctx)
 
-			environmentCmd := environment.NewCmdEnvironment(environment.InitContext)
-			environmentCmd.AddCommand(environment.NewCmdEnvironmentAdd(environment.AddCmdHandler))
-			environmentCmd.AddCommand(environment.NewCmdEnvironmentRemove(environment.RemoveCmdHandler))
-			environmentCmd.AddCommand(environment.NewCmdEnvironmentRename(environment.RenameCmdHandler))
-			environmentCmd.AddCommand(environment.NewCmdEnvironmentList(environment.ListCmdHandler))
-			rootCmd.AddCommand(environmentCmd)
-
 			secretCmd := secret.NewCmdSecret(secret.InitContext)
 			secretCmd.AddCommand(secret.NewCmdSecretSet(secret.SetCmdHandler))
 			secretCmd.AddCommand(secret.NewCmdSecretGet(secret.GetCmdHandler))
@@ -131,6 +124,32 @@ func NewCommandHandler(
 			cmdProject.AddCommand(cmdProjectList)
 
 			rootCmd.AddCommand(cmdProject)
+
+			// -- ENVIRONMENT
+			cmdEnvironment := environment.NewCmdEnvironment()
+
+			environmentService := environment.NewEnvironmentServiceImpl(
+				environment.NewSqliteEnvironmentStore(userDB),
+				validate,
+			)
+
+			handlerEnvironmentAdd := environment.NewHandlerEnvironmentAdd(environmentService)
+			cmdEnvironmentAdd := environment.NewCmdEnvironmentAdd(handlerEnvironmentAdd)
+			cmdEnvironment.AddCommand(cmdEnvironmentAdd)
+
+			handlerEnvironmentRemove := environment.NewHandlerEnvironmentRemove(environmentService)
+			cmdEnvironmentRemove := environment.NewCmdEnvironmentRemove(handlerEnvironmentRemove)
+			cmdEnvironment.AddCommand(cmdEnvironmentRemove)
+
+			handlerEnvironmentRename := environment.NewHandlerEnvironmentRename(environmentService)
+			cmdEnvironmentRename := environment.NewCmdEnvironmentRename(handlerEnvironmentRename)
+			cmdEnvironment.AddCommand(cmdEnvironmentRename)
+
+			handlerEnvironmentList := environment.NewHandlerEnvironmentList(environmentService)
+			cmdEnvironmentList := environment.NewCmdEnvironmentList(handlerEnvironmentList)
+			cmdEnvironment.AddCommand(cmdEnvironmentList)
+
+			rootCmd.AddCommand(cmdEnvironment)
 
 			helpers.WalkCmd(rootCmd, func(c *cobra.Command) {
 				c.Flags().BoolP("help", "h", false, fmt.Sprintf("Help for the '%s' command", c.Name()))

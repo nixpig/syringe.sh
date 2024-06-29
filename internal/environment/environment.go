@@ -11,13 +11,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewCmdEnvironment(init pkg.CobraHandler) *cobra.Command {
+func NewCmdEnvironment() *cobra.Command {
 	environmentCmd := &cobra.Command{
-		Use:               "environment",
-		Aliases:           []string{"e"},
-		Short:             "Manage environments",
-		Long:              "Manage your environments.",
-		PersistentPreRunE: init,
+		Use:     "environment",
+		Aliases: []string{"e"},
+		Short:   "Manage environments",
+		Long:    "Manage your environments.",
 	}
 
 	return environmentCmd

@@ -38,7 +38,7 @@ func main() {
 	projectCmd.AddCommand(project.NewCmdProjectRemove(handler))
 	rootCmd.AddCommand(projectCmd)
 
-	environmentCmd := environment.NewCmdEnvironment(nil)
+	environmentCmd := environment.NewCmdEnvironment()
 	environmentCmd.AddCommand(environment.NewCmdEnvironmentList(handler))
 	environmentCmd.AddCommand(environment.NewCmdEnvironmentAdd(handler))
 	environmentCmd.AddCommand(environment.NewCmdEnvironmentRename(handler))
