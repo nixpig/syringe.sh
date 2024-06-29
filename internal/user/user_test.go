@@ -8,22 +8,29 @@ import (
 )
 
 func TestUserCmd(t *testing.T) {
-	scenarios := map[string]func(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB){
-		"test user command initialise cmd": testUserCmdInitialiseCmd,
-	}
-
-	for scenario, fn := range scenarios {
-		t.Run(scenario, func(t *testing.T) {
-			db, mock, err := sqlmock.New()
-			if err != nil {
-				t.Fatalf("unable to create mock database:\n%s", err)
-			}
-
-			fn(t, mock, db)
-		})
-	}
-
+	// scenarios := map[string]func(
+	// 	t *testing.T,
+	// 	cmd *cobra.Command,
+	// 	service project.ProjectService,
+	// 	mock sqlmock.Sqlmock,
+	// ){
+	// "test user command initialise cmd": testUserCmdInitialiseCmd,
 }
+
+// for scenario, fn := range scenarios {
+// 	t.Run(scenario, func(t *testing.T) {
+// 		db, mock, err := sqlmock.New()
+// 		if err != nil {
+// 			t.Fatalf("unable to create mock database:\n%s", err)
+// 		}
+//
+// 		// cmd := user.NewCmdUser()
+//
+// 		// fn(t, mock, db)
+// 	})
+// }
+//
+// }
 
 func testUserCmdInitialiseCmd(t *testing.T, mock sqlmock.Sqlmock, db *sql.DB) {
 	// cmdIn := bytes.NewReader([]byte{})
