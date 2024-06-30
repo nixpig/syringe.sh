@@ -6,21 +6,18 @@ import (
 )
 
 func NewCmdEnvironment() *cobra.Command {
-	cmdEnvironment := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "environment",
 		Aliases: []string{"e"},
 		Short:   "Manage environments",
 		Long:    "Manage your environments.",
 	}
 
-	cmdEnvironment.PersistentFlags().StringP("project", "p", "", "Project name")
-	cmdEnvironment.MarkFlagRequired("project")
-
-	return cmdEnvironment
+	return cmd
 }
 
 func NewCmdEnvironmentAdd(handler pkg.CobraHandler) *cobra.Command {
-	addCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "add [flags] ENVIRONMENT_NAME",
 		Aliases: []string{"a"},
 		Short:   "Add an environment",
@@ -29,11 +26,13 @@ func NewCmdEnvironmentAdd(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	return addCmd
+	addFlags(cmd)
+
+	return cmd
 }
 
 func NewCmdEnvironmentRemove(handler pkg.CobraHandler) *cobra.Command {
-	removeCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "remove [flags] ENVIRONMENT_NAME",
 		Aliases: []string{"r"},
 		Short:   "Remove an environment",
@@ -42,11 +41,13 @@ func NewCmdEnvironmentRemove(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	return removeCmd
+	addFlags(cmd)
+
+	return cmd
 }
 
 func NewCmdEnvironmentRename(handler pkg.CobraHandler) *cobra.Command {
-	renameCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "rename [flags] CURRENT_ENVIRONMENT_NAME NEW_ENVIRONMENT_NAME",
 		Aliases: []string{"u"},
 		Short:   "Rename an environment",
@@ -55,11 +56,13 @@ func NewCmdEnvironmentRename(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	return renameCmd
+	addFlags(cmd)
+
+	return cmd
 }
 
 func NewCmdEnvironmentList(handler pkg.CobraHandler) *cobra.Command {
-	listCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "list [flags]",
 		Aliases: []string{"l"},
 		Short:   "List environments",
@@ -68,5 +71,12 @@ func NewCmdEnvironmentList(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	return listCmd
+	addFlags(cmd)
+
+	return cmd
+}
+
+func addFlags(cmd *cobra.Command) {
+	cmd.Flags().StringP("project", "p", "", "Project name")
+	cmd.MarkFlagRequired("project")
 }

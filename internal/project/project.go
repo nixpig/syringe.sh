@@ -6,18 +6,18 @@ import (
 )
 
 func NewCmdProject() *cobra.Command {
-	cmdProject := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "project",
 		Aliases: []string{"p"},
 		Short:   "Manage projects",
-		// PreRunE: auth.PreRunE,
+		Long:    "Mange your projects.",
 	}
 
-	return cmdProject
+	return cmd
 }
 
 func NewCmdProjectAdd(handler pkg.CobraHandler) *cobra.Command {
-	cmdAdd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "add [flags] PROJECT_NAME",
 		Aliases: []string{"a"},
 		Short:   "Add a project",
@@ -26,11 +26,11 @@ func NewCmdProjectAdd(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	return cmdAdd
+	return cmd
 }
 
 func NewCmdProjectRemove(handler pkg.CobraHandler) *cobra.Command {
-	cmdRemove := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "remove [flags] PROJECT_NAME",
 		Aliases: []string{"r"},
 		Short:   "Remove a project",
@@ -39,11 +39,11 @@ func NewCmdProjectRemove(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	return cmdRemove
+	return cmd
 }
 
 func NewCmdProjectRename(handler pkg.CobraHandler) *cobra.Command {
-	cmdRename := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "rename [flags] CURRENT_PROJECT_NAME NEW_PROJECT_NAME",
 		Aliases: []string{"u"},
 		Short:   "Rename a project",
@@ -52,11 +52,11 @@ func NewCmdProjectRename(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	return cmdRename
+	return cmd
 }
 
 func NewCmdProjectList(handler pkg.CobraHandler) *cobra.Command {
-	cmdList := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "list [flags]",
 		Aliases: []string{"l"},
 		Short:   "List projects",
@@ -65,5 +65,5 @@ func NewCmdProjectList(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	return cmdList
+	return cmd
 }

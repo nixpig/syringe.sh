@@ -6,18 +6,18 @@ import (
 )
 
 func NewCmdSecret() *cobra.Command {
-	cmdSecret := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "secret",
 		Aliases: []string{"s"},
 		Short:   "Manage secrets",
 		Long:    "Manage your secrets",
 	}
 
-	return cmdSecret
+	return cmd
 }
 
 func NewCmdSecretSet(handler pkg.CobraHandler) *cobra.Command {
-	cmdSet := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "set [flags] SECRET_KEY SECRET_VALUE",
 		Aliases: []string{"s"},
 		Short:   "Set a secret",
@@ -26,19 +26,13 @@ func NewCmdSecretSet(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	cmdSet.Flags().StringP("project", "p", "", "Project to use")
-	cmdSet.MarkFlagRequired("project")
+	addFlags(cmd)
 
-	cmdSet.Flags().StringP("environment", "e", "", "Environment to use")
-	cmdSet.MarkFlagRequired("environment")
-
-	cmdSet.Flags().BoolP("secret", "s", false, "Is secret?")
-
-	return cmdSet
+	return cmd
 }
 
 func NewCmdSecretGet(handler pkg.CobraHandler) *cobra.Command {
-	cmdGet := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "get [flags] SECRET_KEY",
 		Aliases: []string{"g"},
 		Short:   "Get a secret",
@@ -47,19 +41,13 @@ func NewCmdSecretGet(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	cmdGet.Flags().StringP("project", "p", "", "Project")
-	cmdGet.MarkFlagRequired("project")
+	addFlags(cmd)
 
-	cmdGet.Flags().StringP("environment", "e", "", "Environment")
-	cmdGet.MarkFlagRequired("environment")
-
-	cmdGet.Flags().BoolP("secret", "s", false, "Is secret?")
-
-	return cmdGet
+	return cmd
 }
 
 func NewCmdSecretList(handler pkg.CobraHandler) *cobra.Command {
-	cmdList := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "list [flags]",
 		Aliases: []string{"l"},
 		Short:   "List all secrets",
@@ -68,17 +56,13 @@ func NewCmdSecretList(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	cmdList.Flags().StringP("project", "p", "", "Project name")
-	cmdList.MarkFlagRequired("project")
+	addFlags(cmd)
 
-	cmdList.Flags().StringP("environment", "e", "", "Environment name")
-	cmdList.MarkFlagRequired("environment")
-
-	return cmdList
+	return cmd
 }
 
 func NewCmdSecretRemove(handler pkg.CobraHandler) *cobra.Command {
-	cmdRemove := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "remove [flags] SECRET_KEY",
 		Aliases: []string{"r"},
 		Short:   "Remove a secret",
@@ -87,11 +71,15 @@ func NewCmdSecretRemove(handler pkg.CobraHandler) *cobra.Command {
 		RunE:    handler,
 	}
 
-	cmdRemove.Flags().StringP("project", "p", "", "Project name")
-	cmdRemove.MarkFlagRequired("project")
+	addFlags(cmd)
 
-	cmdRemove.Flags().StringP("environment", "e", "", "Environment name")
-	cmdRemove.MarkFlagRequired("environment")
+	return cmd
+}
 
-	return cmdRemove
+func addFlags(cmd *cobra.Command) {
+	cmd.Flags().StringP("project", "p", "", "Project name")
+	cmd.MarkFlagRequired("project")
+
+	cmd.Flags().StringP("environment", "e", "", "Environment name")
+	cmd.MarkFlagRequired("environment")
 }
