@@ -1,8 +1,6 @@
 package auth
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/rs/zerolog"
@@ -52,7 +50,6 @@ func (a AuthServiceImpl) AuthenticateUser(
 	for _, v := range *publicKeysDetails {
 		parsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(v.PublicKey))
 		if err != nil {
-			fmt.Println(" >>> failed to parse authorised key")
 			return nil, err
 		}
 
