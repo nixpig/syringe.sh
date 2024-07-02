@@ -16,6 +16,8 @@ require (
 	golang.org/x/crypto v0.24.0
 )
 
+require github.com/stretchr/objx v0.5.2 // indirect
+
 require (
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
