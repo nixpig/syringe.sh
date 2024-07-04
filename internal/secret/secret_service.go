@@ -9,7 +9,7 @@ type SetSecretRequest struct {
 	Project     string `name:"project name" validate:"required,min=1,max=256"`
 	Environment string `name:"environment name" validate:"required,min=1,max=256"`
 	Key         string `name:"secret key" validate:"required,min=1,max=256"`
-	Value       string `name:"secret name" validate:"required,min=1,max=256"`
+	Value       string `name:"secret value" validate:"required,min=1,max=1024"`
 }
 
 type GetSecretRequest struct {

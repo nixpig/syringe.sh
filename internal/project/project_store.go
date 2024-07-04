@@ -2,7 +2,6 @@ package project
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/nixpig/syringe.sh/pkg/serrors"
 )
@@ -46,7 +45,6 @@ func (s SqliteProjectStore) Remove(name string) error {
 
 	res, err := s.db.Exec(query, sql.Named("name", name))
 	if err != nil {
-		fmt.Println(err)
 		return serrors.ErrDatabaseExec(err)
 	}
 

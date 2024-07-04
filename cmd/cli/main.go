@@ -29,6 +29,7 @@ func main() {
 
 	cmdRoot.PersistentFlags().StringP("identity", "i", "", "Path to SSH key (if not provided, SSH agent is used)")
 
+	// -- project
 	cmdProject := project.NewCmdProject()
 	cmdProject.AddCommand(project.NewCmdProjectList(handlerCLI))
 	cmdProject.AddCommand(project.NewCmdProjectAdd(handlerCLI))
@@ -36,6 +37,7 @@ func main() {
 	cmdProject.AddCommand(project.NewCmdProjectRemove(handlerCLI))
 	cmdRoot.AddCommand(cmdProject)
 
+	// -- environment
 	cmdEnvironment := environment.NewCmdEnvironment()
 	cmdEnvironment.AddCommand(environment.NewCmdEnvironmentList(handlerCLI))
 	cmdEnvironment.AddCommand(environment.NewCmdEnvironmentAdd(handlerCLI))
@@ -43,13 +45,28 @@ func main() {
 	cmdEnvironment.AddCommand(environment.NewCmdEnvironmentRemove(handlerCLI))
 	cmdRoot.AddCommand(cmdEnvironment)
 
+	// -- secret
 	cmdSecret := secret.NewCmdSecret()
+
+	cmdSecretSet := secret.NewCmdSecretSet(handlerCLI)
+	cmdSecretSet.PreRunE = func(cmd *cobra.Command, args []string) error {
+		// encrypt in here
+		return nil
+	}
+	cmdSecret.AddCommand(cmdSecretSet)
+
+	cmdSecretGet := secret.NewCmdSecretGet(handlerCLI)
+	cmdSecretGet.PreRunE = func(cmd *cobra.Command, args []string) error {
+		// decrypt in here
+		return nil
+	}
+	cmdSecret.AddCommand(cmdSecretGet)
+
 	cmdSecret.AddCommand(secret.NewCmdSecretList(handlerCLI))
-	cmdSecret.AddCommand(secret.NewCmdSecretSet(handlerCLI))
-	cmdSecret.AddCommand(secret.NewCmdSecretGet(handlerCLI))
 	cmdSecret.AddCommand(secret.NewCmdSecretRemove(handlerCLI))
 	cmdRoot.AddCommand(cmdSecret)
 
+	// -- user
 	cmdUser := user.NewCmdUser()
 	cmdUser.AddCommand(user.NewCmdUserRegister(handlerCLI))
 	cmdRoot.AddCommand(cmdUser)
@@ -57,6 +74,7 @@ func main() {
 	cmdInject := inject.NewCmdInject(handlerInjectCLI)
 	cmdRoot.AddCommand(cmdInject)
 
+	// -- update help and version for all subcommands
 	helpers.WalkCmd(cmdRoot, func(c *cobra.Command) {
 		c.Flags().BoolP("help", "h", false, fmt.Sprintf("Help for the '%s' command", c.Name()))
 		c.Flags().BoolP("version", "v", false, "Print version information")

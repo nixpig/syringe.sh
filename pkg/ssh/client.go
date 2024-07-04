@@ -41,6 +41,18 @@ func (s *SSHClient) Run(cmd string, w io.Writer) error {
 		return err
 	}
 
+	privateKey, err := GetPrivateKey("/home/nixpig/.ssh/id_rsa_test")
+	if err != nil {
+		return err
+	}
+
+	decrypted, err := Decrypt(string(output), privateKey)
+	if err != nil {
+		return err
+	}
+
+	output = []byte(decrypted)
+
 	if _, err := w.Write(output); err != nil {
 		return err
 	}
@@ -115,12 +127,7 @@ func AgentAuthMethod(sshAuthSock string) (gossh.AuthMethod, error) {
 func IdentityAuthMethod(identity string) (gossh.AuthMethod, error) {
 	var signer gossh.Signer
 
-	keyFile, err := os.Open(identity)
-	if err != nil {
-		return nil, err
-	}
-
-	keyContents, err := io.ReadAll(keyFile)
+	keyContents, err := os.ReadFile(identity)
 	if err != nil {
 		return nil, err
 	}

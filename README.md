@@ -12,7 +12,7 @@ Distributed database-per-user encrypted secrets management over SSH protocol.
 - [x] Share command configuration for both cli client and server
 - [x] Secret injection and run passed command
   - [x] Pass a `io.Writer` into `run` so that we can read secrets from it to inject instead of directly printing to terminal out
-- [ ] Update and enable the disabled unit tests
+- [x] Update and enable the disabled unit tests
 - [ ] Add unit tests for other areas
 - [ ] Encryption and signing of secrets
   - [ ] RSA
