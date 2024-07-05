@@ -2,6 +2,9 @@ package secret_test
 
 import (
 	"bytes"
+	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -9,12 +12,18 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/internal/secret"
+	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/nixpig/syringe.sh/test"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	gossh "golang.org/x/crypto/ssh"
 )
+
+var mockCrypt = new(MockCrypt)
 
 func TestSecretCmd(t *testing.T) {
 	scenarios := map[string]func(
@@ -64,6 +73,7 @@ func TestSecretCmd(t *testing.T) {
 			service := secret.NewSecretServiceImpl(
 				secret.NewSqliteSecretStore(db),
 				validation.New(),
+				mockCrypt,
 			)
 
 			cmd := secret.NewCmdSecret()
@@ -79,6 +89,8 @@ func testSecretSetCmdHappyPath(
 	service secret.SecretService,
 	mock sqlmock.Sqlmock,
 ) {
+	var err error
+
 	cmdIn := bytes.NewReader([]byte{})
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
@@ -86,6 +98,15 @@ func testSecretSetCmdHappyPath(
 	cmdSet := secret.NewCmdSecretSet(
 		secret.NewHandlerSecretSet(service),
 	)
+
+	publicKey, err := generatePublicKey()
+	if err != nil {
+		t.Error("unable to generate public key")
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, ctxkeys.PublicKey, publicKey)
+	cmdSet.SetContext(ctx)
 
 	cmd.AddCommand(cmdSet)
 	cmd.SetArgs([]string{
@@ -124,11 +145,13 @@ func testSecretSetCmdHappyPath(
 			"my_cool_project",
 			"staging",
 			"secret_key",
-			"secret_value",
+			"mock_encrypted_value",
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	err := cmd.Execute()
+	mockCrypt.On("Encrypt", "secret_value", publicKey).Return("mock_encrypted_value", nil)
+
+	err = cmd.Execute()
 
 	require.NoError(t, err)
 	require.Empty(t, errOut.String())
@@ -140,6 +163,7 @@ func testSecretSetCmdHappyPath(
 	)
 
 	require.NoError(t, mock.ExpectationsWereMet())
+	mockCrypt.AssertExpectations(t)
 }
 
 func testSecretSetCmdMissingProject(
@@ -352,7 +376,7 @@ func testSecretSetCmdDatabaseError(
 			"my_cool_project",
 			"staging",
 			"secret_key",
-			"secret_value",
+			"mock_encrypted_value",
 		).
 		WillReturnError(fmt.Errorf("database_error"))
 
@@ -374,7 +398,18 @@ func testSecretSetCmdDatabaseError(
 	cmd.SetOut(cmdOut)
 	cmd.SetErr(errOut)
 
-	err := cmd.Execute()
+	publicKey, err := generatePublicKey()
+	if err != nil {
+		t.Error("unable to generate public key")
+	}
+
+	mockCrypt.On("Encrypt", "secret_value", publicKey).Return("mock_encrypted_value", nil)
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, ctxkeys.PublicKey, publicKey)
+	cmdSet.SetContext(ctx)
+
+	err = cmd.Execute()
 
 	require.Error(t, err)
 
@@ -391,6 +426,8 @@ func testSecretSetCmdDatabaseError(
 	)
 
 	require.NoError(t, mock.ExpectationsWereMet())
+
+	mockCrypt.AssertExpectations(t)
 }
 
 func testSecretSetCmdValidationError(
@@ -421,7 +458,16 @@ func testSecretSetCmdValidationError(
 	cmd.SetOut(cmdOut)
 	cmd.SetErr(errOut)
 
-	err := cmd.Execute()
+	publicKey, err := generatePublicKey()
+	if err != nil {
+		t.Error("unable to generate public key")
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, ctxkeys.PublicKey, publicKey)
+	cmd.SetContext(ctx)
+
+	err = cmd.Execute()
 
 	require.Error(t, err)
 
@@ -1509,4 +1555,39 @@ func testSecretRemoveCmdZeroResults(
 	)
 
 	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func generatePublicKey() (ssh.PublicKey, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey, err := gossh.NewPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	charmPublicKey, ok := publicKey.(ssh.PublicKey)
+	if !ok {
+		return nil, errors.New("failed to cast public key")
+	}
+
+	return charmPublicKey, err
+}
+
+type MockCrypt struct {
+	mock.Mock
+}
+
+func (c *MockCrypt) Encrypt(secret string, publicKey ssh.PublicKey) (string, error) {
+	args := c.Called(secret, publicKey)
+
+	return args.String(0), args.Error(1)
+}
+
+func (c *MockCrypt) Decrypt(cypherText string, privateKey *rsa.PrivateKey) (string, error) {
+	args := c.Called(cypherText, privateKey)
+
+	return args.String(0), args.Error(1)
 }

@@ -3,6 +3,7 @@ package secret
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/nixpig/syringe.sh/pkg/serrors"
 )
@@ -105,6 +106,7 @@ func (s SqliteSecretStore) Set(project, environment, key, value string) error {
 		sql.Named("key", key),
 		sql.Named("value", value),
 	); err != nil {
+		fmt.Println(err)
 		return serrors.ErrDatabaseExec(err)
 	}
 

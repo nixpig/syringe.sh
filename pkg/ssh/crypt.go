@@ -11,7 +11,9 @@ import (
 	gossh "golang.org/x/crypto/ssh"
 )
 
-func Encrypt(secret string, publicKey ssh.PublicKey) (string, error) {
+type Crypt struct{}
+
+func (c Crypt) Encrypt(secret string, publicKey ssh.PublicKey) (string, error) {
 	parsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(gossh.MarshalAuthorizedKey(publicKey)))
 	if err != nil {
 		return "", err
@@ -41,4 +43,24 @@ func Encrypt(secret string, publicKey ssh.PublicKey) (string, error) {
 	}
 
 	return base64.StdEncoding.EncodeToString(encryptedSecret), nil
+}
+
+func (c Crypt) Decrypt(cypherText string, privateKey *rsa.PrivateKey) (string, error) {
+	data, err := base64.StdEncoding.DecodeString(cypherText)
+	if err != nil {
+		return "", err
+	}
+
+	decrypted, err := rsa.DecryptOAEP(
+		sha256.New(),
+		rand.Reader,
+		privateKey,
+		data,
+		nil,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return string(decrypted), nil
 }
