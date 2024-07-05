@@ -1,15 +1,11 @@
 package secret
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/nixpig/syringe.sh/pkg"
-	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
-	myssh "github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh"
 )
 
 func NewHandlerSecretSet(secretService SecretService) pkg.CobraHandler {
@@ -20,21 +16,21 @@ func NewHandlerSecretSet(secretService SecretService) pkg.CobraHandler {
 		project, _ := cmd.Flags().GetString("project")
 		environment, _ := cmd.Flags().GetString("environment")
 
-		c, ok := cmd.Context().Value(ctxkeys.PublicKey).(ssh.PublicKey)
-		if !ok {
-			return errors.New("unable to get public key from context")
-		}
+		// c, ok := cmd.Context().Value(ctxkeys.PublicKey).(ssh.PublicKey)
+		// if !ok {
+		// 	return errors.New("unable to get public key from context")
+		// }
 
-		encryptedSecret, err := myssh.Encrypt(value, c)
-		if err != nil {
-			return err
-		}
+		// encryptedSecret, err := myssh.Encrypt(value, c)
+		// if err != nil {
+		// 	return err
+		// }
 
 		if err := secretService.Set(SetSecretRequest{
 			Project:     project,
 			Environment: environment,
 			Key:         key,
-			Value:       encryptedSecret,
+			Value:       value,
 		}); err != nil {
 			return err
 		}

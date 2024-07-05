@@ -41,17 +41,34 @@ func (s *SSHClient) Run(cmd string, w io.Writer) error {
 		return err
 	}
 
-	privateKey, err := GetPrivateKey("/home/nixpig/.ssh/id_rsa_test")
-	if err != nil {
-		return err
-	}
-
-	decrypted, err := Decrypt(string(output), privateKey)
-	if err != nil {
-		return err
-	}
-
-	output = []byte(decrypted)
+	// var privateKey *rsa.PrivateKey
+	//
+	// privateKey, err = GetPrivateKey("/home/nixpig/.ssh/id_rsa_test2")
+	// if err != nil {
+	// 	_, ok := err.(*gossh.PassphraseMissingError)
+	// 	if !ok {
+	// 		return err
+	// 	}
+	//
+	// 	fmt.Printf("Enter passphrase for %s: ", "/home/nixpig/.ssh/id_rsa_test2")
+	// 	passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
+	// 	fmt.Print("\n")
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	//
+	// 	privateKey, err = GetPrivateKeyWithPassphrase("/home/nixpig/.ssh/id_rsa_test2", string(passphrase))
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+	//
+	// decrypted, err := Decrypt(string(output), privateKey)
+	// if err != nil {
+	// 	return err
+	// }
+	//
+	// output = []byte(decrypted)
 
 	if _, err := w.Write(output); err != nil {
 		return err
@@ -119,7 +136,16 @@ func AgentAuthMethod(sshAuthSock string) (gossh.AuthMethod, error) {
 		return nil, err
 	}
 
-	authMethod := gossh.PublicKeysCallback(agent.NewClient(sshAgent).Signers)
+	sshAgentClient := agent.NewClient(sshAgent)
+
+	ids, err := sshAgentClient.List()
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("identity: ", ids[0].String())
+
+	authMethod := gossh.PublicKeysCallback(sshAgentClient.Signers)
 
 	return authMethod, nil
 }

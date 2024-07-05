@@ -41,7 +41,8 @@ func (s Server) Start(host, port string) error {
 		wish.WithHostKeyPath(s.hostKeyPath),
 		wish.WithMaxTimeout(s.timeout),
 		wish.WithPublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
-			return key.Type() == "ssh-ed25519" || key.Type() == "ssh-rsa"
+			allowed := key.Type() == "ssh-rsa"
+			return allowed
 		}),
 		wish.WithMiddleware(
 			s.middleware...,

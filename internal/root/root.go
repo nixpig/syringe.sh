@@ -11,7 +11,7 @@ func New(ctx context.Context) *cobra.Command {
 		Version: config.Version,
 		Use:     "syringe",
 		Short:   "🔐 Distributed database-per-user encrypted secrets management over SSH protocol.",
-		Long: `🔐 Distributed database-per-user encrypted secrets management over SSH protocol.
+		Long: `🗝 Distributed database-per-user encrypted secrets management over SSH protocol.
 
 SSH is a protocol that...
 
@@ -26,19 +26,19 @@ Supported key formats:
   ✓ OpenSSH
   ✗ SomeOther`,
 
-		Example: `  # Add a project
+		Example: `  • Add a project
     syringe project add my_cool_project
 
-  # Add an environment
+  • Add an environment
     syringe environment add -p my_cool_project dev
 
-  # Add a secret
+  • Add a secret
     syringe secret set -p my_cool_project -e dev SECRET_KEY secret_value
 
-  # List secrets
+  • List secrets
     syringe secret list -p my_cool_project -e dev
 
-  # Inject secrets into command
+  • Inject secrets into command
     syringe inject -p my_cool_project -e dev -- startserver
 
   For more examples, go to https://syringe.sh/examples`,

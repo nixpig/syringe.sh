@@ -16,6 +16,7 @@ Distributed database-per-user encrypted secrets management over SSH protocol.
 - [ ] Add unit tests for other areas
 - [ ] Encryption and signing of secrets
   - [ ] RSA
+  - [ ] OpenSSH
   - [ ] ECDSA
   - [ ] ED25519?
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
