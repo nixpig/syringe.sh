@@ -32,13 +32,14 @@ func TestSecretCmd(t *testing.T) {
 		service secret.SecretService,
 		mock sqlmock.Sqlmock,
 	){
-		"test secret set command happy path":          testSecretSetCmdHappyPath,
-		"test secret set command missing project":     testSecretSetCmdMissingProject,
-		"test secret set command missing environment": testSecretSetCmdMissingEnvironment,
-		"test secret set command too few args":        testSecretSetCmdTooFewArgs,
-		"test secret set command too many args":       testSecretSetCmdTooManyArgs,
-		"test secret set command database error":      testSecretSetCmdDatabaseError,
-		"test secret set command validation error":    testSecretSetCmdValidationError,
+		"test secret set command happy path":              testSecretSetCmdHappyPath,
+		"test secret set command missing project":         testSecretSetCmdMissingProject,
+		"test secret set command missing environment":     testSecretSetCmdMissingEnvironment,
+		"test secret set command too few args":            testSecretSetCmdTooFewArgs,
+		"test secret set command too many args":           testSecretSetCmdTooManyArgs,
+		"test secret set command database error":          testSecretSetCmdDatabaseError,
+		"test secret set command validation error":        testSecretSetCmdValidationError,
+		"test secret set public key not in context error": testSecretSetCmdPublicKeyNotInContextError,
 
 		"test secret get command happy path":          testSecretGetCmdHappyPath,
 		"test secret get command missing project":     testSecretGetCmdMissingProject,
@@ -1555,6 +1556,55 @@ func testSecretRemoveCmdZeroResults(
 	)
 
 	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testSecretSetCmdPublicKeyNotInContextError(
+	t *testing.T,
+	cmd *cobra.Command,
+	service secret.SecretService,
+	mock sqlmock.Sqlmock,
+) {
+	var err error
+
+	cmdIn := bytes.NewReader([]byte{})
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+
+	cmdSet := secret.NewCmdSecretSet(
+		secret.NewHandlerSecretSet(service),
+	)
+
+	cmd.AddCommand(cmdSet)
+	cmd.SetArgs([]string{
+		"set",
+		"-p",
+		"my_cool_project",
+		"-e",
+		"staging",
+		"secret_key",
+		"secret_value",
+	})
+	cmd.SetIn(cmdIn)
+	cmd.SetOut(cmdOut)
+	cmd.SetErr(errOut)
+
+	err = cmd.Execute()
+
+	require.Error(t, err)
+	require.Equal(
+		t,
+		test.ErrorMsg("unable to get public key from context\n"),
+		errOut.String(),
+	)
+
+	require.Equal(
+		t,
+		fmt.Sprintf("%s\n", cmdSet.UsageString()),
+		cmdOut.String(),
+	)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+	mockCrypt.AssertExpectations(t)
 }
 
 func generatePublicKey() (ssh.PublicKey, error) {
