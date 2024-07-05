@@ -10,8 +10,8 @@ func New(ctx context.Context) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Version: config.Version,
 		Use:     "syringe",
-		Short:   "🔐 Distributed database-per-user encrypted secrets management over SSH protocol.",
-		Long: `🗝 Distributed database-per-user encrypted secrets management over SSH protocol.
+		Short:   "Distributed database-per-user encrypted secrets management over SSH protocol.",
+		Long: `Distributed database-per-user encrypted secrets management over SSH protocol.
 
 SSH is a protocol that...
 
@@ -23,8 +23,7 @@ Encryption is tied to your SSH key. If you lose your SSH key, that's it... You c
 
 Supported key formats:
   ✓ RSA
-  ✓ OpenSSH
-  ✗ SomeOther`,
+  ...more soon!`,
 
 		Example: `  • Add a project
     syringe project add my_cool_project

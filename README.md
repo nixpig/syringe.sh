@@ -18,7 +18,7 @@ Distributed database-per-user encrypted secrets management over SSH protocol.
   - [ ] RSA
   - [ ] OpenSSH
   - [ ] ECDSA
-  - [ ] ED25519?
+  - [ ] ED25519
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
   - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?
   - Just use testcontainers??
