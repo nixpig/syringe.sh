@@ -37,6 +37,10 @@ Distributed database-per-user encrypted secrets management over SSH protocol.
 - [ ] Proper good refactor and tidy-up (primarily of database stuff)
 - [ ] Pull the Turso stuff out into separate SDK package??
 
+## Supported SSH key types
+
+- RSA
+
 ## Usage
 
 ### Specifying an identity
@@ -61,8 +65,8 @@ The settings file uses a `key=value` format, with each key/value pair on a new l
 
 #### Settings
 
-| Key                   | Value            | Description                                                                                                                                                       |
-| --------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `identity`            | `string`         | Path to the SSH identity file to use. Equivalent to the `-i` flag to `ssh` or the `IdentityFile` parameter in SSH config. For example: `/home/nixpig/.ssh/id_rsa` |
-| `add_to_agent`        | `true` / `false` | Whether to add the identity to the running SSH agent when loaded.                                                                                                 |
-| `add_to_agent_prompt` | `true` / `false` | Whether to prompt before adding loaded identity to agent.                                                                                                         |
+| Key                   | Value          | Description                                                                                                                                                       |
+| --------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `identity`            | `string`       | Path to the SSH identity file to use. Equivalent to the `-i` flag to `ssh` or the `IdentityFile` parameter in SSH config. For example: `/home/nixpig/.ssh/id_rsa` |
+| `add_to_agent`        | `true` `false` | Whether to add the identity to the running SSH agent when loaded.                                                                                                 |
+| `add_to_agent_prompt` | `true` `false` | Whether to prompt before adding loaded identity to agent.                                                                                                         |

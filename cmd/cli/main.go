@@ -22,6 +22,7 @@ const (
 )
 
 func main() {
+	os.Setenv("APP_HOST", "localhost")
 	cmdRoot := root.New(context.Background())
 
 	handlerCLI := cli.NewHandlerCLI(host, port, cmdRoot.OutOrStdout())
@@ -72,7 +73,7 @@ func main() {
 	cmdInject := inject.NewCmdInject(handlerInjectCLI)
 	cmdRoot.AddCommand(cmdInject)
 
-	// -- update help and version for all subcommands
+	// update help and version for all subcommands
 	helpers.WalkCmd(cmdRoot, func(c *cobra.Command) {
 		c.Flags().BoolP("help", "h", false, fmt.Sprintf("Help for the '%s' command", c.Name()))
 		c.Flags().BoolP("version", "v", false, "Print version information")
