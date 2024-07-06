@@ -21,7 +21,7 @@ func NewHandlerSecretSet(secretService SecretService) pkg.CobraHandler {
 
 		publicKey, ok := cmd.Context().Value(ctxkeys.PublicKey).(ssh.PublicKey)
 		if !ok {
-			return errors.New("unable to get public key from context")
+			return errors.New("failed to get public key from context")
 		}
 
 		if err := secretService.Set(SetSecretRequest{

@@ -21,14 +21,14 @@ func (c Crypt) Encrypt(secret string, publicKey ssh.PublicKey) (string, error) {
 
 	parsedCryptoKey, ok := parsed.(gossh.CryptoPublicKey)
 	if !ok {
-		return "", errors.New("unable to parse parsed to ssh.CryptoPublicKey")
+		return "", errors.New("failed to parse parsed to ssh.CryptoPublicKey")
 	}
 
 	pubCrypto := parsedCryptoKey.CryptoPublicKey()
 
 	pub, ok := pubCrypto.(*rsa.PublicKey)
 	if !ok {
-		return "", errors.New("unable to parse pubCrypto to *rsa.PublicKey")
+		return "", errors.New("failed to parse pubCrypto to *rsa.PublicKey")
 	}
 
 	encryptedSecret, err := rsa.EncryptOAEP(

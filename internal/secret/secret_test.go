@@ -1593,7 +1593,7 @@ func testSecretSetCmdPublicKeyNotInContextError(
 	require.Error(t, err)
 	require.Equal(
 		t,
-		test.ErrorMsg("unable to get public key from context\n"),
+		test.ErrorMsg("failed to get public key from context\n"),
 		errOut.String(),
 	)
 

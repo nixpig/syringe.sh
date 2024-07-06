@@ -27,7 +27,7 @@ func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 
 		currentUser, err := user.Current()
 		if err != nil || currentUser.Username == "" {
-			return err
+			return fmt.Errorf("failed to determine username: %w", err)
 		}
 
 		if identity != "" {
@@ -42,9 +42,7 @@ func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 			}
 
 			// TODO: get identity file path from config (if it exists); if it doesn't, then exit with error
-
 			// TODO: check that identity file from config matches the identity in the host??
-
 			authMethod, err = ssh.AgentAuthMethod(sshAuthSock)
 			if err != nil {
 				return err
@@ -52,9 +50,11 @@ func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 		}
 
 		// get the host from ssh config, if it exists
-		f, err := os.OpenFile(filepath.Join(os.Getenv("HOME"), ".ssh", "config"), os.O_RDWR, 0600)
+		var f *os.File
+		f, err = os.OpenFile(filepath.Join(os.Getenv("HOME"), ".ssh", "config"), os.O_RDWR, 0600)
 		if err != nil {
-			return fmt.Errorf("unable to open ssh config: %w", err)
+			f, err = os.OpenFile(filepath.Join("/etc", "ssh", "ssh_config"), os.O_RDWR, 0600)
+			return errors.New("failed to open ssh config file")
 		}
 
 		defer f.Close()
@@ -91,10 +91,7 @@ func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 				default:
 					continue
 				}
-
 			}
-
-			fmt.Println(identityNodes)
 
 			var hasIdentity bool
 
@@ -118,7 +115,6 @@ func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 
 			if !hasIdentity {
 				// add identity to existing host
-				fmt.Println("add to host...")
 				identityNode := &ssh_config.KV{
 					Key:   "IdentityFile",
 					Value: identity,
@@ -126,14 +122,8 @@ func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 
 				sshConfigHost.Nodes = append(sshConfigHost.Nodes, identityNode)
 			}
-
-			fmt.Println("sshConfigHost: ", sshConfigHost)
-
-			fmt.Println("host found and updated")
-
 		} else {
 			// add new host with identity
-			fmt.Println("not found; creating new host")
 
 			pattern, err := ssh_config.NewPattern(os.Getenv("APP_HOST"))
 			if err != nil {
@@ -141,22 +131,10 @@ func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 			}
 
 			nodes := []ssh_config.Node{
-				&ssh_config.KV{
-					Key:   "AddKeysToAgent",
-					Value: "yes",
-				},
-				&ssh_config.KV{
-					Key:   "IgnoreUnknown",
-					Value: "UseKeychain",
-				},
-				&ssh_config.KV{
-					Key:   "UseKeychain",
-					Value: "yes",
-				},
-				&ssh_config.KV{
-					Key:   "IdentityFile",
-					Value: identity,
-				},
+				&ssh_config.KV{Key: "AddKeysToAgent", Value: "yes"},
+				&ssh_config.KV{Key: "IgnoreUnknown", Value: "UseKeychain"},
+				&ssh_config.KV{Key: "UseKeychain", Value: "yes"},
+				&ssh_config.KV{Key: "IdentityFile", Value: identity},
 			}
 
 			sshConfigHost = &ssh_config.Host{
@@ -167,21 +145,20 @@ func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 			cfg.Hosts = append(cfg.Hosts, sshConfigHost)
 		}
 
-		// TODO: backup config before truncating
+		// TODO: backup config before truncating?
 
 		// save sshConfigHost back to ~/.ssh/config
-		fmt.Println("host: ", host)
 		if err := f.Truncate(0); err != nil {
-			return fmt.Errorf("unable to zero out ssh config file: %w", err)
+			return fmt.Errorf("failed to zero out ssh config file: %w", err)
 		}
 
 		if _, err := f.Seek(0, 0); err != nil {
-			return fmt.Errorf("unable to get to beginning of config file: %w", err)
+			return fmt.Errorf("failed to get to beginning of config file: %w", err)
 		}
 
 		_, err = f.WriteString(cfg.String())
 		if err != nil {
-			return fmt.Errorf("error writing ssh config to file: %w", err)
+			return fmt.Errorf("failed to write ssh config to file: %w", err)
 		}
 
 		// TODO: prompt to add to agent??

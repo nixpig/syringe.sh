@@ -21,7 +21,7 @@ func GetPrivateKey(path string) (*rsa.PrivateKey, error) {
 
 	rsaPrivateKey, ok := key.(*rsa.PrivateKey)
 	if !ok {
-		return nil, errors.New("unable to cast to rsa private key")
+		return nil, errors.New("failed to cast to rsa private key")
 	}
 
 	return rsaPrivateKey, nil
@@ -41,7 +41,7 @@ func GetPrivateKeyWithPassphrase(path, passphrase string) (*rsa.PrivateKey, erro
 
 	rsaPrivateKey, ok := key.(*rsa.PrivateKey)
 	if !ok {
-		return nil, errors.New("unable to cast to rsa private key")
+		return nil, errors.New("failed to cast to rsa private key")
 	}
 
 	return rsaPrivateKey, nil

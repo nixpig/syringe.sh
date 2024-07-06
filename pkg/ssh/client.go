@@ -92,7 +92,7 @@ func NewSSHClient(
 
 			kh, err := knownhosts.New(khPath)
 			if err != nil {
-				return fmt.Errorf("unable to open knownhosts file: %w", err)
+				return fmt.Errorf("failed to open knownhosts file: %w", err)
 			}
 
 			err = kh(fmt.Sprintf("%s:%d", host, port), remote, key)
@@ -104,7 +104,7 @@ func NewSSHClient(
 			if knownhosts.IsHostUnknown(err) {
 				khHandle, err := os.OpenFile(khPath, os.O_APPEND|os.O_WRONLY, 0600)
 				if err != nil {
-					return fmt.Errorf("unable to open known hosts file for writing: %w", err)
+					return fmt.Errorf("failed to open known hosts file for writing: %w", err)
 				}
 
 				defer khHandle.Close()

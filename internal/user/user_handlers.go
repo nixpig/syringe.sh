@@ -13,12 +13,12 @@ func NewHandlerUserRegister(userService UserService) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		username, ok := cmd.Context().Value(ctxkeys.Username).(string)
 		if !ok {
-			return fmt.Errorf("unable to get username from context")
+			return fmt.Errorf("failed to get username from context")
 		}
 
 		publicKey, ok := cmd.Context().Value(ctxkeys.PublicKey).(ssh.PublicKey)
 		if !ok {
-			return fmt.Errorf("unable to get public key from context")
+			return fmt.Errorf("failed to get public key from context")
 		}
 
 		user, err := userService.RegisterUser(RegisterUserRequest{
@@ -27,7 +27,7 @@ func NewHandlerUserRegister(userService UserService) pkg.CobraHandler {
 			PublicKey: publicKey,
 		})
 		if err != nil {
-			return fmt.Errorf("unable to register user: %w", err)
+			return fmt.Errorf("failed to register user: %w", err)
 		}
 
 		cmd.Print(user)
