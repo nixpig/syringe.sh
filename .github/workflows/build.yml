@@ -21,7 +21,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.22.4"
+          go-version: "1.22.5"
 
       - name: Audit
         run: make audit
@@ -36,8 +36,7 @@ jobs:
         env:
           COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
         run: |
-          go install github.com/mattn/goveralls@latest \
-            && goveralls -coverprofile=coverage.out -service=github
+          make coveralls
 
       - name: Build server
         run: make build_server

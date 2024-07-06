@@ -33,6 +33,10 @@ coverage:
 	go test -v -race -buildvcs -covermode atomic -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out
 
+.PHONY: coveralls
+coveralls:
+	go run github.com/mattn/goveralls@latest -coverprofile=coverage.out -service=github
+
 .PHONY: build_cli
 build_cli:
 	go build -o tmp/bin/${CLI_APP_BINARY_NAME} ${CLI_APP_PACKAGE_PATH}

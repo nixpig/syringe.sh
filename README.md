@@ -13,16 +13,22 @@ Distributed database-per-user encrypted secrets management over SSH protocol.
 - [x] Secret injection and run passed command
   - [x] Pass a `io.Writer` into `run` so that we can read secrets from it to inject instead of directly printing to terminal out
 - [x] Update and enable the disabled unit tests
-- [ ] Add unit tests for other areas
+- [ ] Utilise settings file to specify/save which identity to use (viper)
+- [ ] Load ssh config from file
+  - [ ] Single identity for host
+  - [ ] Multiple identities for host - prompt user to choose which to use (have a default - add a flag to just use default (or specific) without prompt)
+- [ ] Use SSH agent by default - if key isn't already in agent when loaded, prompt user to add to agent (add a flag for this)
 - [ ] Encryption and signing of secrets
   - [ ] RSA
   - [ ] OpenSSH
   - [ ] ECDSA
   - [ ] ED25519
+- [ ] Add 'syringe config' command to update config file
+- [ ] Add unit tests for other areas
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
   - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?
   - Just use testcontainers??
-- [ ] Add functionality to 'link' local directories/projects to specific project/environment
+- [ ] Add functionality to 'link' local directories/projects to specific project/environment - save in config file
 - [x] Explicit (not implicit) user registration
 - [ ] Improve error handling, errors and messaging
 - [x] Exit codes on error
@@ -30,5 +36,3 @@ Distributed database-per-user encrypted secrets management over SSH protocol.
 - [ ] Remove use of third-party package for SSH client (in CLI client)
 - [ ] Proper good refactor and tidy-up (primarily of database stuff)
 - [ ] Pull the Turso stuff out into separate SDK package??
-- [ ] Make it work also with a local database
-  - [ ] Add syncing of local and remote databases
