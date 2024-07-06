@@ -145,7 +145,9 @@ func addIdentityToSSHConfig(identity string) error {
 	f, err = os.OpenFile(filepath.Join(os.Getenv("HOME"), ".ssh", "config"), os.O_RDWR, 0600)
 	if err != nil {
 		f, err = os.OpenFile(filepath.Join("/etc", "ssh", "ssh_config"), os.O_RDWR, 0600)
-		return errors.New("failed to open ssh config file")
+		if err != nil {
+			return errors.New("failed to open ssh config file")
+		}
 	}
 
 	defer f.Close()
