@@ -50,7 +50,7 @@ Supported key formats:
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.New()
 
-			if err := initialiseConfig(cmd, v); err != nil {
+			if err := initialiseConfig(v); err != nil {
 				return err
 			}
 
@@ -84,7 +84,6 @@ For more help on how to use syringe.sh, go to https://syringe.sh/help`
 		"",
 		"Path to SSH key (optional).\nIf not provided, SSH agent is used and syringe.sh host must be configured in SSH config.",
 	)
-
 	rootCmd.SetContext(ctx)
 
 	return rootCmd
