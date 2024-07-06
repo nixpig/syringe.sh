@@ -1,8 +1,14 @@
 package root
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/nixpig/syringe.sh/config"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 )
 
@@ -41,6 +47,19 @@ Supported key formats:
     syringe inject -p my_cool_project -e dev -- startserver
 
   For more examples, go to https://syringe.sh/examples`,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			v := viper.New()
+
+			if err := initialiseConfig(cmd, v); err != nil {
+				return err
+			}
+
+			bindFlags(cmd, v)
+
+			fmt.Println("viper: ", v.GetString("identity"))
+
+			return nil
+		},
 	}
 
 	additionalHelp := `
@@ -59,7 +78,66 @@ For more help on how to use syringe.sh, go to https://syringe.sh/help`
 	)
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 
+	rootCmd.PersistentFlags().StringP(
+		"identity",
+		"i",
+		"",
+		"Path to SSH key (optional).\nIf not provided, SSH agent is used and syringe.sh host must be configured in SSH config.",
+	)
+
 	rootCmd.SetContext(ctx)
 
 	return rootCmd
+}
+
+func initialiseConfig(v *viper.Viper) error {
+	userConfigDir, err := os.UserConfigDir()
+	if err != nil {
+		return err
+	}
+
+	syringeConfigDir := filepath.Join(userConfigDir, "syringe")
+
+	if err := os.MkdirAll(syringeConfigDir, os.ModePerm); err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(
+		filepath.Join(syringeConfigDir, "settings"),
+		os.O_RDWR|os.O_CREATE,
+		0666,
+	)
+	if err != nil {
+		return err
+	}
+	f.Close()
+
+	v.SetConfigFile(filepath.Join(
+		syringeConfigDir,
+		"settings",
+	))
+
+	v.SetConfigType("env")
+
+	if err := v.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func bindFlags(cmd *cobra.Command, v *viper.Viper) error {
+	if err := v.BindPFlag("identity", cmd.Flags().Lookup("identity")); err != nil {
+		return err
+	}
+
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		if v.IsSet(f.Name) {
+			cmd.Flags().Set(f.Name, v.GetString(f.Name))
+		}
+	})
+
+	return nil
 }

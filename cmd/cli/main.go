@@ -27,8 +27,6 @@ func main() {
 	handlerCLI := cli.NewHandlerCLI(host, port, cmdRoot.OutOrStdout())
 	handlerInjectCLI := cli.NewHandlerInjectCLI(host, port, cmdRoot.OutOrStdout())
 
-	cmdRoot.PersistentFlags().StringP("identity", "i", "", "Path to SSH key (optional).\nIf not provided, SSH agent is used and syringe.sh host must be configured in SSH config.")
-
 	// -- project
 	cmdProject := project.NewCmdProject()
 	cmdProject.AddCommand(project.NewCmdProjectList(handlerCLI))
