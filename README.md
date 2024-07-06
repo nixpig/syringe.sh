@@ -36,6 +36,7 @@ Distributed database-per-user encrypted secrets management over SSH protocol.
 - [ ] Remove use of third-party package for SSH client (in CLI client)
 - [ ] Proper good refactor and tidy-up (primarily of database stuff)
 - [ ] Pull the Turso stuff out into separate SDK package??
+- [ ] Create a wrapper package around the various SSH related stuff like config and known hosts
 
 ## Supported SSH key types
 

@@ -138,6 +138,9 @@ func AgentAuthMethod(sshAuthSock string) (gossh.AuthMethod, error) {
 
 	sshAgentClient := agent.NewClient(sshAgent)
 
+	// TODO: find the agent key which matches the provided identity
+	// TODO: create a signer from the key and use that for the publickeyscallback
+
 	authMethod := gossh.PublicKeysCallback(sshAgentClient.Signers)
 
 	return authMethod, nil

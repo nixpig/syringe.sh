@@ -20,145 +20,43 @@ import (
 func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		var authMethod gossh.AuthMethod
-		var identity string
-
-		// don't care if errors, since will fallback to using ssh agent in case of empty identity
-		identity, _ = cmd.Flags().GetString("identity")
 
 		currentUser, err := user.Current()
 		if err != nil || currentUser.Username == "" {
 			return fmt.Errorf("failed to determine username: %w", err)
 		}
 
-		if identity != "" {
-			authMethod, err = ssh.IdentityAuthMethod(identity)
-			if err != nil {
-				return err
-			}
-		} else {
-			sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
-			if sshAuthSock == "" {
-				return errors.New("SSH_AUTH_SOCK not set")
-			}
-
-			// TODO: get identity file path from config (if it exists); if it doesn't, then exit with error
-			// TODO: check that identity file from config matches the identity in the host??
-			authMethod, err = ssh.AgentAuthMethod(sshAuthSock)
-			if err != nil {
-				return err
-			}
-		}
-
-		// get the host from ssh config, if it exists
-		var f *os.File
-		f, err = os.OpenFile(filepath.Join(os.Getenv("HOME"), ".ssh", "config"), os.O_RDWR, 0600)
-		if err != nil {
-			f, err = os.OpenFile(filepath.Join("/etc", "ssh", "ssh_config"), os.O_RDWR, 0600)
-			return errors.New("failed to open ssh config file")
-		}
-
-		defer f.Close()
-
-		cfg, err := ssh_config.Decode(f)
+		identity, err := cmd.Flags().GetString("identity")
 		if err != nil {
 			return err
 		}
-
-		// get the closest matching host from ssh config file
-		var sshConfigHost *ssh_config.Host
-
-		for _, h := range cfg.Hosts {
-			if h.Matches(os.Getenv("APP_HOST")) {
-				if h.Matches("*") {
-					continue
-				}
-
-				sshConfigHost = h
-				break
-			}
+		if identity == "" {
+			return errors.New("no identity specified")
+			// sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
+			// if sshAuthSock == "" {
+			// 	return errors.New("SSH_AUTH_SOCK not set")
+			// }
+			//
+			// // TODO: get identity file path from config (if it exists); if it doesn't, then exit with error
+			// // TODO: check that identity file from config matches the identity in the host??
+			// authMethod, err = ssh.AgentAuthMethod(sshAuthSock)
+			// if err != nil {
+			// 	return err
+			// }
 		}
 
-		if sshConfigHost != nil {
-			// check if host contains identity, if not then add to host
-			var identityNodes []ssh_config.Node
-
-			for _, n := range sshConfigHost.Nodes {
-				switch t := n.(type) {
-				case *ssh_config.KV:
-					if strings.ToLower(t.Key) == "identityfile" {
-						identityNodes = append(identityNodes, n)
-					}
-				default:
-					continue
-				}
-			}
-
-			var hasIdentity bool
-
-			for _, id := range identityNodes {
-				ip := id.(*ssh_config.KV).Value
-
-				if strings.HasPrefix(ip, "~/") {
-					var home string
-					home, err := os.UserHomeDir()
-					if err != nil {
-						home = os.Getenv("HOME")
-					}
-
-					ip = home + ip[1:]
-				}
-
-				if ip == identity {
-					hasIdentity = true
-				}
-			}
-
-			if !hasIdentity {
-				// add identity to existing host
-				identityNode := &ssh_config.KV{
-					Key:   "IdentityFile",
-					Value: identity,
-				}
-
-				sshConfigHost.Nodes = append(sshConfigHost.Nodes, identityNode)
-			}
-		} else {
-			// add new host with identity
-
-			pattern, err := ssh_config.NewPattern(os.Getenv("APP_HOST"))
-			if err != nil {
-				return err
-			}
-
-			nodes := []ssh_config.Node{
-				&ssh_config.KV{Key: "AddKeysToAgent", Value: "yes"},
-				&ssh_config.KV{Key: "IgnoreUnknown", Value: "UseKeychain"},
-				&ssh_config.KV{Key: "UseKeychain", Value: "yes"},
-				&ssh_config.KV{Key: "IdentityFile", Value: identity},
-			}
-
-			sshConfigHost = &ssh_config.Host{
-				Patterns: []*ssh_config.Pattern{pattern},
-				Nodes:    nodes,
-			}
-
-			cfg.Hosts = append(cfg.Hosts, sshConfigHost)
+		if err := addIdentityToSSHConfig(identity); err != nil {
+			return fmt.Errorf("failed to add/update identity in ssh config file: %w", err)
 		}
 
-		// TODO: backup config before truncating?
+		// TODO: check if provided identity is already available on ssh agent
+		// if it isn't then add it
+		// then use ssh agent rather than identityauthmethod
+		// fallback to identityauthmethod
 
-		// save sshConfigHost back to ~/.ssh/config
-		if err := f.Truncate(0); err != nil {
-			return fmt.Errorf("failed to zero out ssh config file: %w", err)
-		}
-
-		if _, err := f.Seek(0, 0); err != nil {
-			return fmt.Errorf("failed to get to beginning of config file: %w", err)
-		}
-
-		_, err = f.WriteString(cfg.String())
+		authMethod, err = ssh.IdentityAuthMethod(identity)
 		if err != nil {
-			return fmt.Errorf("failed to write ssh config to file: %w", err)
+			return err
 		}
 
 		// TODO: prompt to add to agent??
@@ -199,4 +97,131 @@ func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 
 		return nil
 	}
+}
+
+func hostHasIdentity(host *ssh_config.Host, identity string) bool {
+	var hasIdentity bool
+
+	// check if host contains identity, if not then add to host
+	var identityNodes []ssh_config.Node
+
+	for _, n := range host.Nodes {
+		switch t := n.(type) {
+		case *ssh_config.KV:
+			if strings.ToLower(t.Key) == "identityfile" {
+				identityNodes = append(identityNodes, n)
+			}
+		default:
+			continue
+		}
+	}
+
+	for _, id := range identityNodes {
+		ip := id.(*ssh_config.KV).Value
+
+		if strings.HasPrefix(ip, "~/") {
+			var home string
+			home, err := os.UserHomeDir()
+			if err != nil {
+				home = os.Getenv("HOME")
+			}
+
+			ip = home + ip[1:]
+		}
+
+		if ip == identity {
+			hasIdentity = true
+		}
+	}
+
+	return hasIdentity
+}
+
+func addIdentityToSSHConfig(identity string) error {
+	var err error
+
+	// get the host from ssh config, if it exists
+	var f *os.File
+	f, err = os.OpenFile(filepath.Join(os.Getenv("HOME"), ".ssh", "config"), os.O_RDWR, 0600)
+	if err != nil {
+		f, err = os.OpenFile(filepath.Join("/etc", "ssh", "ssh_config"), os.O_RDWR, 0600)
+		return errors.New("failed to open ssh config file")
+	}
+
+	defer f.Close()
+
+	cfg, err := ssh_config.Decode(f)
+	if err != nil {
+		return err
+	}
+
+	// get the closest matching host from ssh config file
+	var sshConfigHost *ssh_config.Host
+
+	for _, h := range cfg.Hosts {
+		if h.Matches(os.Getenv("APP_HOST")) {
+			if h.Matches("*") {
+				continue
+			}
+
+			sshConfigHost = h
+			break
+		}
+	}
+
+	if sshConfigHost != nil {
+		hasIdentity := hostHasIdentity(sshConfigHost, identity)
+
+		if !hasIdentity {
+			// add identity to existing host
+			identityNode := &ssh_config.KV{
+				Key:   "IdentityFile",
+				Value: identity,
+			}
+
+			sshConfigHost.Nodes = append(sshConfigHost.Nodes, identityNode)
+		}
+	} else {
+		// add new host with identity
+
+		pattern, err := ssh_config.NewPattern(os.Getenv("APP_HOST"))
+		if err != nil {
+			return err
+		}
+
+		nodes := []ssh_config.Node{
+			&ssh_config.KV{Key: "AddKeysToAgent", Value: "yes"},
+			&ssh_config.KV{Key: "IgnoreUnknown", Value: "UseKeychain"},
+			&ssh_config.KV{Key: "UseKeychain", Value: "yes"},
+			&ssh_config.KV{Key: "IdentityFile", Value: identity},
+		}
+
+		sshConfigHost = &ssh_config.Host{
+			Patterns: []*ssh_config.Pattern{pattern},
+			Nodes:    nodes,
+		}
+
+		cfg.Hosts = append(cfg.Hosts, sshConfigHost)
+	}
+
+	// TODO: backup config before truncating?
+
+	// FIXME: why would we write this every time the user runs the app
+	// surely we want to avoid this if the key already exists in config
+
+	// save sshConfigHost back to ~/.ssh/config
+	if err := f.Truncate(0); err != nil {
+		return fmt.Errorf("failed to zero out ssh config file: %w", err)
+	}
+
+	if _, err := f.Seek(0, 0); err != nil {
+		return fmt.Errorf("failed to get to beginning of config file: %w", err)
+	}
+
+	_, err = f.WriteString(cfg.String())
+	if err != nil {
+		return fmt.Errorf("failed to write ssh config to file: %w", err)
+	}
+
+	return nil
 }
