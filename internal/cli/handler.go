@@ -21,7 +21,6 @@ func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 
 		// don't care if errors, since will fallback to using ssh agent in case of empty identity
 		identity, _ := cmd.Flags().GetString("identity")
-		fmt.Println("identity: ", identity)
 
 		currentUser, err := user.Current()
 		if err != nil || currentUser.Username == "" {

@@ -1,7 +1,6 @@
 package root
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -56,8 +55,6 @@ Supported key formats:
 
 			bindFlags(cmd, v)
 
-			fmt.Println("viper: ", v.GetString("identity"))
-
 			return nil
 		},
 	}
@@ -82,7 +79,9 @@ For more help on how to use syringe.sh, go to https://syringe.sh/help`
 		"identity",
 		"i",
 		"",
-		"Path to SSH key (optional).\nIf not provided, SSH agent is used and syringe.sh host must be configured in SSH config.",
+		`Path to SSH key (optional).
+[move_to_docs] If not provided, 'identity' is read from settings file.
+[move_to_docs] If no identity specified as flag or in settings file, SSH agent is used and syringe.sh host must be configured in SSH config.`,
 	)
 	rootCmd.SetContext(ctx)
 

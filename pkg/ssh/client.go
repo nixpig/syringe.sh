@@ -138,13 +138,6 @@ func AgentAuthMethod(sshAuthSock string) (gossh.AuthMethod, error) {
 
 	sshAgentClient := agent.NewClient(sshAgent)
 
-	ids, err := sshAgentClient.List()
-	if err != nil {
-		return nil, err
-	}
-
-	fmt.Println("identity: ", ids[0].String())
-
 	authMethod := gossh.PublicKeysCallback(sshAgentClient.Signers)
 
 	return authMethod, nil
