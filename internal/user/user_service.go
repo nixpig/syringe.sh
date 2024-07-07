@@ -11,7 +11,6 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/secret"
-	myssh "github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/nixpig/syringe.sh/pkg/turso"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	gossh "golang.org/x/crypto/ssh"
@@ -196,7 +195,7 @@ func (u UserServiceImpl) CreateDatabase(
 	}
 
 	envStore := secret.NewSqliteSecretStore(userDB)
-	envService := secret.NewSecretServiceImpl(envStore, validation.New(), myssh.Crypt{})
+	envService := secret.NewSecretServiceImpl(envStore, validation.New())
 
 	var count time.Duration
 	increment := time.Second * 5

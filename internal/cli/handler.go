@@ -35,6 +35,11 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 			return errors.New("no identity provided")
 		}
 
+		publicKey, err := ssh.GetPublicKey(fmt.Sprintf("%s.pub", identity))
+		if err != nil {
+			return fmt.Errorf("failed to get public key: %w", err)
+		}
+
 		sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
 		if sshAuthSock == "" {
 			return errors.New("SSH_AUTH_SOCK not set")
@@ -55,11 +60,6 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 			agentKeys, err := sshAgentClient.List()
 			if err != nil {
 				return fmt.Errorf("failed to get identities from ssh agent: %w", err)
-			}
-
-			publicKey, err := ssh.GetPublicKey(fmt.Sprintf("%s.pub", identity))
-			if err != nil {
-				return fmt.Errorf("failed to get public key: %w", err)
 			}
 
 			// if the agent doesn't already contain the identity, then add it
@@ -110,6 +110,31 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 		}
 
 		defer client.Close()
+
+		if cmd.Parent().Use == "secret" {
+			switch cmd.CalledAs() {
+			case "set":
+				crypt := ssh.Crypt{}
+				// encrypt secret at args[1]
+				encryptedSecret, err := crypt.Encrypt(args[1], publicKey)
+				if err != nil {
+					return fmt.Errorf("failed to encrypt secret: %w", err)
+				}
+				args[1] = encryptedSecret
+				fmt.Println("encrypt for set...")
+
+			case "get":
+				fmt.Println("decrypt for get...")
+				// decrypt
+				// who knows how we get the value to decrypt??
+				// maybe some sort of 'decrypting writer' to pass to client run??
+			}
+		}
+
+		if cmd.CalledAs() == "inject" {
+			fmt.Println("decrypt for inject...")
+			// decrypt
+		}
 
 		sshcmd := buildCommand(cmd, args)
 

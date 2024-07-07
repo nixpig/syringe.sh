@@ -19,7 +19,6 @@ import (
 	"github.com/nixpig/syringe.sh/internal/user"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/nixpig/syringe.sh/pkg/helpers"
-	myssh "github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
@@ -149,7 +148,6 @@ func NewMiddlewareCommand(
 			secretService := secret.NewSecretServiceImpl(
 				secret.NewSqliteSecretStore(userDB),
 				validate,
-				myssh.Crypt{},
 			)
 
 			handlerSecretSet := secret.NewHandlerSecretSet(secretService)

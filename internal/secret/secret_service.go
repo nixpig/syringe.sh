@@ -9,11 +9,10 @@ import (
 )
 
 type SetSecretRequest struct {
-	Project     string        `name:"project name" validate:"required,min=1,max=256"`
-	Environment string        `name:"environment name" validate:"required,min=1,max=256"`
-	Key         string        `name:"secret key" validate:"required,min=1,max=256"`
-	Value       string        `name:"secret value" validate:"required,min=1,max=1024"`
-	PublicKey   ssh.PublicKey `name:"public key"`
+	Project     string `name:"project name" validate:"required,min=1,max=256"`
+	Environment string `name:"environment name" validate:"required,min=1,max=256"`
+	Key         string `name:"secret key" validate:"required,min=1,max=256"`
+	Value       string `name:"secret value" validate:"required,min=1,max=1024"`
 }
 
 type GetSecretRequest struct {
@@ -62,7 +61,6 @@ type SecretService interface {
 type SecretServiceImpl struct {
 	store    SecretStore
 	validate validation.Validator
-	crypt    Cryptor
 }
 
 type Cryptor interface {
@@ -73,12 +71,10 @@ type Cryptor interface {
 func NewSecretServiceImpl(
 	store SecretStore,
 	validate validation.Validator,
-	crypt Cryptor,
 ) SecretService {
 	return SecretServiceImpl{
 		store:    store,
 		validate: validate,
-		crypt:    crypt,
 	}
 }
 
@@ -95,16 +91,11 @@ func (s SecretServiceImpl) Set(secret SetSecretRequest) error {
 		return serrors.ValidationError(err)
 	}
 
-	encryptedSecret, err := s.crypt.Encrypt(secret.Value, secret.PublicKey)
-	if err != nil {
-		return err
-	}
-
 	if err := s.store.Set(
 		secret.Project,
 		secret.Environment,
 		secret.Key,
-		encryptedSecret,
+		secret.Value,
 	); err != nil {
 		return err
 	}
