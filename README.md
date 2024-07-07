@@ -56,7 +56,7 @@ The identity to use is selected with the following order of precedence.
 
 Note: when using the SSH agent directly, the syringe.sh host must also be configured in SSH config.
 
-In any case, if you have an SSH agent running and the specified identity is not already loaded into the SSH agent, you will be prompted to do so.
+In any case, if you have an SSH agent running and the specified identity is not already loaded into the SSH agent, you will be prompted to add it.
 
 ### Settings file
 

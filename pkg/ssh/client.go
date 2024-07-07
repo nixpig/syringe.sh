@@ -130,7 +130,7 @@ func NewSSHClient(
 	}, nil
 }
 
-func AgentAuthMethod(sshAuthSock string) (gossh.AuthMethod, error) {
+func NewSSHAgentClient(sshAuthSock string) (agent.ExtendedAgent, error) {
 	sshAgent, err := net.Dial("unix", sshAuthSock)
 	if err != nil {
 		return nil, err
@@ -138,10 +138,16 @@ func AgentAuthMethod(sshAuthSock string) (gossh.AuthMethod, error) {
 
 	sshAgentClient := agent.NewClient(sshAgent)
 
+	return sshAgentClient, nil
+}
+
+func AgentAuthMethod(signersFunc func() ([]gossh.Signer, error)) (gossh.AuthMethod, error) {
+
 	// TODO: find the agent key which matches the provided identity
 	// TODO: create a signer from the key and use that for the publickeyscallback
+	// DO NOT JUST PASS IN EVERYTHING IN THE AGENT!!!
 
-	authMethod := gossh.PublicKeysCallback(sshAgentClient.Signers)
+	authMethod := gossh.PublicKeysCallback(signersFunc)
 
 	return authMethod, nil
 }
