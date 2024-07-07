@@ -105,9 +105,6 @@ func (c *Config) AddIdentityToHost(host *ssh_config.Host, identity string) {
 		Value: identity,
 	}
 
-	fmt.Println("host: ", host)
-	fmt.Println("adding to host nodes")
-
 	host.Nodes = append(host.Nodes, identityNode)
 }
 

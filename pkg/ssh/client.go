@@ -25,7 +25,7 @@ func (s *SSHClient) Close() error {
 	return nil
 }
 
-func (s *SSHClient) Run(cmd string, w io.Writer) error {
+func (s *SSHClient) Run(cmd string, out io.Writer) error {
 	session, err := s.client.NewSession()
 	if err != nil {
 		return err
@@ -35,42 +35,13 @@ func (s *SSHClient) Run(cmd string, w io.Writer) error {
 
 	output, err := session.CombinedOutput(cmd)
 	if err != nil {
-		if _, err := w.Write(output); err != nil {
+		if _, err := out.Write(output); err != nil {
 			return err
 		}
 		return err
 	}
 
-	// var privateKey *rsa.PrivateKey
-	//
-	// privateKey, err = GetPrivateKey("/home/nixpig/.ssh/id_rsa_test2")
-	// if err != nil {
-	// 	_, ok := err.(*gossh.PassphraseMissingError)
-	// 	if !ok {
-	// 		return err
-	// 	}
-	//
-	// 	fmt.Printf("Enter passphrase for %s: ", "/home/nixpig/.ssh/id_rsa_test2")
-	// 	passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
-	// 	fmt.Print("\n")
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	//
-	// 	privateKey, err = GetPrivateKeyWithPassphrase("/home/nixpig/.ssh/id_rsa_test2", string(passphrase))
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-	//
-	// decrypted, err := Decrypt(string(output), privateKey)
-	// if err != nil {
-	// 	return err
-	// }
-	//
-	// output = []byte(decrypted)
-
-	if _, err := w.Write(output); err != nil {
+	if _, err := out.Write(output); err != nil {
 		return err
 	}
 
@@ -112,8 +83,6 @@ func NewSSHClient(
 				if err := knownhosts.WriteKnownHost(khHandle, hostname, remote, key); err != nil {
 					return fmt.Errorf("failed to write to known hosts: %w", err)
 				}
-
-				fmt.Printf("added host %s to known hosts\n", hostname)
 			}
 
 			return nil

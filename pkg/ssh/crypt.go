@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
+	"fmt"
 
 	"github.com/charmbracelet/ssh"
 	gossh "golang.org/x/crypto/ssh"
@@ -21,14 +22,14 @@ func (c Crypt) Encrypt(secret string, publicKey ssh.PublicKey) (string, error) {
 
 	parsedCryptoKey, ok := parsed.(gossh.CryptoPublicKey)
 	if !ok {
-		return "", errors.New("failed to parse parsed to ssh.CryptoPublicKey")
+		return "", errors.New("failed to parse public key to crypto public key")
 	}
 
 	pubCrypto := parsedCryptoKey.CryptoPublicKey()
 
 	pub, ok := pubCrypto.(*rsa.PublicKey)
 	if !ok {
-		return "", errors.New("failed to parse pubCrypto to *rsa.PublicKey")
+		return "", errors.New("failed to parse crypto public key to rsa public key")
 	}
 
 	encryptedSecret, err := rsa.EncryptOAEP(
@@ -39,7 +40,7 @@ func (c Crypt) Encrypt(secret string, publicKey ssh.PublicKey) (string, error) {
 		nil,
 	)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to encrypt secret: %w", err)
 	}
 
 	return base64.StdEncoding.EncodeToString(encryptedSecret), nil
@@ -48,7 +49,7 @@ func (c Crypt) Encrypt(secret string, publicKey ssh.PublicKey) (string, error) {
 func (c Crypt) Decrypt(cypherText string, privateKey *rsa.PrivateKey) (string, error) {
 	data, err := base64.StdEncoding.DecodeString(cypherText)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to decode cypher text: %w", err)
 	}
 
 	decrypted, err := rsa.DecryptOAEP(
@@ -59,7 +60,7 @@ func (c Crypt) Decrypt(cypherText string, privateKey *rsa.PrivateKey) (string, e
 		nil,
 	)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to decrypt cypher text: %w", err)
 	}
 
 	return string(decrypted), nil

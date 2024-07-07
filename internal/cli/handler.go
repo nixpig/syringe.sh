@@ -1,13 +1,13 @@
 package cli
 
 import (
-	"crypto/rsa"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/user"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/nixpig/syringe.sh/pkg"
@@ -16,10 +16,9 @@ import (
 	"github.com/spf13/pflag"
 	gossh "golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
-	"golang.org/x/term"
 )
 
-func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
+func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		var authMethod gossh.AuthMethod
 
@@ -44,104 +43,45 @@ func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 
 		sshAgentClient, err := ssh.NewSSHAgentClient(sshAuthSock)
 		if err != nil {
-			fmt.Println("unable to connect to agent, falling back to identity")
+			cmd.Println("unable to connect to agent, falling back to identity")
 			authMethod, err = ssh.IdentityAuthMethod(identity)
 			if err != nil {
 				return err
 			}
 		} else {
-
 			agentKeys, err := sshAgentClient.List()
 			if err != nil {
-				return fmt.Errorf("failed to list identities in ssh agent: %w", err)
+				return fmt.Errorf("failed to get identities from ssh agent: %w", err)
+			}
+
+			publicKey, err := ssh.GetPublicKey(fmt.Sprintf("%s.pub", identity))
+			if err != nil {
+				return fmt.Errorf("failed to get public key: %w", err)
 			}
 
 			// if the agent doesn't already contain the identity, then add it
-			// iterate over the keys in the agent and compare them to ${identity}.pub to determine which key
-			// pass that key's signer into the auth method further down (instead of using _all_ the keys' signers)
-			var keyToUse *agent.Key
-			for _, agentKey := range agentKeys {
-				// compare each key to ${identity}.pub to determine if key provided by identity is in the agent
-				publicKeyOnFile, err := os.ReadFile(fmt.Sprintf("%s.pub", identity))
+			if i := slices.IndexFunc(agentKeys, func(agentKey *agent.Key) bool {
+				return string(agentKey.Marshal()) == string(publicKey.Marshal())
+			}); i == -1 {
+				privateKey, err := ssh.GetPrivateKey(identity, cmd.OutOrStdout())
 				if err != nil {
-					return fmt.Errorf("failed to read public key from filesystem: %w", err)
-				}
-
-				parsedPublicKeyOnFile, _, _, _, err := gossh.ParseAuthorizedKey(publicKeyOnFile)
-				if err != nil {
-					return fmt.Errorf("failed to parse public key from filesystem: %w", err)
-				}
-
-				if string(agentKey.Marshal()) == string(parsedPublicKeyOnFile.Marshal()) {
-					keyToUse = agentKey
-					break
-				}
-			}
-
-			if keyToUse == nil {
-				var privateKey *rsa.PrivateKey
-				privateKey, err = ssh.GetPrivateKey(identity)
-				if err != nil {
-					if _, ok := err.(*gossh.PassphraseMissingError); !ok {
-						return fmt.Errorf("failed to read private key from identity: %w", err)
-					}
-
-					cmd.Print(fmt.Sprintf("Enter passphrase for %s: ", identity))
-					passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
-					if err != nil {
-						return fmt.Errorf("failed to read password: %w", err)
-					}
-
-					privateKey, err = ssh.GetPrivateKeyWithPassphrase(identity, string(passphrase))
-					if err != nil {
-						return fmt.Errorf("failed to read private key: %w", err)
-					}
+					return fmt.Errorf("failed to read private key: %w", err)
 				}
 
 				if err := sshAgentClient.Add(agent.AddedKey{PrivateKey: privateKey}); err != nil {
-					fmt.Println(fmt.Errorf("failed to add key to agent: %w", err))
-					fmt.Println("falling back to identity..???")
+					return fmt.Errorf("failed to add key to agent: %w", err)
 				}
-
-				// TODO: how do we get the 'added key' back out
 			}
-
-			// if we fail to add to agent (i.e. it's still empty), then fallback to identity
 
 			sshAgentClientSigners, err := sshAgentClient.Signers()
 			if err != nil {
 				return fmt.Errorf("failed to get signers from ssh client: %w", err)
 			}
 
-			var signersFunc = func() ([]gossh.Signer, error) {
-				var signers []gossh.Signer
-
-				for _, signer := range sshAgentClientSigners {
-
-					publicKeyOnFile, err := os.ReadFile(fmt.Sprintf("%s.pub", identity))
-					if err != nil {
-						return nil, fmt.Errorf("failed to read public key from filesystem: %w", err)
-					}
-
-					parsedPublicKeyOnFile, _, _, _, err := gossh.ParseAuthorizedKey(publicKeyOnFile)
-					if err != nil {
-						return nil, fmt.Errorf("failed to parse public key from filesystem: %w", err)
-					}
-
-					if string(parsedPublicKeyOnFile.Marshal()) == string(signer.PublicKey().Marshal()) {
-						fmt.Println("found signer...")
-						signers = append(signers, signer)
-					}
-				}
-
-				if len(signers) == 0 {
-					return nil, errors.New("no valid signers in agent")
-				}
-
-				return signers, nil
-			}
-
-			authMethod, err = ssh.AgentAuthMethod(signersFunc)
+			authMethod, err = ssh.AgentAuthMethod(
+				// use only signer for the specified identity key
+				newSignersFunc(publicKey, sshAgentClientSigners),
+			)
 			if err != nil {
 				return err
 			}
@@ -165,7 +105,8 @@ func NewHandlerCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
 		defer client.Close()
 
 		sshcmd := buildCommand(cmd, args)
-		if err := client.Run(sshcmd, cmdOut); err != nil {
+
+		if err := client.Run(sshcmd, out); err != nil {
 			return err
 		}
 
@@ -228,4 +169,22 @@ func addIdentityToSSHConfig(identity string) error {
 	}
 
 	return nil
+}
+
+func newSignersFunc(publicKey gossh.PublicKey, agentSigners []gossh.Signer) func() ([]gossh.Signer, error) {
+	return func() ([]gossh.Signer, error) {
+		var signers []gossh.Signer
+
+		for _, signer := range agentSigners {
+			if string(publicKey.Marshal()) == string(signer.PublicKey().Marshal()) {
+				signers = append(signers, signer)
+			}
+		}
+
+		if len(signers) == 0 {
+			return nil, errors.New("no valid signers in agent")
+		}
+
+		return signers, nil
+	}
 }

@@ -30,7 +30,7 @@ func NewHandlerUserRegister(userService UserService) pkg.CobraHandler {
 			return fmt.Errorf("failed to register user: %w", err)
 		}
 
-		cmd.Print(user)
+		cmd.Print(fmt.Sprintf("User '%s' registered successfully!", user.Username))
 
 		return nil
 	}

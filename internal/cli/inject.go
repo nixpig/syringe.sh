@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewHandlerInjectCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandler {
+func NewHandlerInjectCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		w := bytes.NewBufferString("")
 		injectHandler := NewHandlerCLI(host, port, w)
@@ -39,7 +39,7 @@ func NewHandlerInjectCLI(host string, port int, cmdOut io.Writer) pkg.CobraHandl
 
 		hostCmd := exec.Command(command, arguments...)
 		hostCmd.Env = append(hostCmd.Environ(), env...)
-		hostCmd.Stdout = cmdOut
+		hostCmd.Stdout = out
 
 		if err := hostCmd.Run(); err != nil {
 			cmd.SilenceUsage = true
