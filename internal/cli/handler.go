@@ -44,10 +44,14 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 		sshAgentClient, err := ssh.NewSSHAgentClient(sshAuthSock)
 		if err != nil {
 			cmd.Println("unable to connect to agent, falling back to identity")
-			authMethod, err = ssh.IdentityAuthMethod(identity)
+
+			signer, err := ssh.GetSigner(identity, cmd.OutOrStderr())
 			if err != nil {
 				return err
 			}
+
+			authMethod = gossh.PublicKeys(signer)
+
 		} else {
 			agentKeys, err := sshAgentClient.List()
 			if err != nil {
@@ -63,7 +67,7 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 			if i := slices.IndexFunc(agentKeys, func(agentKey *agent.Key) bool {
 				return string(agentKey.Marshal()) == string(publicKey.Marshal())
 			}); i == -1 {
-				privateKey, err := ssh.GetPrivateKey(identity, cmd.OutOrStdout())
+				privateKey, err := ssh.GetPrivateKey(identity, cmd.OutOrStderr())
 				if err != nil {
 					return fmt.Errorf("failed to read private key: %w", err)
 				}
@@ -78,13 +82,10 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 				return fmt.Errorf("failed to get signers from ssh client: %w", err)
 			}
 
-			authMethod, err = ssh.AgentAuthMethod(
+			authMethod = gossh.PublicKeysCallback(
 				// use only signer for the specified identity key
 				newSignersFunc(publicKey, sshAgentClientSigners),
 			)
-			if err != nil {
-				return err
-			}
 		}
 
 		if err := addIdentityToSSHConfig(identity); err != nil {

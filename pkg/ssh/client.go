@@ -10,7 +10,6 @@ import (
 	"github.com/skeema/knownhosts"
 	gossh "golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
-	"golang.org/x/term"
 )
 
 type SSHClient struct {
@@ -108,48 +107,4 @@ func NewSSHAgentClient(sshAuthSock string) (agent.ExtendedAgent, error) {
 	sshAgentClient := agent.NewClient(sshAgent)
 
 	return sshAgentClient, nil
-}
-
-func AgentAuthMethod(signersFunc func() ([]gossh.Signer, error)) (gossh.AuthMethod, error) {
-
-	// TODO: find the agent key which matches the provided identity
-	// TODO: create a signer from the key and use that for the publickeyscallback
-	// DO NOT JUST PASS IN EVERYTHING IN THE AGENT!!!
-
-	authMethod := gossh.PublicKeysCallback(signersFunc)
-
-	return authMethod, nil
-}
-
-func IdentityAuthMethod(identity string) (gossh.AuthMethod, error) {
-	var signer gossh.Signer
-
-	keyContents, err := os.ReadFile(identity)
-	if err != nil {
-		return nil, err
-	}
-
-	signer, err = gossh.ParsePrivateKey(keyContents)
-	if err != nil {
-		_, ok := err.(*gossh.PassphraseMissingError)
-		if !ok {
-			return nil, err
-		}
-
-		fmt.Printf("Enter passphrase for %s: ", identity)
-		passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
-		fmt.Print("\n")
-		if err != nil {
-			return nil, err
-		}
-
-		signer, err = gossh.ParsePrivateKeyWithPassphrase(keyContents, passphrase)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	authMethod := gossh.PublicKeys(signer)
-
-	return authMethod, nil
 }
