@@ -5,6 +5,9 @@
 
 Distributed database-per-user encrypted secrets management over SSH protocol.
 
+> **⚠️ This project is a work in progress and not yet ready for general use.**
+> Feel free to browse the code while it's being developed, but use at your own risk.
+
 SSH (Secure Shell) is a cryptographic network protocol for secure communication between computers over an unsecured network that uses keys for secure authentication. If you've ever `ssh`'d into a remote machine or used CLI tools like `git` then you've used SSH.
 
 syringe.sh uses SSH as the protocol for communication between the client (your machine) and the server (in the cloud).
