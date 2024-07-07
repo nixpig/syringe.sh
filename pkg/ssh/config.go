@@ -1,53 +1,95 @@
 package ssh
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/kevinburke/ssh_config"
 )
 
-type Config struct {
-	cfg  *ssh_config.Config
-	file *os.File
-}
+func AddIdentityToSSHConfig(identity string, f *os.File) error {
+	var err error
 
-func NewConfig(rw *os.File) (*Config, error) {
-	cfg, err := ssh_config.Decode(rw)
+	cfg, err := configFromFile(f)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &Config{
-		cfg:  cfg,
-		file: rw,
-	}, nil
-}
+	sshConfigHost, err := hostFromConfig(cfg, os.Getenv("APP_HOST"), false)
+	if err == nil {
+		if hostHasIdentity(sshConfigHost, identity) {
+			return nil
+		}
 
-func (c *Config) Write() error {
-
-	// TODO: backup config before truncating?
-
-	if err := c.file.Truncate(0); err != nil {
-		return fmt.Errorf("failed to zero out ssh config file: %w", err)
+		addIdentityToHost(sshConfigHost, identity)
+	} else {
+		if err := addHost(
+			cfg,
+			os.Getenv("APP_HOST"),
+			identity,
+		); err != nil {
+			return err
+		}
 	}
 
-	if _, err := c.file.Seek(0, 0); err != nil {
-		return fmt.Errorf("failed to get to beginning of config file: %w", err)
-	}
-
-	if _, err := c.file.WriteString(c.cfg.String()); err != nil {
+	if err := writeConfig(cfg, f); err != nil {
 		return fmt.Errorf("failed to write ssh config to file: %w", err)
 	}
 
 	return nil
 }
 
-func (c *Config) GetHost(pattern string, allowWildcard bool) *ssh_config.Host {
+func ConfigFile() (*os.File, error) {
+	var f *os.File
+	var err error
+
+	f, err = os.OpenFile(filepath.Join(os.Getenv("HOME"), ".ssh", "config"), os.O_RDWR, 0600)
+	if err != nil {
+		f, err = os.OpenFile(filepath.Join("/etc", "ssh", "ssh_config"), os.O_RDWR, 0600)
+		if err != nil {
+			return nil, errors.New("failed to open ssh config file")
+		}
+	}
+
+	return f, nil
+}
+
+func writeConfig(cfg *ssh_config.Config, f *os.File) error {
+	if err := f.Truncate(0); err != nil {
+		return fmt.Errorf("failed to zero out ssh config file: %w", err)
+	}
+
+	if _, err := f.Seek(0, 0); err != nil {
+		return fmt.Errorf("failed to get to beginning of config file: %w", err)
+	}
+
+	if _, err := f.WriteString(cfg.String()); err != nil {
+		return fmt.Errorf("failed to write ssh config to file: %w", err)
+	}
+
+	return nil
+}
+
+func configFromFile(f *os.File) (*ssh_config.Config, error) {
+	cfg, err := ssh_config.Decode(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
+func hostFromConfig(
+	cfg *ssh_config.Config,
+	pattern string,
+	allowWildcard bool,
+) (*ssh_config.Host, error) {
 	var sshConfigHost *ssh_config.Host
 
-	for _, h := range c.cfg.Hosts {
+	for _, h := range cfg.Hosts {
 		if h.Matches(pattern) {
 			if !allowWildcard && h.Matches("*") {
 				continue
@@ -58,10 +100,14 @@ func (c *Config) GetHost(pattern string, allowWildcard bool) *ssh_config.Host {
 		}
 	}
 
-	return sshConfigHost
+	if sshConfigHost != nil {
+		return sshConfigHost, nil
+	}
+
+	return nil, errors.New("host not in config")
 }
 
-func (c *Config) HostHasIdentity(host *ssh_config.Host, identity string) bool {
+func hostHasIdentity(host *ssh_config.Host, identity string) bool {
 	var hasIdentity bool
 
 	// check if host contains identity, if not then add to host
@@ -99,7 +145,7 @@ func (c *Config) HostHasIdentity(host *ssh_config.Host, identity string) bool {
 	return hasIdentity
 }
 
-func (c *Config) AddIdentityToHost(host *ssh_config.Host, identity string) {
+func addIdentityToHost(host *ssh_config.Host, identity string) {
 	identityNode := &ssh_config.KV{
 		Key:   "IdentityFile",
 		Value: identity,
@@ -108,7 +154,7 @@ func (c *Config) AddIdentityToHost(host *ssh_config.Host, identity string) {
 	host.Nodes = append(host.Nodes, identityNode)
 }
 
-func (c *Config) AddHost(name, identity string) error {
+func addHost(cfg *ssh_config.Config, name, identity string) error {
 	pattern, err := ssh_config.NewPattern(name)
 	if err != nil {
 		return err
@@ -126,7 +172,7 @@ func (c *Config) AddHost(name, identity string) error {
 		Nodes:    nodes,
 	}
 
-	c.cfg.Hosts = append(c.cfg.Hosts, sshConfigHost)
+	cfg.Hosts = append(cfg.Hosts, sshConfigHost)
 
 	return nil
 }
