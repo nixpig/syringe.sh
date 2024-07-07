@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"crypto/rsa"
 	"errors"
 	"fmt"
 	"io"
@@ -20,6 +21,7 @@ import (
 func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		var authMethod gossh.AuthMethod
+		var privateKey *rsa.PrivateKey
 
 		currentUser, err := user.Current()
 		if err != nil || currentUser.Username == "" {
@@ -66,7 +68,7 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 			if i := slices.IndexFunc(agentKeys, func(agentKey *agent.Key) bool {
 				return string(agentKey.Marshal()) == string(publicKey.Marshal())
 			}); i == -1 {
-				privateKey, err := ssh.GetPrivateKey(identity, cmd.OutOrStderr())
+				privateKey, err = ssh.GetPrivateKey(identity, cmd.OutOrStderr())
 				if err != nil {
 					return fmt.Errorf("failed to read private key: %w", err)
 				}
@@ -124,10 +126,24 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 				fmt.Println("encrypt for set...")
 
 			case "get":
-				fmt.Println("decrypt for get...")
-				// decrypt
-				// who knows how we get the value to decrypt??
-				// maybe some sort of 'decrypting writer' to pass to client run??
+				sshcmd := buildCommand(cmd, args)
+
+				privateKey, err = ssh.GetPrivateKey(identity, cmd.OutOrStderr())
+				if err != nil {
+					return fmt.Errorf("failed to read private key: %w", err)
+				}
+
+				dout := DecryptedOutput{
+					w:          out,
+					decryptor:  ssh.Crypt{},
+					privateKey: privateKey,
+				}
+
+				if err := client.Run(sshcmd, dout); err != nil {
+					return err
+				}
+
+				return nil
 			}
 		}
 
@@ -144,6 +160,34 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 
 		return nil
 	}
+}
+
+type Decryptor interface {
+	Decrypt(cypherText string, privateKey *rsa.PrivateKey) (string, error)
+}
+
+type DecryptedOutput struct {
+	w          io.Writer
+	decryptor  Decryptor
+	privateKey *rsa.PrivateKey
+}
+
+func (d DecryptedOutput) Write(p []byte) (int, error) {
+	decrypted, err := d.decryptor.Decrypt(string(p), d.privateKey)
+	if err != nil {
+		return 0, err
+	}
+
+	b, err := d.w.Write([]byte(decrypted))
+	if err != nil {
+		return b, err
+	}
+
+	if len([]byte(decrypted)) != b {
+		return b, io.ErrShortWrite
+	}
+
+	return b, nil
 }
 
 func buildCommand(cmd *cobra.Command, args []string) string {

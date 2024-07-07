@@ -48,6 +48,8 @@ func GetPrivateKey(path string, out io.Writer) (*rsa.PrivateKey, error) {
 			return nil, fmt.Errorf("failed to read password: %w", err)
 		}
 
+		out.Write([]byte("\n"))
+
 		key, err = gossh.ParseRawPrivateKeyWithPassphrase(fc, []byte(passphrase))
 		if err != nil {
 			return nil, err

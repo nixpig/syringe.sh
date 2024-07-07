@@ -40,7 +40,7 @@ func (c Crypt) Encrypt(secret string, publicKey ssh.PublicKey) (string, error) {
 		nil,
 	)
 	if err != nil {
-		return "", fmt.Errorf("failed to encrypt secret: %w", err)
+		return "", err
 	}
 
 	return base64.StdEncoding.EncodeToString(encryptedSecret), nil

@@ -1,9 +1,6 @@
 package secret
 
 import (
-	"crypto/rsa"
-
-	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/pkg/serrors"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 )
@@ -61,11 +58,6 @@ type SecretService interface {
 type SecretServiceImpl struct {
 	store    SecretStore
 	validate validation.Validator
-}
-
-type Cryptor interface {
-	Encrypt(secret string, publicKey ssh.PublicKey) (string, error)
-	Decrypt(cypherText string, privateKey *rsa.PrivateKey) (string, error)
 }
 
 func NewSecretServiceImpl(
