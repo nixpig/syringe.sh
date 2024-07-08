@@ -12,9 +12,7 @@ import (
 	gossh "golang.org/x/crypto/ssh"
 )
 
-type Crypt struct{}
-
-func (c Crypt) Encrypt(secret string, publicKey ssh.PublicKey) (string, error) {
+func Encrypt(secret string, publicKey ssh.PublicKey) (string, error) {
 	parsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(gossh.MarshalAuthorizedKey(publicKey)))
 	if err != nil {
 		return "", err
@@ -46,7 +44,7 @@ func (c Crypt) Encrypt(secret string, publicKey ssh.PublicKey) (string, error) {
 	return base64.StdEncoding.EncodeToString(encryptedSecret), nil
 }
 
-func (c Crypt) Decrypt(cypherText string, privateKey *rsa.PrivateKey) (string, error) {
+func Decrypt(cypherText string, privateKey *rsa.PrivateKey) (string, error) {
 	data, err := base64.StdEncoding.DecodeString(cypherText)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode cypher text: %w", err)

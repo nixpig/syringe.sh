@@ -116,14 +116,31 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 		if cmd.Parent().Use == "secret" {
 			switch cmd.CalledAs() {
 			case "set":
-				crypt := ssh.Crypt{}
-				// encrypt secret at args[1]
-				encryptedSecret, err := crypt.Encrypt(args[1], publicKey)
+				encryptedSecret, err := ssh.Encrypt(args[1], publicKey)
 				if err != nil {
 					return fmt.Errorf("failed to encrypt secret: %w", err)
 				}
 				args[1] = encryptedSecret
-				fmt.Println("encrypt for set...")
+
+			case "list":
+				sshcmd := buildCommand(cmd, args)
+
+				privateKey, err = ssh.GetPrivateKey(identity, cmd.OutOrStderr())
+				if err != nil {
+					return fmt.Errorf("failed to read private key: %w", err)
+				}
+
+				dout := DecryptedOutput{
+					out:        out,
+					decrypt:    listDecryptor,
+					privateKey: privateKey,
+				}
+
+				if err := client.Run(sshcmd, dout); err != nil {
+					return err
+				}
+
+				return nil
 
 			case "get":
 				sshcmd := buildCommand(cmd, args)
@@ -134,8 +151,8 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 				}
 
 				dout := DecryptedOutput{
-					w:          out,
-					decryptor:  ssh.Crypt{},
+					out:        out,
+					decrypt:    ssh.Decrypt,
 					privateKey: privateKey,
 				}
 
@@ -148,6 +165,7 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 		}
 
 		if cmd.CalledAs() == "inject" {
+			// TODO: decrypt for secret injecting
 			fmt.Println("decrypt for inject...")
 			// decrypt
 		}
@@ -162,23 +180,39 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 	}
 }
 
-type Decryptor interface {
-	Decrypt(cypherText string, privateKey *rsa.PrivateKey) (string, error)
+func listDecryptor(cypherText string, privateKey *rsa.PrivateKey) (string, error) {
+	var err error
+
+	lines := strings.Split(cypherText, "\n")
+	for i, l := range lines {
+		parts := strings.SplitN(l, "=", 2)
+		parts[1], err = ssh.Decrypt(parts[1], privateKey)
+		if err != nil {
+			return "", err
+		}
+
+		lines[i] = strings.Join(parts, "=")
+	}
+
+	return strings.Join(lines, "\n"), nil
 }
 
+type Decryptor func(cypherText string, privateKey *rsa.PrivateKey) (string, error)
+
 type DecryptedOutput struct {
-	w          io.Writer
-	decryptor  Decryptor
-	privateKey *rsa.PrivateKey
+	out                   io.Writer
+	privateKey            *rsa.PrivateKey
+	decrypt               Decryptor
+	encryptedSecretParser io.ReadWriter
 }
 
 func (d DecryptedOutput) Write(p []byte) (int, error) {
-	decrypted, err := d.decryptor.Decrypt(string(p), d.privateKey)
+	decrypted, err := d.decrypt(string(p), d.privateKey)
 	if err != nil {
 		return 0, err
 	}
 
-	b, err := d.w.Write([]byte(decrypted))
+	b, err := d.out.Write([]byte(decrypted))
 	if err != nil {
 		return b, err
 	}
