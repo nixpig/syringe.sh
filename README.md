@@ -33,13 +33,15 @@ Secrets can only be decrypted locally using your private key. Without your priva
   - [?] Multiple identities for host - prompt user to choose which to use (have a default - add a flag to just use default (or specific) without prompt)
 - [x] Use SSH agent by default - check if key is in agent, if key isn't already in agent when loaded, prompt user to add to agent (add a flag for this too!)
 - [ ] Encryption and signing of secrets
-  - [ ] RSA
+  - [x] RSA
   - [x] Encrypt on client before sending
   - [ ] Decrypt on client
-    - [ ] secret get
-    - [ ] secret list
+    - [x] secret get
+    - [x] secret list
     - [ ] inject
+- [ ] Inject into command or inject into environment
 - [ ] Add 'syringe config' command to update config file
+- [ ] Formatted and --plain output of commands, e.g. table when listing secrets
 - [ ] Add unit tests for other areas
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
   - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?

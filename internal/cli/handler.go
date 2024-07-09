@@ -113,6 +113,27 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 
 		defer client.Close()
 
+		if cmd.CalledAs() == "inject" {
+			sshcmd := buildCommand(cmd, args)
+
+			privateKey, err = ssh.GetPrivateKey(identity, cmd.OutOrStderr())
+			if err != nil {
+				return fmt.Errorf("failed to read private key: %w", err)
+			}
+
+			dout := DecryptedOutput{
+				out:        out,
+				decrypt:    injectDecryptor,
+				privateKey: privateKey,
+			}
+
+			if err := client.Run(sshcmd, dout); err != nil {
+				return err
+			}
+
+			return nil
+		}
+
 		if cmd.Parent().Use == "secret" {
 			switch cmd.CalledAs() {
 			case "set":
@@ -164,18 +185,6 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 			}
 		}
 
-		if cmd.CalledAs() == "inject" {
-			// TODO: decrypt for secret injecting
-			fmt.Println("decrypt for inject...")
-			// decrypt
-		}
-
-		sshcmd := buildCommand(cmd, args)
-
-		if err := client.Run(sshcmd, out); err != nil {
-			return err
-		}
-
 		return nil
 	}
 }
@@ -195,6 +204,23 @@ func listDecryptor(cypherText string, privateKey *rsa.PrivateKey) (string, error
 	}
 
 	return strings.Join(lines, "\n"), nil
+}
+
+func injectDecryptor(cypherText string, privateKey *rsa.PrivateKey) (string, error) {
+	var err error
+
+	lines := strings.Split(cypherText, " ")
+	for i, l := range lines {
+		parts := strings.SplitN(l, "=", 2)
+		parts[1], err = ssh.Decrypt(parts[1], privateKey)
+		if err != nil {
+			return "", err
+		}
+
+		lines[i] = strings.Join(parts, "=")
+	}
+
+	return strings.Join(lines, " "), nil
 }
 
 type Decryptor func(cypherText string, privateKey *rsa.PrivateKey) (string, error)
