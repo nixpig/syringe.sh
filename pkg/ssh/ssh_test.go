@@ -61,6 +61,7 @@ func testEncryptDecryptHappyPath(t *testing.T) {
 		encryptedSecret,
 		privateKey,
 	)
+	require.NoError(t, err)
 
 	b, err := io.ReadAll(w)
 	require.NoError(t, err)
@@ -95,6 +96,7 @@ func testEncryptDecryptWithPassphraseHappyPath(t *testing.T) {
 		encryptedSecret,
 		privateKey,
 	)
+	require.NoError(t, err)
 
 	_, err = io.ReadAll(w)
 	require.NoError(t, err)
