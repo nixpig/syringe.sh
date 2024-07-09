@@ -185,6 +185,11 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 			}
 		}
 
+		sshcmd := buildCommand(cmd, args)
+		if err := client.Run(sshcmd, out); err != nil {
+			return err
+		}
+
 		return nil
 	}
 }
