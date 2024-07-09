@@ -11,16 +11,12 @@ import (
 	"github.com/nixpig/syringe.sh/test"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	gossh "golang.org/x/crypto/ssh"
 )
-
-// secret_value
-// eW1Ohpp+p9rNFZiRu03hE+CpEaNOEVnXWsLUHtb0s8SUsvIyUnQt531XGvK67jwU2SVJIt4sSZLTWnp8iLOePTTzQLVF9AcSWXPTpQSWq7XgS9B91GIK+JxPaLMQ4PAE4w8J9F5K/xuLIO763EzUcGfFBEqJlHxz+h9tRJIxpoNuxV9vjf7s+dNnFSfIKOeFA47e+sG1FhNZhWPJk5Xqgmxx/RjwqW+RcLIciUokG5mm9yROpe8I5JPJB4DZsFFZPnPaKmdUQqUnfSfQRHYwOezVzU3I45KGvYuTjO9Atnk6OjjWHj4x6jlA3yvrU1RKc5ofv+YZPPjZa+2TqkmEjJLa1Dto5xjrmwl/vti1j3S8Hp8B6hnniJemzzcSuhkU7vTUivxPjM+mC6IN93sDzn5y8eUO4Gpuz/gkv4O1FJu0ZpDd5S+KMhQPWku7sLv+cv3a2PWAKY+zhMJq9l0MXzLu0W8Aj7OQpboMs+SC3AuP6PWf5RxcSd1vHD+PtYla
 
 func TestSSH(t *testing.T) {
 	scenarios := map[string]func(t *testing.T){
 		"test encrypt/decrypt happy path": testEncryptDecryptHappyPath,
-
-		// TODO: test with correct password and valid contents!!!
 
 		"test get private key no password happy path":               testGetPrivateKeyNoPasswordHappyPath,
 		"test get private key with password happy path":             testGetPrivateKeyWithPasswordHappyPath,
@@ -31,7 +27,9 @@ func TestSSH(t *testing.T) {
 		"test get private key with invalid contents error":          testGetPrivateKeyWithInvalidContentsError,
 		"test get private key with password invalid contents error": testGetPrivateKeyWithPasswordInvalidContentsError,
 
+		"test get public key happy path":                  testGetPublicKeyHappyPath,
 		"test get public key with invalid filepath error": testGetPublicKeyWithInvalidFilepathError,
+		"test get public key with invalid contents error": testGetPublicKeyWithInvalidContentsError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -182,4 +180,18 @@ func testGetPrivateKeyWithPasswordHappyPath(t *testing.T) {
 	require.IsType(t, &rsa.PrivateKey{}, key)
 
 	mockTermReadPassword.Unset()
+}
+
+func testGetPublicKeyWithInvalidContentsError(t *testing.T) {
+	key, err := ssh.GetPublicKey("../../test/crypt_test_invalid.pub")
+
+	require.Empty(t, key)
+	require.EqualError(t, err, "ssh: no key found")
+}
+
+func testGetPublicKeyHappyPath(t *testing.T) {
+	key, err := ssh.GetPublicKey("../../test/crypt_test_rsa.pub")
+
+	require.NoError(t, err)
+	require.Implements(t, (*gossh.PublicKey)(nil), key)
 }
