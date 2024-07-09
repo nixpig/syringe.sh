@@ -25,7 +25,7 @@ func GetPublicKey(path string) (gossh.PublicKey, error) {
 	return publicKey, nil
 }
 
-func GetPrivateKey(path string, out io.Writer) (*rsa.PrivateKey, error) {
+func GetPrivateKey(path string, out io.Writer, pr PasswordReader) (*rsa.PrivateKey, error) {
 	var err error
 
 	fc, err := os.ReadFile(path)
@@ -43,7 +43,7 @@ func GetPrivateKey(path string, out io.Writer) (*rsa.PrivateKey, error) {
 
 		out.Write([]byte(fmt.Sprintf("Enter passphrase for %s: ", path)))
 
-		passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
+		passphrase, err := pr(int(os.Stdin.Fd()))
 		if err != nil {
 			return nil, fmt.Errorf("failed to read password: %w", err)
 		}
@@ -113,3 +113,5 @@ func NewSignersFunc(publicKey gossh.PublicKey, agentSigners []gossh.Signer) func
 		return signers, nil
 	}
 }
+
+type PasswordReader func(fd int) ([]byte, error)

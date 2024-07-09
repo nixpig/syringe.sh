@@ -16,6 +16,7 @@ import (
 	"github.com/spf13/pflag"
 	gossh "golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
+	"golang.org/x/term"
 )
 
 func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
@@ -68,7 +69,7 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 			if i := slices.IndexFunc(agentKeys, func(agentKey *agent.Key) bool {
 				return string(agentKey.Marshal()) == string(publicKey.Marshal())
 			}); i == -1 {
-				privateKey, err = ssh.GetPrivateKey(identity, cmd.OutOrStderr())
+				privateKey, err = ssh.GetPrivateKey(identity, cmd.OutOrStderr(), term.ReadPassword)
 				if err != nil {
 					return fmt.Errorf("failed to read private key: %w", err)
 				}
@@ -116,7 +117,7 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 		if cmd.CalledAs() == "inject" {
 			sshcmd := buildCommand(cmd, args)
 
-			privateKey, err = ssh.GetPrivateKey(identity, cmd.OutOrStderr())
+			privateKey, err = ssh.GetPrivateKey(identity, cmd.OutOrStderr(), term.ReadPassword)
 			if err != nil {
 				return fmt.Errorf("failed to read private key: %w", err)
 			}
@@ -146,7 +147,7 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 			case "list":
 				sshcmd := buildCommand(cmd, args)
 
-				privateKey, err = ssh.GetPrivateKey(identity, cmd.OutOrStderr())
+				privateKey, err = ssh.GetPrivateKey(identity, cmd.OutOrStderr(), term.ReadPassword)
 				if err != nil {
 					return fmt.Errorf("failed to read private key: %w", err)
 				}
@@ -166,7 +167,7 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 			case "get":
 				sshcmd := buildCommand(cmd, args)
 
-				privateKey, err = ssh.GetPrivateKey(identity, cmd.OutOrStderr())
+				privateKey, err = ssh.GetPrivateKey(identity, cmd.OutOrStderr(), term.ReadPassword)
 				if err != nil {
 					return fmt.Errorf("failed to read private key: %w", err)
 				}

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/nixpig/syringe.sh/pkg/ssh"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,7 +15,10 @@ import (
 
 func TestSSH(t *testing.T) {
 	scenarios := map[string]func(t *testing.T){
-		"test encrypt/decrypt happy path": testEncryptDecryptHappyPath,
+		"test encrypt/decrypt happy path":                      testEncryptDecryptHappyPath,
+		"test encrypt/decrypt with passphrase happy path":      testEncryptDecryptWithPassphraseHappyPath,
+		"test get private key with empty passphrase error":     testGetPrivateKeyEmptyPassphraseError,
+		"test get private key with incorrect passphrase error": testGetPrivateKeyIncorrectPassphraseError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -24,6 +28,18 @@ func TestSSH(t *testing.T) {
 	}
 
 }
+
+type MockTerm struct {
+	mock.Mock
+}
+
+func (mt *MockTerm) ReadPassword(fd int) ([]byte, error) {
+	args := mt.Called(fd)
+
+	return args.Get(0).([]byte), args.Error(1)
+}
+
+var mockTerm = new(MockTerm)
 
 func testEncryptDecryptHappyPath(t *testing.T) {
 	publicKey, err := ssh.GetPublicKey("../../test/crypt_test_rsa.pub")
@@ -38,7 +54,7 @@ func testEncryptDecryptHappyPath(t *testing.T) {
 
 	w := bytes.NewBufferString("")
 
-	privateKey, err := ssh.GetPrivateKey("../../test/crypt_test_rsa", w)
+	privateKey, err := ssh.GetPrivateKey("../../test/crypt_test_rsa", w, mockTerm.ReadPassword)
 	require.NoError(t, err)
 
 	decryptedSecret, err := ssh.Decrypt(
@@ -55,4 +71,85 @@ func testEncryptDecryptHappyPath(t *testing.T) {
 		"secret_value",
 		decryptedSecret,
 	)
+}
+
+func testEncryptDecryptWithPassphraseHappyPath(t *testing.T) {
+	publicKey, err := ssh.GetPublicKey("../../test/crypt_test_pass_rsa.pub")
+	require.NoError(t, err)
+
+	encryptedSecret, err := ssh.Encrypt(
+		"secret_value",
+		publicKey,
+	)
+
+	require.NoError(t, err)
+
+	w := bytes.NewBufferString("")
+
+	mockTermReadPassword := mockTerm.On("ReadPassword", mock.Anything).Return([]byte("test"), nil)
+
+	privateKey, err := ssh.GetPrivateKey("../../test/crypt_test_pass_rsa", w, mockTerm.ReadPassword)
+	require.NoError(t, err)
+
+	decryptedSecret, err := ssh.Decrypt(
+		encryptedSecret,
+		privateKey,
+	)
+
+	_, err = io.ReadAll(w)
+	require.NoError(t, err)
+
+	require.Equal(
+		t,
+		"secret_value",
+		decryptedSecret,
+	)
+
+	mockTermReadPassword.Unset()
+}
+
+func testGetPrivateKeyEmptyPassphraseError(t *testing.T) {
+	publicKey, err := ssh.GetPublicKey("../../test/crypt_test_pass_rsa.pub")
+	require.NoError(t, err)
+
+	_, err = ssh.Encrypt(
+		"secret_value",
+		publicKey,
+	)
+
+	require.NoError(t, err)
+
+	w := bytes.NewBufferString("")
+
+	mockTermReadPassword := mockTerm.On("ReadPassword", mock.Anything).Return([]byte(""), nil)
+
+	key, err := ssh.GetPrivateKey("../../test/crypt_test_pass_rsa", w, mockTerm.ReadPassword)
+
+	require.EqualError(t, err, "bcrypt_pbkdf: empty password")
+	require.Empty(t, key)
+
+	mockTermReadPassword.Unset()
+}
+
+func testGetPrivateKeyIncorrectPassphraseError(t *testing.T) {
+	publicKey, err := ssh.GetPublicKey("../../test/crypt_test_pass_rsa.pub")
+	require.NoError(t, err)
+
+	_, err = ssh.Encrypt(
+		"secret_value",
+		publicKey,
+	)
+
+	require.NoError(t, err)
+
+	w := bytes.NewBufferString("")
+
+	mockTermReadPassword := mockTerm.On("ReadPassword", mock.Anything).Return([]byte("incorrect_passphrase"), nil)
+
+	key, err := ssh.GetPrivateKey("../../test/crypt_test_pass_rsa", w, mockTerm.ReadPassword)
+
+	require.EqualError(t, err, "x509: decryption password incorrect")
+	require.Empty(t, key)
+
+	mockTermReadPassword.Unset()
 }
