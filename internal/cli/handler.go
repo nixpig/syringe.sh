@@ -231,10 +231,9 @@ func injectDecryptor(cypherText string, privateKey *rsa.PrivateKey) (string, err
 type Decryptor func(cypherText string, privateKey *rsa.PrivateKey) (string, error)
 
 type DecryptedOutput struct {
-	out                   io.Writer
-	privateKey            *rsa.PrivateKey
-	decrypt               Decryptor
-	encryptedSecretParser io.ReadWriter
+	out        io.Writer
+	privateKey *rsa.PrivateKey
+	decrypt    Decryptor
 }
 
 func (d DecryptedOutput) Write(p []byte) (int, error) {

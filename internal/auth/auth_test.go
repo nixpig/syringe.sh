@@ -1,8 +1,6 @@
 package auth_test
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
 	"database/sql"
 	"errors"
 	"regexp"
@@ -11,9 +9,9 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/internal/auth"
 	"github.com/nixpig/syringe.sh/pkg/validation"
+	"github.com/nixpig/syringe.sh/test"
 	"github.com/stretchr/testify/require"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -47,32 +45,13 @@ func TestAuthInternalPkg(t *testing.T) {
 	}
 }
 
-func generatePublicKey() (ssh.PublicKey, error) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
-	if err != nil {
-		return nil, err
-	}
-
-	publicKey, err := gossh.NewPublicKey(&privateKey.PublicKey)
-	if err != nil {
-		return nil, err
-	}
-
-	charmPublicKey, ok := publicKey.(ssh.PublicKey)
-	if !ok {
-		return nil, errors.New("failed to cast public key")
-	}
-
-	return charmPublicKey, err
-}
-
 func testAuthUserWithMatchingKey(
 	t *testing.T,
 	mock sqlmock.Sqlmock,
 	db *sql.DB,
 	service auth.AuthService,
 ) {
-	key, err := generatePublicKey()
+	key, err := test.GeneratePublicKey()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}
@@ -113,12 +92,12 @@ func testAuthUserWithNonMatchingKey(
 	db *sql.DB,
 	service auth.AuthService,
 ) {
-	key1, err := generatePublicKey()
+	key1, err := test.GeneratePublicKey()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}
 
-	key2, err := generatePublicKey()
+	key2, err := test.GeneratePublicKey()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}
@@ -172,7 +151,7 @@ func testAuthUserWithNoKeys(
 				NewRows([]string{"id_", "user_id_", "ssh_public_key_", "created_at_"}),
 		)
 
-	key, err := generatePublicKey()
+	key, err := test.GeneratePublicKey()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}
@@ -199,7 +178,7 @@ func testAuthUserKeyParsingError(
 	db *sql.DB,
 	service auth.AuthService,
 ) {
-	key, err := generatePublicKey()
+	key, err := test.GeneratePublicKey()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}
@@ -244,7 +223,7 @@ func testAuthUserDBQueryError(
 		`)).WithArgs("janedoe").
 		WillReturnError(errors.New("database_error"))
 
-	key, err := generatePublicKey()
+	key, err := test.GeneratePublicKey()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}
@@ -265,7 +244,7 @@ func testAuthUserDBScanError(
 	db *sql.DB,
 	service auth.AuthService,
 ) {
-	key, err := generatePublicKey()
+	key, err := test.GeneratePublicKey()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}

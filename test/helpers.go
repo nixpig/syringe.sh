@@ -1,6 +1,14 @@
 package test
 
-import "fmt"
+import (
+	"crypto/rand"
+	"crypto/rsa"
+	"errors"
+	"fmt"
+
+	"github.com/charmbracelet/ssh"
+	gossh "golang.org/x/crypto/ssh"
+)
 
 func UnknownCommandErrorMsg(command, parent string) string {
 	return fmt.Sprintf("Error: unknown command \"%s\" for \"%s\"\n", command, parent)
@@ -44,4 +52,23 @@ func EnvironmentRemovedSuccessMsg(environment, project string) string {
 
 func EnvironmentRenamedSuccessMsg(name, newName, project string) string {
 	return fmt.Sprintf("Environment '%s' renamed to '%s' in project '%s'\n", name, newName, project)
+}
+
+func GeneratePublicKey() (ssh.PublicKey, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey, err := gossh.NewPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	charmPublicKey, ok := publicKey.(ssh.PublicKey)
+	if !ok {
+		return nil, errors.New("failed to cast public key")
+	}
+
+	return charmPublicKey, err
 }
