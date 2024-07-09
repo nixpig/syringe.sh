@@ -54,21 +54,21 @@ func EnvironmentRenamedSuccessMsg(name, newName, project string) string {
 	return fmt.Sprintf("Environment '%s' renamed to '%s' in project '%s'\n", name, newName, project)
 }
 
-func GeneratePublicKey() (ssh.PublicKey, error) {
+func GenerateKeyPair() (ssh.PublicKey, *rsa.PrivateKey, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	publicKey, err := gossh.NewPublicKey(&privateKey.PublicKey)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	charmPublicKey, ok := publicKey.(ssh.PublicKey)
 	if !ok {
-		return nil, errors.New("failed to cast public key")
+		return nil, nil, errors.New("failed to cast public key")
 	}
 
-	return charmPublicKey, err
+	return charmPublicKey, privateKey, err
 }

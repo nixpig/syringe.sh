@@ -51,7 +51,7 @@ func testAuthUserWithMatchingKey(
 	db *sql.DB,
 	service auth.AuthService,
 ) {
-	key, err := test.GeneratePublicKey()
+	key, _, err := test.GenerateKeyPair()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}
@@ -92,12 +92,12 @@ func testAuthUserWithNonMatchingKey(
 	db *sql.DB,
 	service auth.AuthService,
 ) {
-	key1, err := test.GeneratePublicKey()
+	key1, _, err := test.GenerateKeyPair()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}
 
-	key2, err := test.GeneratePublicKey()
+	key2, _, err := test.GenerateKeyPair()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}
@@ -151,7 +151,7 @@ func testAuthUserWithNoKeys(
 				NewRows([]string{"id_", "user_id_", "ssh_public_key_", "created_at_"}),
 		)
 
-	key, err := test.GeneratePublicKey()
+	key, _, err := test.GenerateKeyPair()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}
@@ -178,7 +178,7 @@ func testAuthUserKeyParsingError(
 	db *sql.DB,
 	service auth.AuthService,
 ) {
-	key, err := test.GeneratePublicKey()
+	key, _, err := test.GenerateKeyPair()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}
@@ -223,7 +223,7 @@ func testAuthUserDBQueryError(
 		`)).WithArgs("janedoe").
 		WillReturnError(errors.New("database_error"))
 
-	key, err := test.GeneratePublicKey()
+	key, _, err := test.GenerateKeyPair()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}
@@ -244,7 +244,7 @@ func testAuthUserDBScanError(
 	db *sql.DB,
 	service auth.AuthService,
 ) {
-	key, err := test.GeneratePublicKey()
+	key, _, err := test.GenerateKeyPair()
 	if err != nil {
 		t.Errorf("failed to generate public key: %s", err)
 	}
