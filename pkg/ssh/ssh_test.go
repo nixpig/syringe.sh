@@ -30,6 +30,8 @@ func TestSSH(t *testing.T) {
 		"test get public key happy path":                  testGetPublicKeyHappyPath,
 		"test get public key with invalid filepath error": testGetPublicKeyWithInvalidFilepathError,
 		"test get public key with invalid contents error": testGetPublicKeyWithInvalidContentsError,
+
+		"test get signer happy path": testGetSignerHappyPath,
 	}
 
 	for scenario, fn := range scenarios {
@@ -112,6 +114,7 @@ func testGetPrivateKeyWithInvalidFilepathError(t *testing.T) {
 	key, err := ssh.GetPrivateKey("some/invalid/filepath", w, mockTerm.ReadPassword)
 
 	require.Empty(t, key)
+	require.Empty(t, w.String())
 	require.EqualError(t, err, "open some/invalid/filepath: no such file or directory")
 }
 
@@ -166,6 +169,7 @@ func testGetPrivateKeyNoPasswordHappyPath(t *testing.T) {
 	key, err := ssh.GetPrivateKey("../../test/crypt_test_rsa", w, mockTerm.ReadPassword)
 
 	require.NoError(t, err)
+	require.Empty(t, w.String())
 	require.IsType(t, &rsa.PrivateKey{}, key)
 }
 
@@ -194,4 +198,13 @@ func testGetPublicKeyHappyPath(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Implements(t, (*gossh.PublicKey)(nil), key)
+}
+
+func testGetSignerHappyPath(t *testing.T) {
+	w := bytes.NewBufferString("")
+	signer, err := ssh.GetSigner("../../test/crypt_test_rsa", w)
+	require.NoError(t, err)
+	require.Empty(t, w.String())
+
+	require.Implements(t, (*gossh.Signer)(nil), signer)
 }
