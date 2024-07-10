@@ -11,6 +11,8 @@ import (
 	"golang.org/x/term"
 )
 
+type PasswordReader func(fd int) ([]byte, error)
+
 func GetPublicKey(path string) (gossh.PublicKey, error) {
 	fc, err := os.ReadFile(path)
 	if err != nil {
@@ -113,5 +115,3 @@ func NewSignersFunc(publicKey gossh.PublicKey, agentSigners []gossh.Signer) func
 		return signers, nil
 	}
 }
-
-type PasswordReader func(fd int) ([]byte, error)

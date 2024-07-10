@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"errors"
-	"io"
 	"testing"
 
 	"github.com/nixpig/syringe.sh/pkg/ssh"
@@ -14,10 +13,8 @@ import (
 	gossh "golang.org/x/crypto/ssh"
 )
 
-func TestSSH(t *testing.T) {
+func TestSSHUtils(t *testing.T) {
 	scenarios := map[string]func(t *testing.T){
-		"test encrypt/decrypt happy path": testEncryptDecryptHappyPath,
-
 		"test get private key no password happy path":               testGetPrivateKeyNoPasswordHappyPath,
 		"test get private key with password happy path":             testGetPrivateKeyWithPasswordHappyPath,
 		"test get private key with empty passphrase error":          testGetPrivateKeyEmptyPassphraseError,
@@ -32,6 +29,8 @@ func TestSSH(t *testing.T) {
 		"test get public key with invalid contents error": testGetPublicKeyWithInvalidContentsError,
 
 		"test get signer happy path": testGetSignerHappyPath,
+
+		"test new signers func happy path": testNewSignersFuncHappyPath,
 	}
 
 	for scenario, fn := range scenarios {
@@ -53,35 +52,6 @@ func (mt *MockTerm) ReadPassword(fd int) ([]byte, error) {
 }
 
 var mockTerm = new(MockTerm)
-
-func testEncryptDecryptHappyPath(t *testing.T) {
-	publicKey, privateKey, err := test.GenerateKeyPair()
-	require.NoError(t, err)
-
-	encryptedSecret, err := ssh.Encrypt(
-		"secret_value",
-		publicKey,
-	)
-	require.NoError(t, err)
-
-	w := bytes.NewBufferString("")
-
-	decryptedSecret, err := ssh.Decrypt(
-		encryptedSecret,
-		privateKey,
-	)
-	require.NoError(t, err)
-
-	b, err := io.ReadAll(w)
-	require.NoError(t, err)
-	require.Empty(t, b)
-
-	require.Equal(
-		t,
-		"secret_value",
-		decryptedSecret,
-	)
-}
 
 func testGetPrivateKeyEmptyPassphraseError(t *testing.T) {
 	w := bytes.NewBufferString("")
@@ -207,4 +177,36 @@ func testGetSignerHappyPath(t *testing.T) {
 	require.Empty(t, w.String())
 
 	require.Implements(t, (*gossh.Signer)(nil), signer)
+}
+
+func testNewSignersFuncHappyPath(t *testing.T) {
+	publicKey, privateKey1, err := test.GenerateKeyPair()
+	require.NoError(t, err)
+	signer1, err := gossh.NewSignerFromKey(privateKey1)
+	require.NoError(t, err)
+
+	_, privateKey2, err := test.GenerateKeyPair()
+	require.NoError(t, err)
+	signer2, err := gossh.NewSignerFromKey(privateKey2)
+	require.NoError(t, err)
+
+	_, privateKey3, err := test.GenerateKeyPair()
+	require.NoError(t, err)
+	signer3, err := gossh.NewSignerFromKey(privateKey3)
+	require.NoError(t, err)
+
+	signers := []gossh.Signer{
+		signer1,
+		signer2,
+		signer3,
+	}
+
+	signersFunc := ssh.NewSignersFunc(publicKey, signers)
+
+	validSigners, err := signersFunc()
+
+	require.NoError(t, err)
+
+	require.Len(t, validSigners, 1)
+	require.Equal(t, signer1, validSigners[0])
 }
