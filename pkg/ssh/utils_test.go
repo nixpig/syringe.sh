@@ -24,6 +24,7 @@ func TestSSHUtils(t *testing.T) {
 		"test get private key with invalid contents error":          testGetPrivateKeyWithInvalidContentsError,
 		"test get private key with password invalid contents error": testGetPrivateKeyWithPasswordInvalidContentsError,
 
+		"test get signer happy path":                           testGetSignerHappyPath,
 		"test get signer no password happy path":               testGetSignerNoPasswordHappyPath,
 		"test get signer with password happy path":             testGetSignerWithPasswordHappyPath,
 		"test get signer with empty passphrase error":          testGetSignerEmptyPassphraseError,
@@ -36,8 +37,6 @@ func TestSSHUtils(t *testing.T) {
 		"test get public key happy path":                  testGetPublicKeyHappyPath,
 		"test get public key with invalid filepath error": testGetPublicKeyWithInvalidFilepathError,
 		"test get public key with invalid contents error": testGetPublicKeyWithInvalidContentsError,
-
-		"test get signer happy path": testGetSignerHappyPath,
 
 		"test new signers func happy path":       testNewSignersFuncHappyPath,
 		"test new signers func no signers error": testNewSignersFuncNoSignersError,
