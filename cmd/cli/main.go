@@ -48,20 +48,13 @@ func main() {
 	cmdSecret := secret.NewCmdSecret()
 
 	cmdSecretSet := secret.NewCmdSecretSet(handlerCLI)
-	cmdSecretSet.PreRunE = func(cmd *cobra.Command, args []string) error {
-		// encrypt in here
-		return nil
-	}
+	cmdSecretSet.PreRunE = cli.PreRunEEncrypt
 	cmdSecret.AddCommand(cmdSecretSet)
 
-	cmdSecretGet := secret.NewCmdSecretGet(handlerCLI)
-	cmdSecretGet.PreRunE = func(cmd *cobra.Command, args []string) error {
-		// decrypt in here
-		return nil
-	}
-	cmdSecret.AddCommand(cmdSecretGet)
+	cmdSecretList := secret.NewCmdSecretList(handlerCLI)
+	cmdSecret.AddCommand(cmdSecretList)
 
-	cmdSecret.AddCommand(secret.NewCmdSecretList(handlerCLI))
+	cmdSecret.AddCommand(secret.NewCmdSecretGet(handlerCLI))
 	cmdSecret.AddCommand(secret.NewCmdSecretRemove(handlerCLI))
 	cmdRoot.AddCommand(cmdSecret)
 
@@ -70,6 +63,7 @@ func main() {
 	cmdUser.AddCommand(user.NewCmdUserRegister(handlerCLI))
 	cmdRoot.AddCommand(cmdUser)
 
+	// -- inject
 	cmdInject := inject.NewCmdInject(handlerInjectCLI)
 	cmdRoot.AddCommand(cmdInject)
 

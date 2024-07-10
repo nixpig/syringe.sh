@@ -137,12 +137,6 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 
 		if cmd.Parent().Use == "secret" {
 			switch cmd.CalledAs() {
-			case "set":
-				encryptedSecret, err := ssh.Encrypt(args[1], publicKey)
-				if err != nil {
-					return fmt.Errorf("failed to encrypt secret: %w", err)
-				}
-				args[1] = encryptedSecret
 
 			case "list":
 				sshcmd := buildCommand(cmd, args)

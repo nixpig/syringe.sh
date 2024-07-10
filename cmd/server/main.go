@@ -59,7 +59,7 @@ func main() {
 			middleware.NewMiddlewareLogging(&log),
 		},
 		time.Duration(time.Second*30),
-		".ssh/id_ed25519",
+		os.Getenv("HOST_KEY_PATH"),
 	)
 
 	if err := sshServer.Start(
