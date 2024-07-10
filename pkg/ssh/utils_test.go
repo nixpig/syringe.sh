@@ -24,6 +24,15 @@ func TestSSHUtils(t *testing.T) {
 		"test get private key with invalid contents error":          testGetPrivateKeyWithInvalidContentsError,
 		"test get private key with password invalid contents error": testGetPrivateKeyWithPasswordInvalidContentsError,
 
+		"test get signer no password happy path":               testGetSignerNoPasswordHappyPath,
+		"test get signer with password happy path":             testGetSignerWithPasswordHappyPath,
+		"test get signer with empty passphrase error":          testGetSignerEmptyPassphraseError,
+		"test get signer with incorrect passphrase error":      testGetSignerIncorrectPassphraseError,
+		"test get signer with password read error":             testGetSignerPasswordReadError,
+		"test get signer with invalid filepath error":          testGetSignerWithInvalidFilepathError,
+		"test get signer with invalid contents error":          testGetSignerWithInvalidContentsError,
+		"test get signer with password invalid contents error": testGetSignerWithPasswordInvalidContentsError,
+
 		"test get public key happy path":                  testGetPublicKeyHappyPath,
 		"test get public key with invalid filepath error": testGetPublicKeyWithInvalidFilepathError,
 		"test get public key with invalid contents error": testGetPublicKeyWithInvalidContentsError,
@@ -173,7 +182,7 @@ func testGetPublicKeyHappyPath(t *testing.T) {
 
 func testGetSignerHappyPath(t *testing.T) {
 	w := bytes.NewBufferString("")
-	signer, err := ssh.GetSigner("../../test/crypt_test_rsa", w)
+	signer, err := ssh.GetSigner("../../test/crypt_test_rsa", w, mockTerm.ReadPassword)
 	require.NoError(t, err)
 	require.Empty(t, w.String())
 
@@ -239,4 +248,102 @@ func testNewSignersFuncNoSignersError(t *testing.T) {
 
 	require.EqualError(t, err, "no valid signers in agent")
 	require.Empty(t, validSigners)
+}
+
+// -----------------------------------
+
+func testGetSignerEmptyPassphraseError(t *testing.T) {
+	w := bytes.NewBufferString("")
+
+	mockTermReadPassword := mockTerm.On("ReadPassword", mock.Anything).Return([]byte(""), nil)
+
+	signer, err := ssh.GetSigner("../../test/crypt_test_pass_rsa", w, mockTerm.ReadPassword)
+
+	require.EqualError(t, err, "bcrypt_pbkdf: empty password")
+	require.Empty(t, signer)
+
+	mockTermReadPassword.Unset()
+}
+
+func testGetSignerIncorrectPassphraseError(t *testing.T) {
+	w := bytes.NewBufferString("")
+
+	mockTermReadPassword := mockTerm.On("ReadPassword", mock.Anything).Return([]byte("incorrect_passphrase"), nil)
+
+	signer, err := ssh.GetSigner("../../test/crypt_test_pass_rsa", w, mockTerm.ReadPassword)
+
+	require.EqualError(t, err, "x509: decryption password incorrect")
+	require.Empty(t, signer)
+
+	mockTermReadPassword.Unset()
+}
+
+func testGetSignerWithInvalidFilepathError(t *testing.T) {
+	w := bytes.NewBufferString("")
+	signer, err := ssh.GetSigner("some/invalid/filepath", w, mockTerm.ReadPassword)
+
+	require.Empty(t, signer)
+	require.Empty(t, w.String())
+	require.EqualError(t, err, "open some/invalid/filepath: no such file or directory")
+}
+
+func testGetSignerWithInvalidContentsError(t *testing.T) {
+	w := bytes.NewBufferString("")
+
+	mockTermReadPassword := mockTerm.On("ReadPassword", mock.Anything).Return([]byte("test"), nil)
+
+	signer, err := ssh.GetSigner("../../test/crypt_test_invalid", w, mockTerm.ReadPassword)
+
+	require.EqualError(t, err, "ssh: no key found")
+	require.Empty(t, signer)
+
+	mockTermReadPassword.Unset()
+}
+
+func testGetSignerWithPasswordInvalidContentsError(t *testing.T) {
+	w := bytes.NewBufferString("")
+
+	mockTermReadPassword := mockTerm.On("ReadPassword", mock.Anything).Return([]byte("test"), nil)
+
+	signer, err := ssh.GetSigner("../../test/crypt_test_pass_invalid", w, mockTerm.ReadPassword)
+
+	require.EqualError(t, err, "ssh: no key found")
+	require.Empty(t, signer)
+
+	mockTermReadPassword.Unset()
+}
+
+func testGetSignerPasswordReadError(t *testing.T) {
+	w := bytes.NewBufferString("")
+
+	mockTermReadPassword := mockTerm.On("ReadPassword", mock.Anything).Return([]byte{}, errors.New("failed to read password"))
+
+	signer, err := ssh.GetSigner("../../test/crypt_test_pass_rsa", w, mockTerm.ReadPassword)
+
+	require.EqualError(t, err, "failed to read password: failed to read password")
+	require.Empty(t, signer)
+
+	mockTermReadPassword.Unset()
+}
+
+func testGetSignerNoPasswordHappyPath(t *testing.T) {
+	w := bytes.NewBufferString("")
+	signer, err := ssh.GetSigner("../../test/crypt_test_rsa", w, mockTerm.ReadPassword)
+
+	require.NoError(t, err)
+	require.Empty(t, w.String())
+	require.Implements(t, (*gossh.Signer)(nil), signer)
+}
+
+func testGetSignerWithPasswordHappyPath(t *testing.T) {
+	w := bytes.NewBufferString("")
+
+	mockTermReadPassword := mockTerm.On("ReadPassword", mock.Anything).Return([]byte("test"), nil)
+
+	signer, err := ssh.GetSigner("../../test/crypt_test_pass_rsa", w, mockTerm.ReadPassword)
+
+	require.NoError(t, err)
+	require.Implements(t, (*gossh.Signer)(nil), signer)
+
+	mockTermReadPassword.Unset()
 }

@@ -52,7 +52,7 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 		if err != nil {
 			cmd.Println("unable to connect to agent, falling back to identity")
 
-			signer, err := ssh.GetSigner(identity, cmd.OutOrStderr())
+			signer, err := ssh.GetSigner(identity, cmd.OutOrStderr(), term.ReadPassword)
 			if err != nil {
 				return err
 			}

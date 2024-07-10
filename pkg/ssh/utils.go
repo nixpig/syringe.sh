@@ -8,7 +8,6 @@ import (
 	"os"
 
 	gossh "golang.org/x/crypto/ssh"
-	"golang.org/x/term"
 )
 
 type PasswordReader func(fd int) ([]byte, error)
@@ -66,7 +65,7 @@ func GetPrivateKey(path string, out io.Writer, pr PasswordReader) (*rsa.PrivateK
 	return rsaPrivateKey, nil
 }
 
-func GetSigner(path string, out io.Writer) (gossh.Signer, error) {
+func GetSigner(path string, out io.Writer, pr PasswordReader) (gossh.Signer, error) {
 	var err error
 
 	fc, err := os.ReadFile(path)
@@ -84,7 +83,7 @@ func GetSigner(path string, out io.Writer) (gossh.Signer, error) {
 
 		out.Write([]byte(fmt.Sprintf("Enter passphrase for %s: ", path)))
 
-		passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
+		passphrase, err := pr(int(os.Stdin.Fd()))
 		if err != nil {
 			return nil, fmt.Errorf("failed to read password: %w", err)
 		}
