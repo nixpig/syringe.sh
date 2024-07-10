@@ -30,7 +30,8 @@ func TestSSHUtils(t *testing.T) {
 
 		"test get signer happy path": testGetSignerHappyPath,
 
-		"test new signers func happy path": testNewSignersFuncHappyPath,
+		"test new signers func happy path":       testNewSignersFuncHappyPath,
+		"test new signers func no signers error": testNewSignersFuncNoSignersError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -209,4 +210,33 @@ func testNewSignersFuncHappyPath(t *testing.T) {
 
 	require.Len(t, validSigners, 1)
 	require.Equal(t, signer1, validSigners[0])
+}
+
+func testNewSignersFuncNoSignersError(t *testing.T) {
+	_, privateKey1, err := test.GenerateKeyPair()
+	require.NoError(t, err)
+	signer1, err := gossh.NewSignerFromKey(privateKey1)
+	require.NoError(t, err)
+
+	publicKey, privateKey2, err := test.GenerateKeyPair()
+	require.NoError(t, err)
+	_, err = gossh.NewSignerFromKey(privateKey2)
+	require.NoError(t, err)
+
+	_, privateKey3, err := test.GenerateKeyPair()
+	require.NoError(t, err)
+	signer3, err := gossh.NewSignerFromKey(privateKey3)
+	require.NoError(t, err)
+
+	signers := []gossh.Signer{
+		signer1,
+		signer3,
+	}
+
+	signersFunc := ssh.NewSignersFunc(publicKey, signers)
+
+	validSigners, err := signersFunc()
+
+	require.EqualError(t, err, "no valid signers in agent")
+	require.Empty(t, validSigners)
 }
