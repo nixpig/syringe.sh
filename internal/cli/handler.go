@@ -58,73 +58,47 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 
 		defer client.Close()
 
-		if cmd.CalledAs() == "inject" {
-			sshcmd := buildCommand(cmd, args)
+		sshcmd := buildCommand(cmd, args)
 
+		if cmd.CalledAs() == "inject" {
 			privateKey, err := ssh.GetPrivateKey(identity, cmd.OutOrStderr(), term.ReadPassword)
 			if err != nil {
 				return fmt.Errorf("failed to read private key: %w", err)
 			}
 
-			if err := client.Run(
-				sshcmd,
-				InjectResponseParser{
-					w:          out,
-					privateKey: privateKey,
-				},
-			); err != nil {
-				return err
+			out = InjectResponseParser{
+				w:          out,
+				privateKey: privateKey,
 			}
-
-			return nil
 		}
 
 		if cmd.Parent().Use == "secret" {
 			switch cmd.CalledAs() {
 
 			case "list":
-				sshcmd := buildCommand(cmd, args)
-
 				privateKey, err := ssh.GetPrivateKey(identity, cmd.OutOrStderr(), term.ReadPassword)
 				if err != nil {
 					return fmt.Errorf("failed to read private key: %w", err)
 				}
 
-				if err := client.Run(
-					sshcmd,
-					ListResponseParser{
-						w:          out,
-						privateKey: privateKey,
-					},
-				); err != nil {
-					return err
+				out = ListResponseParser{
+					w:          out,
+					privateKey: privateKey,
 				}
-
-				return nil
 
 			case "get":
-				sshcmd := buildCommand(cmd, args)
-
 				privateKey, err := ssh.GetPrivateKey(identity, cmd.OutOrStderr(), term.ReadPassword)
 				if err != nil {
 					return fmt.Errorf("failed to read private key: %w", err)
 				}
 
-				if err := client.Run(
-					sshcmd,
-					GetResponseParser{
-						w:          out,
-						privateKey: privateKey,
-					},
-				); err != nil {
-					return err
+				out = GetResponseParser{
+					w:          out,
+					privateKey: privateKey,
 				}
-
-				return nil
 			}
 		}
 
-		sshcmd := buildCommand(cmd, args)
 		if err := client.Run(sshcmd, out); err != nil {
 			return err
 		}
