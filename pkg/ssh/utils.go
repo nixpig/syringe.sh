@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 
 	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
+	"golang.org/x/term"
 )
 
 type PasswordReader func(fd int) ([]byte, error)
@@ -113,4 +116,62 @@ func NewSignersFunc(publicKey gossh.PublicKey, agentSigners []gossh.Signer) func
 
 		return signers, nil
 	}
+}
+
+func AuthMethod(identity string, out io.Writer) (gossh.AuthMethod, error) {
+	var authMethod gossh.AuthMethod
+
+	publicKey, err := GetPublicKey(fmt.Sprintf("%s.pub", identity))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get public key: %w", err)
+	}
+
+	sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
+	if sshAuthSock == "" {
+		return nil, errors.New("SSH_AUTH_SOCK not set")
+	}
+
+	sshAgentClient, err := NewSSHAgentClient(sshAuthSock)
+	if err != nil {
+		fmt.Println("unable to connect to agent, falling back to identity")
+
+		signer, err := GetSigner(identity, out, term.ReadPassword)
+		if err != nil {
+			return nil, err
+		}
+
+		authMethod = gossh.PublicKeys(signer)
+
+	} else {
+		agentKeys, err := sshAgentClient.List()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get identities from ssh agent: %w", err)
+		}
+
+		// if the agent doesn't already contain the identity, then add it
+		if i := slices.IndexFunc(agentKeys, func(agentKey *agent.Key) bool {
+			return string(agentKey.Marshal()) == string(publicKey.Marshal())
+		}); i == -1 {
+			privateKey, err := GetPrivateKey(identity, out, term.ReadPassword)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read private key: %w", err)
+			}
+
+			if err := sshAgentClient.Add(agent.AddedKey{PrivateKey: privateKey}); err != nil {
+				return nil, fmt.Errorf("failed to add key to agent: %w", err)
+			}
+		}
+
+		sshAgentClientSigners, err := sshAgentClient.Signers()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get signers from ssh client: %w", err)
+		}
+
+		authMethod = gossh.PublicKeysCallback(
+			// use only signer for the specified identity key
+			NewSignersFunc(publicKey, sshAgentClientSigners),
+		)
+	}
+
+	return authMethod, nil
 }
