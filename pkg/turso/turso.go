@@ -38,11 +38,12 @@ type TursoToken struct {
 
 type TursoDatabaseAPI interface {
 	CreateDatabase(name, group string) (*TursoDatabaseResponse, error)
-	ListDatabases() (*[]TursoDatabase, error)
-	CreateToken(name string) (*TursoToken, error)
+	ListDatabases() (*TursoDatabases, error)
+	CreateToken(name, expiration string) (*TursoToken, error)
+	New(organization, apiToken string, httpClient http.Client) TursoClient
 }
 
-func (t *TursoClient) New(organization, apiToken string, httpClient http.Client) TursoClient {
+func (t TursoClient) New(organization, apiToken string, httpClient http.Client) TursoClient {
 	return TursoClient{
 		organization: organization,
 		token:        apiToken,
@@ -51,7 +52,7 @@ func (t *TursoClient) New(organization, apiToken string, httpClient http.Client)
 	}
 }
 
-func (t *TursoClient) CreateDatabase(name, group string) (*TursoDatabaseResponse, error) {
+func (t TursoClient) CreateDatabase(name, group string) (*TursoDatabaseResponse, error) {
 	url := t.baseURL + "/organizations/" + t.organization + "/databases"
 	body := []byte(fmt.Sprintf(`{
 		"name": "%s",
@@ -90,7 +91,7 @@ func (t *TursoClient) CreateDatabase(name, group string) (*TursoDatabaseResponse
 	return &createdDatabase, nil
 }
 
-func (t *TursoClient) ListDatabases() (*TursoDatabases, error) {
+func (t TursoClient) ListDatabases() (*TursoDatabases, error) {
 	url := t.baseURL + "/organizations/" + t.organization + "/databases"
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -115,7 +116,7 @@ func (t *TursoClient) ListDatabases() (*TursoDatabases, error) {
 	return &databases, nil
 }
 
-func (t *TursoClient) CreateToken(name, expiration string) (*TursoToken, error) {
+func (t TursoClient) CreateToken(name, expiration string) (*TursoToken, error) {
 	url := t.baseURL + "/organizations/" + t.organization + "/databases/" + name + "/auth/tokens?expiration=" + expiration
 
 	req, err := http.NewRequest(http.MethodPost, url, nil)

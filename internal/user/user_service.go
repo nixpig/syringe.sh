@@ -71,7 +71,7 @@ type UserServiceImpl struct {
 	validate         validation.Validator
 	httpClient       http.Client
 	tursoAPISettings TursoAPISettings
-	tursoClient      turso.TursoClient
+	tursoClient      turso.TursoDatabaseAPI
 }
 
 func NewUserServiceImpl(
@@ -79,7 +79,7 @@ func NewUserServiceImpl(
 	validate validation.Validator,
 	httpClient http.Client,
 	tursoAPISettings TursoAPISettings,
-	tursoClient turso.TursoClient,
+	tursoClient turso.TursoDatabaseAPI,
 ) UserServiceImpl {
 	return UserServiceImpl{
 		store:            store,

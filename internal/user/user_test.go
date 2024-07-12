@@ -22,19 +22,25 @@ func (m *MockTursoClient) CreateDatabase(name, group string) (*turso.TursoDataba
 	return args.Get(0).(*turso.TursoDatabaseResponse), args.Error(1)
 }
 
-func (m *MockTursoClient) ListDatabases() (*[]turso.TursoDatabase, error) {
+func (m *MockTursoClient) ListDatabases() (*turso.TursoDatabases, error) {
 	args := m.Called()
 
-	return args.Get(0).(*[]turso.TursoDatabase), args.Error(1)
+	return args.Get(0).(*turso.TursoDatabases), args.Error(1)
 }
 
-func (m *MockTursoClient) CreateToken(name string) (*turso.TursoToken, error) {
-	args := m.Called(name)
+func (m *MockTursoClient) CreateToken(name, expiration string) (*turso.TursoToken, error) {
+	args := m.Called(name, expiration)
 
 	return args.Get(0).(*turso.TursoToken), args.Error(1)
 }
 
-var api = new(MockTursoClient)
+func (m *MockTursoClient) New(organization, apiToken string, httpClient http.Client) turso.TursoClient {
+	m.Called(organization, apiToken, httpClient)
+
+	return turso.TursoClient{}
+}
+
+var mockTursoClient = new(MockTursoClient)
 
 func TestUserCmd(t *testing.T) {
 	scenarios := map[string]func(
@@ -59,6 +65,7 @@ func TestUserCmd(t *testing.T) {
 			validation.New(),
 			http.Client{},
 			user.TursoAPISettings{URL: "", Token: ""},
+			mockTursoClient,
 		)
 
 		cmd := user.NewCmdUser()
