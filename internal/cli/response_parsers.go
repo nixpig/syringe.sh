@@ -4,8 +4,6 @@ import (
 	"crypto/rsa"
 	"io"
 	"strings"
-
-	"github.com/nixpig/syringe.sh/pkg/ssh"
 )
 
 type Decryptor func(cypherText string, privateKey *rsa.PrivateKey) (string, error)
@@ -16,7 +14,11 @@ type ListResponseParser struct {
 	decrypt    Decryptor
 }
 
-func NewListResponseParser(w io.Writer, privateKey *rsa.PrivateKey, decrypt Decryptor) ListResponseParser {
+func NewListResponseParser(
+	w io.Writer,
+	privateKey *rsa.PrivateKey,
+	decrypt Decryptor,
+) ListResponseParser {
 	return ListResponseParser{
 		w:          w,
 		privateKey: privateKey,
@@ -48,7 +50,11 @@ type GetResponseParser struct {
 	decrypt    Decryptor
 }
 
-func NewGetResponseParser(w io.Writer, privateKey *rsa.PrivateKey, decrypt Decryptor) GetResponseParser {
+func NewGetResponseParser(
+	w io.Writer,
+	privateKey *rsa.PrivateKey,
+	decrypt Decryptor,
+) GetResponseParser {
 	return GetResponseParser{
 		w:          w,
 		privateKey: privateKey,
@@ -68,6 +74,19 @@ func (grp GetResponseParser) Write(p []byte) (int, error) {
 type InjectResponseParser struct {
 	w          io.Writer
 	privateKey *rsa.PrivateKey
+	decrypt    Decryptor
+}
+
+func NewInjectResponseParser(
+	w io.Writer,
+	privateKey *rsa.PrivateKey,
+	decrypt Decryptor,
+) InjectResponseParser {
+	return InjectResponseParser{
+		w:          w,
+		privateKey: privateKey,
+		decrypt:    decrypt,
+	}
 }
 
 func (irp InjectResponseParser) Write(p []byte) (int, error) {
@@ -78,7 +97,7 @@ func (irp InjectResponseParser) Write(p []byte) (int, error) {
 	lines := strings.Split(cypherText, " ")
 	for i, l := range lines {
 		parts := strings.SplitN(l, "=", 2)
-		parts[1], err = ssh.Decrypt(parts[1], irp.privateKey)
+		parts[1], err = irp.decrypt(parts[1], irp.privateKey)
 		if err != nil {
 			return 0, err
 		}

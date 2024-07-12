@@ -75,10 +75,11 @@ func NewHandlerCLI(
 					return fmt.Errorf("failed to read private key: %w", err)
 				}
 
-				out = InjectResponseParser{
-					w:          out,
-					privateKey: privateKey,
-				}
+				out = NewInjectResponseParser(
+					out,
+					privateKey,
+					ssh.Decrypt,
+				)
 
 			case "list":
 				privateKey, err := ssh.GetPrivateKey(identity, cmd.OutOrStderr(), term.ReadPassword)
