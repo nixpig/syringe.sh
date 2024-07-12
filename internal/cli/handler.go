@@ -98,10 +98,11 @@ func NewHandlerCLI(
 					return fmt.Errorf("failed to read private key: %w", err)
 				}
 
-				out = GetResponseParser{
-					w:          out,
-					privateKey: privateKey,
-				}
+				out = NewGetResponseParser(
+					out,
+					privateKey,
+					ssh.Decrypt,
+				)
 			}
 		}
 

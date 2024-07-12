@@ -45,10 +45,19 @@ func (lrp ListResponseParser) Write(p []byte) (int, error) {
 type GetResponseParser struct {
 	w          io.Writer
 	privateKey *rsa.PrivateKey
+	decrypt    Decryptor
+}
+
+func NewGetResponseParser(w io.Writer, privateKey *rsa.PrivateKey, decrypt Decryptor) GetResponseParser {
+	return GetResponseParser{
+		w:          w,
+		privateKey: privateKey,
+		decrypt:    decrypt,
+	}
 }
 
 func (grp GetResponseParser) Write(p []byte) (int, error) {
-	decrypted, err := ssh.Decrypt(string(p), grp.privateKey)
+	decrypted, err := grp.decrypt(string(p), grp.privateKey)
 	if err != nil {
 		return 0, err
 	}

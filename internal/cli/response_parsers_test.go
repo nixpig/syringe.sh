@@ -30,6 +30,9 @@ func TestResponseParsers(t *testing.T) {
 		"test list response parser single secret happy path":    testListResponseParserSingleSecretHappyPath,
 		"test list response parser multiple secrets happy path": testListResponseParserMultipleSecretsHappyPath,
 		"test list response parser decrypt error":               testListResponseParserDecryptError,
+
+		"test get response parser happy path":    testGetResponseParserHappyPath,
+		"test get response parser decrypt error": testGetResponseParserDecryptError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -112,5 +115,55 @@ func testListResponseParserDecryptError(t *testing.T) {
 
 	written, err := io.ReadAll(w)
 	require.NoError(t, err)
+	require.Equal(t, "", string(written))
+}
+
+func testGetResponseParserHappyPath(t *testing.T) {
+	w := bytes.NewBufferString("")
+	_, privateKey, err := test.GenerateKeyPair()
+	require.NoError(t, err)
+
+	parser := cli.NewGetResponseParser(
+		w,
+		privateKey,
+		mockCrypt.Decrypt,
+	)
+
+	mockCrypt.
+		On("Decrypt", "mock_encrypted_value", privateKey).
+		Return("mock_decrypted_value", nil)
+
+	b, err := parser.Write([]byte("mock_encrypted_value"))
+	require.NoError(t, err)
+	require.Equal(t, 20, b)
+
+	written, err := io.ReadAll(w)
+	require.NoError(t, err)
+
+	require.Equal(t, "mock_decrypted_value", string(written))
+}
+
+func testGetResponseParserDecryptError(t *testing.T) {
+	w := bytes.NewBufferString("")
+	_, privateKey, err := test.GenerateKeyPair()
+	require.NoError(t, err)
+
+	parser := cli.NewGetResponseParser(
+		w,
+		privateKey,
+		mockCrypt.Decrypt,
+	)
+
+	mockCrypt.
+		On("Decrypt", "mock_encrypted_value", privateKey).
+		Return("", errors.New("decrypt_error"))
+
+	b, err := parser.Write([]byte("mock_encrypted_value"))
+	require.EqualError(t, err, "decrypt_error")
+	require.Equal(t, 0, b)
+
+	written, err := io.ReadAll(w)
+	require.NoError(t, err)
+
 	require.Equal(t, "", string(written))
 }
