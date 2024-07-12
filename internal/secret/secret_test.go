@@ -52,6 +52,9 @@ func TestSecretCmd(t *testing.T) {
 		"test secret remove command missing environment": testSecretRemoveCmdMissingEnvironment,
 		"test secret remove command missing key":         testSecretRemoveCmdMissingKey,
 		"test secret remove command validation error":    testSecretRemoveCmdValidationError,
+
+		"test secret inject command happy path": testSecretInjectCmdHappyPath,
+		// "test secret inject command service error": testSecretInjectCmdServiceError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -1512,3 +1515,118 @@ func testSecretRemoveCmdZeroResults(
 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
+
+func testSecretInjectCmdHappyPath(
+	t *testing.T,
+	cmd *cobra.Command,
+	service secret.SecretService,
+	mock sqlmock.Sqlmock,
+) {
+	cmdOut := bytes.NewBufferString("")
+	errOut := bytes.NewBufferString("")
+	handler := secret.NewHandlerSecretInject(service)
+	cmdInject := secret.NewCmdSecretInject(handler)
+	cmdInject.SetOut(cmdOut)
+	cmdInject.SetErr(errOut)
+
+	cmd.AddCommand(cmdInject)
+	cmd.SetArgs([]string{
+		"inject",
+		"-p",
+		"my_cool_project",
+		"-e",
+		"staging",
+		"--",
+		"startserver",
+	})
+
+	query := `
+		select s.id_, s.key_, s.value_, p.name_, e.name_
+		from secrets_ s
+		inner join
+		environments_ e
+		on s.environment_id_ = e.id_
+		inner join
+		projects_ p
+		on p.id_ = e.project_id_
+		where p.name_ = $project
+		and e.name_ = $environment
+	`
+
+	mock.
+		ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs("my_cool_project", "staging").
+		WillReturnRows(
+			sqlmock.NewRows([]string{
+				"id_",
+				"key_",
+				"value_",
+				"project_name_",
+				"environment_name_",
+			}).
+				AddRow(23, "SECRET_KEY_1", "SECRET_VALUE_1", "my_cool_project", "staging").
+				AddRow(69, "SECRET_KEY_2", "SECRET_VALUE_2", "my_cool_project", "staging"),
+		)
+
+	err := cmd.Execute()
+
+	require.NoError(t, err)
+	require.Empty(t, errOut.String())
+
+	require.Equal(
+		t,
+		"SECRET_KEY_1=SECRET_VALUE_1 SECRET_KEY_2=SECRET_VALUE_2\n",
+		cmdOut.String(),
+	)
+
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+// func testInjectCmdServiceError(
+// 	t *testing.T,
+// 	cmd *cobra.Command,
+// 	service secret.SecretService,
+// ) {
+// 	cmdOut := bytes.NewBufferString("")
+// 	errOut := bytes.NewBufferString("")
+// 	handler := inject.NewHandlerInject(service)
+// 	cmdInject := inject.NewCmdInject(handler)
+// 	cmdInject.SetOut(cmdOut)
+// 	cmdInject.SetErr(errOut)
+//
+// 	cmd.AddCommand(cmdInject)
+// 	cmd.SetArgs([]string{
+// 		"inject",
+// 		"-p",
+// 		"my_cool_project",
+// 		"-e",
+// 		"staging",
+// 		"--",
+// 		"startserver",
+// 	})
+//
+// 	m := mockSecretService.On("List", secret.ListSecretsRequest{
+// 		Project:     "my_cool_project",
+// 		Environment: "staging",
+// 	}).Return(
+// 		&secret.ListSecretsResponse{},
+// 		errors.New("secret_service_error"),
+// 	)
+//
+// 	err := cmd.Execute()
+//
+// 	require.Error(t, err)
+//
+// 	require.Equal(
+// 		t,
+// 		"",
+// 		cmdOut.String(),
+// 	)
+//
+// 	mockSecretService.AssertCalled(t, "List", secret.ListSecretsRequest{
+// 		Project:     "my_cool_project",
+// 		Environment: "staging",
+// 	})
+//
+// 	m.Unset()
+// }

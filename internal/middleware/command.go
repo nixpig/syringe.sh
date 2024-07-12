@@ -12,7 +12,6 @@ import (
 	"github.com/nixpig/syringe.sh/internal/auth"
 	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/environment"
-	"github.com/nixpig/syringe.sh/internal/inject"
 	"github.com/nixpig/syringe.sh/internal/project"
 	"github.com/nixpig/syringe.sh/internal/root"
 	"github.com/nixpig/syringe.sh/internal/secret"
@@ -166,13 +165,12 @@ func NewMiddlewareCommand(
 			cmdSecretRemove := secret.NewCmdSecretRemove(handlerSecretRemove)
 			cmdSecret.AddCommand(cmdSecretRemove)
 
-			cmdRoot.AddCommand(cmdSecret)
+			handlerSecretInject := secret.NewHandlerSecretInject(secretService)
+			cmdSecretInject := secret.NewCmdSecretInject(handlerSecretInject)
+			cmdSecretInject.PersistentPreRunE = auth.PreRunE
+			cmdSecret.AddCommand(cmdSecretInject)
 
-			// -- INJECT CMD
-			handlerInject := inject.NewHandlerInject(secretService)
-			cmdInject := inject.NewCmdInject(handlerInject)
-			cmdInject.PersistentPreRunE = auth.PreRunE
-			cmdRoot.AddCommand(cmdInject)
+			cmdRoot.AddCommand(cmdSecret)
 
 			helpers.WalkCmd(cmdRoot, func(c *cobra.Command) {
 				c.Flags().BoolP("help", "h", false, fmt.Sprintf("Help for the '%s' command", c.Name()))

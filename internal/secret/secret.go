@@ -76,6 +76,30 @@ func NewCmdSecretRemove(handler pkg.CobraHandler) *cobra.Command {
 	return cmd
 }
 
+func NewCmdSecretInject(handler pkg.CobraHandler) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "inject [flags] -- SUBCOMMAND",
+		Aliases: []string{"i"},
+		Short:   "Inject secrets",
+		Long:    "Inject secrets into the specified subcommand.",
+		Example: `  • Inject secrets from 'dev' environment in 'my_cool_project' project into 'startserver' command
+    syringe secret inject -p my_cool_project -e dev -- startserver
+
+  • Inject secrets from 'dev' environment in 'my_cool_project' project into current shell
+    syringe secret inject -p my_cool_project -e dev
+`,
+		Args: cobra.MinimumNArgs(1),
+		FParseErrWhitelist: cobra.FParseErrWhitelist{
+			UnknownFlags: true,
+		},
+		RunE: handler,
+	}
+
+	addFlags(cmd)
+
+	return cmd
+}
+
 func addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("project", "p", "", "Project name")
 	cmd.MarkFlagRequired("project")

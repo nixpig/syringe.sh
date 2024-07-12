@@ -7,7 +7,6 @@ import (
 
 	"github.com/nixpig/syringe.sh/internal/cli"
 	"github.com/nixpig/syringe.sh/internal/environment"
-	"github.com/nixpig/syringe.sh/internal/inject"
 	"github.com/nixpig/syringe.sh/internal/project"
 	"github.com/nixpig/syringe.sh/internal/root"
 	"github.com/nixpig/syringe.sh/internal/secret"
@@ -54,18 +53,19 @@ func main() {
 	cmdSecretList := secret.NewCmdSecretList(handlerCLI)
 	cmdSecret.AddCommand(cmdSecretList)
 
+	cmdSecretInject := secret.NewCmdSecretInject(handlerInjectCLI)
+	cmdSecret.AddCommand(cmdSecretInject)
+
 	cmdSecret.AddCommand(secret.NewCmdSecretGet(handlerCLI))
+
 	cmdSecret.AddCommand(secret.NewCmdSecretRemove(handlerCLI))
+
 	cmdRoot.AddCommand(cmdSecret)
 
 	// -- user
 	cmdUser := user.NewCmdUser()
 	cmdUser.AddCommand(user.NewCmdUserRegister(handlerCLI))
 	cmdRoot.AddCommand(cmdUser)
-
-	// -- inject
-	cmdInject := inject.NewCmdInject(handlerInjectCLI)
-	cmdRoot.AddCommand(cmdInject)
 
 	// update help and version for all subcommands
 	helpers.WalkCmd(cmdRoot, func(c *cobra.Command) {

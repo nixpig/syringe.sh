@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-echo args: 
 while getopts "x:" flag; do 
   case $flag in 
     x) 

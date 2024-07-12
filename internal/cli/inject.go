@@ -13,6 +13,7 @@ import (
 func NewHandlerInjectCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		w := bytes.NewBufferString("")
+
 		injectHandler := NewHandlerCLI(host, port, w)
 
 		if err := injectHandler(cmd, args); err != nil {

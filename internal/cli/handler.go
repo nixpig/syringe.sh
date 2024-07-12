@@ -60,20 +60,19 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 
 		sshcmd := buildCommand(cmd, args)
 
-		if cmd.CalledAs() == "inject" {
-			privateKey, err := ssh.GetPrivateKey(identity, cmd.OutOrStderr(), term.ReadPassword)
-			if err != nil {
-				return fmt.Errorf("failed to read private key: %w", err)
-			}
-
-			out = InjectResponseParser{
-				w:          out,
-				privateKey: privateKey,
-			}
-		}
-
 		if cmd.Parent().Use == "secret" {
 			switch cmd.CalledAs() {
+
+			case "inject":
+				privateKey, err := ssh.GetPrivateKey(identity, cmd.OutOrStderr(), term.ReadPassword)
+				if err != nil {
+					return fmt.Errorf("failed to read private key: %w", err)
+				}
+
+				out = InjectResponseParser{
+					w:          out,
+					privateKey: privateKey,
+				}
 
 			case "list":
 				privateKey, err := ssh.GetPrivateKey(identity, cmd.OutOrStderr(), term.ReadPassword)
