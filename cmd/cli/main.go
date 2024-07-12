@@ -12,6 +12,7 @@ import (
 	"github.com/nixpig/syringe.sh/internal/secret"
 	"github.com/nixpig/syringe.sh/internal/user"
 	"github.com/nixpig/syringe.sh/pkg/helpers"
+	"github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +25,13 @@ func main() {
 	os.Setenv("APP_HOST", "localhost")
 	cmdRoot := root.New(context.Background())
 
-	handlerCLI := cli.NewHandlerCLI(host, port, cmdRoot.OutOrStdout())
+	handlerCLI := cli.NewHandlerCLI(
+		host,
+		port,
+		cmdRoot.OutOrStdout(),
+		ssh.NewSSHClient,
+	)
+
 	handlerInjectCLI := cli.NewHandlerInjectCLI(host, port, cmdRoot.OutOrStdout())
 
 	// -- project

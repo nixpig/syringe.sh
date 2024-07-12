@@ -45,7 +45,7 @@ Supported key formats:
     syringe secret list -p my_cool_project -e dev
 
   • Inject secrets into command
-    syringe inject -p my_cool_project -e dev -- startserver
+    syringe secret inject -p my_cool_project -e dev -- startserver
 
   For more examples, go to https://syringe.sh/examples`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {

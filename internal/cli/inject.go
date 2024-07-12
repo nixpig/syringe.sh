@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/nixpig/syringe.sh/pkg"
+	"github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +15,12 @@ func NewHandlerInjectCLI(host string, port int, out io.Writer) pkg.CobraHandler 
 	return func(cmd *cobra.Command, args []string) error {
 		w := bytes.NewBufferString("")
 
-		injectHandler := NewHandlerCLI(host, port, w)
+		injectHandler := NewHandlerCLI(
+			host,
+			port,
+			w,
+			ssh.NewSSHClient,
+		)
 
 		if err := injectHandler(cmd, args); err != nil {
 			return err

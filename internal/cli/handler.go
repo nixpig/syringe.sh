@@ -11,10 +11,16 @@ import (
 	"github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	gossh "golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 )
 
-func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
+func NewHandlerCLI(
+	host string,
+	port int,
+	out io.Writer,
+	newSSHClient func(host string, port int, username string, authMethod gossh.AuthMethod) (*ssh.SSHClient, error),
+) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		currentUser, err := user.Current()
 		if err != nil || currentUser.Username == "" {
@@ -46,7 +52,7 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 			return fmt.Errorf("failed to add or update identity in ssh config file: %w", err)
 		}
 
-		client, err := ssh.NewSSHClient(
+		client, err := newSSHClient(
 			host,
 			port,
 			currentUser.Username,
@@ -80,10 +86,11 @@ func NewHandlerCLI(host string, port int, out io.Writer) pkg.CobraHandler {
 					return fmt.Errorf("failed to read private key: %w", err)
 				}
 
-				out = ListResponseParser{
-					w:          out,
-					privateKey: privateKey,
-				}
+				out = NewListResponseParser(
+					out,
+					privateKey,
+					ssh.Decrypt,
+				)
 
 			case "get":
 				privateKey, err := ssh.GetPrivateKey(identity, cmd.OutOrStderr(), term.ReadPassword)

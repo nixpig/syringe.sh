@@ -41,7 +41,6 @@ Secrets can only be decrypted locally using your private key. Without your priva
 
 ### P1
 
-- [ ] Inject into command or inject into environment
 - [ ] Add unit tests for other areas
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
   - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?

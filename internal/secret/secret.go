@@ -83,11 +83,7 @@ func NewCmdSecretInject(handler pkg.CobraHandler) *cobra.Command {
 		Short:   "Inject secrets",
 		Long:    "Inject secrets into the specified subcommand.",
 		Example: `  • Inject secrets from 'dev' environment in 'my_cool_project' project into 'startserver' command
-    syringe secret inject -p my_cool_project -e dev -- startserver
-
-  • Inject secrets from 'dev' environment in 'my_cool_project' project into current shell
-    syringe secret inject -p my_cool_project -e dev
-`,
+    syringe secret inject -p my_cool_project -e dev -- startserver`,
 		Args: cobra.MinimumNArgs(1),
 		FParseErrWhitelist: cobra.FParseErrWhitelist{
 			UnknownFlags: true,
