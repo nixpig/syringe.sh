@@ -1,4 +1,4 @@
-package cli
+package secret
 
 import (
 	"bytes"
@@ -6,16 +6,17 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/nixpig/syringe.sh/internal/cli"
 	"github.com/nixpig/syringe.sh/pkg"
 	"github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/spf13/cobra"
 )
 
-func NewHandlerInjectCLI(host string, port int, out io.Writer) pkg.CobraHandler {
+func NewCLIHandlerSecretInject(host string, port int, out io.Writer) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		w := bytes.NewBufferString("")
 
-		injectHandler := NewHandlerCLI(
+		injectHandler := cli.NewHandlerCLI(
 			host,
 			port,
 			w,

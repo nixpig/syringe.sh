@@ -42,7 +42,7 @@ type TursoDatabaseAPI interface {
 	CreateToken(name string) (*TursoToken, error)
 }
 
-func New(organization, apiToken string, httpClient http.Client) TursoClient {
+func (t *TursoClient) New(organization, apiToken string, httpClient http.Client) TursoClient {
 	return TursoClient{
 		organization: organization,
 		token:        apiToken,

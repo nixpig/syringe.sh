@@ -71,6 +71,7 @@ type UserServiceImpl struct {
 	validate         validation.Validator
 	httpClient       http.Client
 	tursoAPISettings TursoAPISettings
+	tursoClient      turso.TursoClient
 }
 
 func NewUserServiceImpl(
@@ -78,12 +79,14 @@ func NewUserServiceImpl(
 	validate validation.Validator,
 	httpClient http.Client,
 	tursoAPISettings TursoAPISettings,
+	tursoClient turso.TursoClient,
 ) UserServiceImpl {
 	return UserServiceImpl{
 		store:            store,
 		validate:         validate,
 		httpClient:       httpClient,
 		tursoAPISettings: tursoAPISettings,
+		tursoClient:      tursoClient,
 	}
 }
 
@@ -161,7 +164,7 @@ func (u UserServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	api := turso.New(databaseDetails.DatabaseOrg, u.tursoAPISettings.Token, u.httpClient)
+	api := u.tursoClient.New(databaseDetails.DatabaseOrg, u.tursoAPISettings.Token, u.httpClient)
 
 	list, err := api.ListDatabases()
 	if err != nil {

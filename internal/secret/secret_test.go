@@ -89,7 +89,7 @@ func testSecretSetCmdHappyPath(
 	errOut := bytes.NewBufferString("")
 
 	cmdSet := secret.NewCmdSecretSet(
-		secret.NewHandlerSecretSet(service),
+		secret.NewSSHHandlerSecretSet(service),
 	)
 
 	cmd.AddCommand(cmdSet)
@@ -158,7 +158,7 @@ func testSecretSetCmdMissingProject(
 	errOut := bytes.NewBufferString("")
 
 	cmdSet := secret.NewCmdSecretSet(
-		secret.NewHandlerSecretSet(service),
+		secret.NewSSHHandlerSecretSet(service),
 	)
 
 	cmd.AddCommand(cmdSet)
@@ -201,7 +201,7 @@ func testSecretSetCmdMissingEnvironment(
 	errOut := bytes.NewBufferString("")
 
 	cmdSet := secret.NewCmdSecretSet(
-		secret.NewHandlerSecretSet(service),
+		secret.NewSSHHandlerSecretSet(service),
 	)
 
 	cmd.AddCommand(cmdSet)
@@ -244,7 +244,7 @@ func testSecretSetCmdTooFewArgs(
 	errOut := bytes.NewBufferString("")
 
 	cmdSet := secret.NewCmdSecretSet(
-		secret.NewHandlerSecretSet(service),
+		secret.NewSSHHandlerSecretSet(service),
 	)
 
 	cmd.AddCommand(cmdSet)
@@ -289,7 +289,7 @@ func testSecretSetCmdTooManyArgs(
 	errOut := bytes.NewBufferString("")
 
 	cmdSet := secret.NewCmdSecretSet(
-		secret.NewHandlerSecretSet(service),
+		secret.NewSSHHandlerSecretSet(service),
 	)
 
 	cmd.AddCommand(cmdSet)
@@ -362,7 +362,7 @@ func testSecretSetCmdDatabaseError(
 		WillReturnError(fmt.Errorf("database_error"))
 
 	cmdSet := secret.NewCmdSecretSet(
-		secret.NewHandlerSecretSet(service),
+		secret.NewSSHHandlerSecretSet(service),
 	)
 
 	cmd.AddCommand(cmdSet)
@@ -409,7 +409,7 @@ func testSecretSetCmdValidationError(
 	errOut := bytes.NewBufferString("")
 
 	cmdSet := secret.NewCmdSecretSet(
-		secret.NewHandlerSecretSet(service),
+		secret.NewSSHHandlerSecretSet(service),
 	)
 
 	cmd.AddCommand(cmdSet)
@@ -448,7 +448,7 @@ func testSecretGetCmdHappyPath(
 	errOut := bytes.NewBufferString("")
 
 	cmdGet := secret.NewCmdSecretGet(
-		secret.NewHandlerSecretGet(service),
+		secret.NewSSHHandlerSecretGet(service),
 	)
 
 	cmd.AddCommand(cmdGet)
@@ -523,7 +523,7 @@ func testSecretGetCmdMissingProject(
 	errOut := bytes.NewBufferString("")
 
 	cmdGet := secret.NewCmdSecretGet(
-		secret.NewHandlerSecretGet(service),
+		secret.NewSSHHandlerSecretGet(service),
 	)
 
 	cmd.AddCommand(cmdGet)
@@ -565,7 +565,7 @@ func testSecretGetCmdMissingEnvironment(
 	errOut := bytes.NewBufferString("")
 
 	cmdGet := secret.NewCmdSecretGet(
-		secret.NewHandlerSecretGet(service),
+		secret.NewSSHHandlerSecretGet(service),
 	)
 
 	cmd.AddCommand(cmdGet)
@@ -607,7 +607,7 @@ func testSecretGetCmdMissingKey(
 	errOut := bytes.NewBufferString("")
 
 	cmdGet := secret.NewCmdSecretGet(
-		secret.NewHandlerSecretGet(service),
+		secret.NewSSHHandlerSecretGet(service),
 	)
 
 	cmd.AddCommand(cmdGet)
@@ -672,7 +672,7 @@ func testSecretGetCmdDatabaseError(
 		WillReturnError(fmt.Errorf("database_error"))
 
 	cmdGet := secret.NewCmdSecretGet(
-		secret.NewHandlerSecretGet(service),
+		secret.NewSSHHandlerSecretGet(service),
 	)
 
 	cmd.AddCommand(cmdGet)
@@ -718,7 +718,7 @@ func testSecretGetCmdValidationError(
 	errOut := bytes.NewBufferString("")
 
 	cmdGet := secret.NewCmdSecretGet(
-		secret.NewHandlerSecretGet(service),
+		secret.NewSSHHandlerSecretGet(service),
 	)
 
 	cmd.AddCommand(cmdGet)
@@ -756,7 +756,7 @@ func testSecretListCmdHappyPath(
 	errOut := bytes.NewBufferString("")
 
 	cmdList := secret.NewCmdSecretList(
-		secret.NewHandlerSecretList(service),
+		secret.NewSSHHandlerSecretList(service),
 	)
 
 	cmd.AddCommand(cmdList)
@@ -824,7 +824,7 @@ func testSecretRemoveCmdHappyPath(
 	errOut := bytes.NewBufferString("")
 
 	cmdRemove := secret.NewCmdSecretRemove(
-		secret.NewHandlerSecretRemove(service),
+		secret.NewSSHHandlerSecretRemove(service),
 	)
 
 	cmd.AddCommand(cmdRemove)
@@ -902,7 +902,7 @@ func testSecretListCmdDatabaseError(
 	).WillReturnError(errors.New("database_error"))
 
 	cmdList := secret.NewCmdSecretList(
-		secret.NewHandlerSecretList(service),
+		secret.NewSSHHandlerSecretList(service),
 	)
 
 	cmd.AddCommand(cmdList)
@@ -947,7 +947,7 @@ func testSecretListCmdMissingProject(
 	errOut := bytes.NewBufferString("")
 
 	cmdList := secret.NewCmdSecretList(
-		secret.NewHandlerSecretList(service),
+		secret.NewSSHHandlerSecretList(service),
 	)
 
 	cmd.AddCommand(cmdList)
@@ -988,7 +988,7 @@ func testSecretListCmdMissingEnvironment(
 	errOut := bytes.NewBufferString("")
 
 	cmdList := secret.NewCmdSecretList(
-		secret.NewHandlerSecretList(service),
+		secret.NewSSHHandlerSecretList(service),
 	)
 
 	cmd.AddCommand(cmdList)
@@ -1035,7 +1035,7 @@ func testSecretListCmdValidationError(
 	errOut = bytes.NewBufferString("")
 
 	cmdList = secret.NewCmdSecretList(
-		secret.NewHandlerSecretList(service),
+		secret.NewSSHHandlerSecretList(service),
 	)
 
 	cmd.AddCommand(cmdList)
@@ -1073,7 +1073,7 @@ func testSecretListCmdValidationError(
 	errOut = bytes.NewBufferString("")
 
 	cmdList = secret.NewCmdSecretList(
-		secret.NewHandlerSecretList(service),
+		secret.NewSSHHandlerSecretList(service),
 	)
 
 	cmd.AddCommand(cmdList)
@@ -1116,7 +1116,7 @@ func testSecretRemoveCmdDatabaseError(
 	errOut := bytes.NewBufferString("")
 
 	cmdRemove := secret.NewCmdSecretRemove(
-		secret.NewHandlerSecretRemove(service),
+		secret.NewSSHHandlerSecretRemove(service),
 	)
 
 	query := `
@@ -1182,7 +1182,7 @@ func testSecretRemoveCmdMissingProject(
 	errOut := bytes.NewBufferString("")
 
 	cmdRemove := secret.NewCmdSecretRemove(
-		secret.NewHandlerSecretRemove(service),
+		secret.NewSSHHandlerSecretRemove(service),
 	)
 
 	cmd.AddCommand(cmdRemove)
@@ -1224,7 +1224,7 @@ func testSecretRemoveCmdMissingEnvironment(
 	errOut := bytes.NewBufferString("")
 
 	cmdRemove := secret.NewCmdSecretRemove(
-		secret.NewHandlerSecretRemove(service),
+		secret.NewSSHHandlerSecretRemove(service),
 	)
 
 	cmd.AddCommand(cmdRemove)
@@ -1266,7 +1266,7 @@ func testSecretRemoveCmdMissingKey(
 	errOut := bytes.NewBufferString("")
 
 	cmdRemove := secret.NewCmdSecretRemove(
-		secret.NewHandlerSecretRemove(service),
+		secret.NewSSHHandlerSecretRemove(service),
 	)
 
 	cmd.AddCommand(cmdRemove)
@@ -1315,7 +1315,7 @@ func testSecretRemoveCmdValidationError(
 	errOut = bytes.NewBufferString("")
 
 	cmdRemove = secret.NewCmdSecretRemove(
-		secret.NewHandlerSecretRemove(service),
+		secret.NewSSHHandlerSecretRemove(service),
 	)
 
 	cmd.AddCommand(cmdRemove)
@@ -1354,7 +1354,7 @@ func testSecretRemoveCmdValidationError(
 	errOut = bytes.NewBufferString("")
 
 	cmdRemove = secret.NewCmdSecretRemove(
-		secret.NewHandlerSecretRemove(service),
+		secret.NewSSHHandlerSecretRemove(service),
 	)
 
 	cmd.AddCommand(cmdRemove)
@@ -1398,7 +1398,7 @@ func testSecretListCmdZeroResults(
 	errOut := bytes.NewBufferString("")
 
 	cmdList := secret.NewCmdSecretList(
-		secret.NewHandlerSecretList(service),
+		secret.NewSSHHandlerSecretList(service),
 	)
 
 	cmd.AddCommand(cmdList)
@@ -1481,7 +1481,7 @@ func testSecretRemoveCmdZeroResults(
 	).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	cmdRemove := secret.NewCmdSecretRemove(
-		secret.NewHandlerSecretRemove(service),
+		secret.NewSSHHandlerSecretRemove(service),
 	)
 
 	cmd.AddCommand(cmdRemove)
@@ -1524,7 +1524,7 @@ func testSecretInjectCmdHappyPath(
 ) {
 	cmdOut := bytes.NewBufferString("")
 	errOut := bytes.NewBufferString("")
-	handler := secret.NewHandlerSecretInject(service)
+	handler := secret.NewSSHHandlerSecretInject(service)
 	cmdInject := secret.NewCmdSecretInject(handler)
 	cmdInject.SetOut(cmdOut)
 	cmdInject.SetErr(errOut)

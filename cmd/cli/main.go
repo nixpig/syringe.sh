@@ -32,7 +32,7 @@ func main() {
 		ssh.NewSSHClient,
 	)
 
-	handlerInjectCLI := cli.NewHandlerInjectCLI(host, port, cmdRoot.OutOrStdout())
+	handlerInjectCLI := secret.NewCLIHandlerSecretInject(host, port, cmdRoot.OutOrStdout())
 
 	// -- project
 	cmdProject := project.NewCmdProject()

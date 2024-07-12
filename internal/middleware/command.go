@@ -18,6 +18,7 @@ import (
 	"github.com/nixpig/syringe.sh/internal/user"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/nixpig/syringe.sh/pkg/helpers"
+	"github.com/nixpig/syringe.sh/pkg/turso"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
@@ -80,6 +81,7 @@ func NewMiddlewareCommand(
 					URL:   os.Getenv("API_BASE_URL"),
 					Token: os.Getenv("API_TOKEN"),
 				},
+				turso.TursoClient{},
 			)
 
 			handlerUserRegister := user.NewHandlerUserRegister(userService)
@@ -149,23 +151,23 @@ func NewMiddlewareCommand(
 				validate,
 			)
 
-			handlerSecretSet := secret.NewHandlerSecretSet(secretService)
+			handlerSecretSet := secret.NewSSHHandlerSecretSet(secretService)
 			cmdSecretSet := secret.NewCmdSecretSet(handlerSecretSet)
 			cmdSecret.AddCommand(cmdSecretSet)
 
-			handlerSecretGet := secret.NewHandlerSecretGet(secretService)
+			handlerSecretGet := secret.NewSSHHandlerSecretGet(secretService)
 			cmdSecretGet := secret.NewCmdSecretGet(handlerSecretGet)
 			cmdSecret.AddCommand(cmdSecretGet)
 
-			handlerSecretList := secret.NewHandlerSecretList(secretService)
+			handlerSecretList := secret.NewSSHHandlerSecretList(secretService)
 			cmdSecretList := secret.NewCmdSecretList(handlerSecretList)
 			cmdSecret.AddCommand(cmdSecretList)
 
-			handlerSecretRemove := secret.NewHandlerSecretRemove(secretService)
+			handlerSecretRemove := secret.NewSSHHandlerSecretRemove(secretService)
 			cmdSecretRemove := secret.NewCmdSecretRemove(handlerSecretRemove)
 			cmdSecret.AddCommand(cmdSecretRemove)
 
-			handlerSecretInject := secret.NewHandlerSecretInject(secretService)
+			handlerSecretInject := secret.NewSSHHandlerSecretInject(secretService)
 			cmdSecretInject := secret.NewCmdSecretInject(handlerSecretInject)
 			cmdSecretInject.PersistentPreRunE = auth.PreRunE
 			cmdSecret.AddCommand(cmdSecretInject)

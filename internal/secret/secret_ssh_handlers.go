@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewHandlerSecretSet(secretService SecretService) pkg.CobraHandler {
+func NewSSHHandlerSecretSet(secretService SecretService) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		key := args[0]
 		value := args[1]
@@ -30,7 +30,7 @@ func NewHandlerSecretSet(secretService SecretService) pkg.CobraHandler {
 	}
 }
 
-func NewHandlerSecretGet(secretService SecretService) pkg.CobraHandler {
+func NewSSHHandlerSecretGet(secretService SecretService) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		key := args[0]
 
@@ -52,7 +52,7 @@ func NewHandlerSecretGet(secretService SecretService) pkg.CobraHandler {
 	}
 }
 
-func NewHandlerSecretList(secretService SecretService) pkg.CobraHandler {
+func NewSSHHandlerSecretList(secretService SecretService) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		project, _ := cmd.Flags().GetString("project")
 		environment, _ := cmd.Flags().GetString("environment")
@@ -76,7 +76,7 @@ func NewHandlerSecretList(secretService SecretService) pkg.CobraHandler {
 	}
 }
 
-func NewHandlerSecretRemove(secretService SecretService) pkg.CobraHandler {
+func NewSSHHandlerSecretRemove(secretService SecretService) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		key := args[0]
 
@@ -97,7 +97,7 @@ func NewHandlerSecretRemove(secretService SecretService) pkg.CobraHandler {
 	}
 }
 
-func NewHandlerSecretInject(secretService SecretService) pkg.CobraHandler {
+func NewSSHHandlerSecretInject(secretService SecretService) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		project, _ := cmd.Flags().GetString("project")
 		environment, _ := cmd.Flags().GetString("environment")

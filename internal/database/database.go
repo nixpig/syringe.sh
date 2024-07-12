@@ -77,7 +77,8 @@ func MigrateAppDB(db *sql.DB) error {
 }
 
 func NewUserDBConnection(publicKey ssh.PublicKey) (*sql.DB, error) {
-	api := turso.New(
+	c := turso.TursoClient{}
+	api := c.New(
 		os.Getenv("DATABASE_ORG"),
 		os.Getenv("API_TOKEN"),
 		http.Client{},
