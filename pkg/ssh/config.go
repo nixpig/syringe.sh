@@ -74,6 +74,10 @@ func writeConfig(cfg *ssh_config.Config, f *os.File) error {
 }
 
 func configFromFile(f *os.File) (*ssh_config.Config, error) {
+	if _, err := f.Seek(0, 0); err != nil {
+		return nil, fmt.Errorf("failed to get to beginning of config file: %w", err)
+	}
+
 	cfg, err := ssh_config.Decode(f)
 	if err != nil {
 		return nil, err
