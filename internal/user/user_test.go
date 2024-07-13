@@ -3,7 +3,9 @@ package user_test
 import (
 	"bytes"
 	"context"
+	"crypto/sha1"
 	"database/sql"
+	"fmt"
 	"net/http"
 	"os"
 	"regexp"
@@ -83,7 +85,7 @@ func TestUserCmd(t *testing.T) {
 			store,
 			validation.New(),
 			http.Client{},
-			user.TursoAPISettings{BaseURL: "", Token: ""},
+			user.TursoAPISettings{BaseURL: "mock_base_url", Token: "mock_api_token"},
 			mockTursoClient,
 			databaseConnector,
 		)
@@ -169,7 +171,11 @@ func testUserRegisterHappyPath(
 		}, nil)
 
 	mockTursoClient.
-		On("CreateDatabase", mock.Anything, mock.Anything).
+		On(
+			"CreateDatabase",
+			fmt.Sprintf("%x", sha1.Sum(gossh.MarshalAuthorizedKey(publicKey))),
+			os.Getenv("DATABASE_GROUP"),
+		).
 		Return(&turso.TursoDatabaseResponse{
 			Database: turso.TursoDatabase{
 				DBID:     "someid",
@@ -184,9 +190,9 @@ func testUserRegisterHappyPath(
 
 	mockTursoClient.On(
 		"New",
-		mock.Anything,
-		mock.Anything,
-		mock.Anything,
+		os.Getenv("DATABASE_ORG"),
+		"mock_api_token",
+		mock.AnythingOfType("http.Client"),
 	).Return(&mockTursoClient)
 
 	projectsQuery := `
