@@ -57,35 +57,37 @@ func NewSSHClient(
 		User: username,
 		Auth: []gossh.AuthMethod{authMethod},
 
-		HostKeyCallback: gossh.HostKeyCallback(func(hostname string, remote net.Addr, key gossh.PublicKey) error {
-			khPath := filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
+		HostKeyCallback: gossh.HostKeyCallback(
+			func(hostname string, remote net.Addr, key gossh.PublicKey) error {
+				khPath := filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
 
-			kh, err := knownhosts.New(khPath)
-			if err != nil {
-				return fmt.Errorf("failed to open knownhosts file: %w", err)
-			}
-
-			err = kh(fmt.Sprintf("%s:%d", host, port), remote, key)
-
-			if knownhosts.IsHostKeyChanged(err) {
-				return fmt.Errorf("remote host identification has changed which may indicate a MITM attack: %w", err)
-			}
-
-			if knownhosts.IsHostUnknown(err) {
-				khHandle, err := os.OpenFile(khPath, os.O_APPEND|os.O_WRONLY, 0600)
+				kh, err := knownhosts.New(khPath)
 				if err != nil {
-					return fmt.Errorf("failed to open known hosts file for writing: %w", err)
+					return fmt.Errorf("failed to open knownhosts file: %w", err)
 				}
 
-				defer khHandle.Close()
+				err = kh(fmt.Sprintf("%s:%d", host, port), remote, key)
 
-				if err := knownhosts.WriteKnownHost(khHandle, hostname, remote, key); err != nil {
-					return fmt.Errorf("failed to write to known hosts: %w", err)
+				if knownhosts.IsHostKeyChanged(err) {
+					return fmt.Errorf("remote host identification has changed which may indicate a MITM attack: %w", err)
 				}
-			}
 
-			return nil
-		}),
+				if knownhosts.IsHostUnknown(err) {
+					khHandle, err := os.OpenFile(khPath, os.O_APPEND|os.O_WRONLY, 0600)
+					if err != nil {
+						return fmt.Errorf("failed to open known hosts file for writing: %w", err)
+					}
+
+					defer khHandle.Close()
+
+					if err := knownhosts.WriteKnownHost(khHandle, hostname, remote, key); err != nil {
+						return fmt.Errorf("failed to write to known hosts: %w", err)
+					}
+				}
+
+				return nil
+			},
+		),
 	}
 
 	conn, err := gossh.Dial("tcp", fmt.Sprintf("%s:%d", host, port), sshConfig)

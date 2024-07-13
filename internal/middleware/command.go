@@ -78,10 +78,11 @@ func NewMiddlewareCommand(
 				validate,
 				http.Client{},
 				user.TursoAPISettings{
-					URL:   os.Getenv("API_BASE_URL"),
-					Token: os.Getenv("API_TOKEN"),
+					BaseURL: os.Getenv("API_BASE_URL"),
+					Token:   os.Getenv("API_TOKEN"),
 				},
 				turso.TursoClient{},
+				database.Connection,
 			)
 
 			handlerUserRegister := user.NewHandlerUserRegister(userService)

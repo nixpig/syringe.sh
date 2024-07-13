@@ -40,15 +40,15 @@ type TursoDatabaseAPI interface {
 	CreateDatabase(name, group string) (*TursoDatabaseResponse, error)
 	ListDatabases() (*TursoDatabases, error)
 	CreateToken(name, expiration string) (*TursoToken, error)
-	New(organization, apiToken string, httpClient http.Client) TursoClient
+	New(organization, apiToken, baseURL string, httpClient http.Client) TursoDatabaseAPI
 }
 
-func (t TursoClient) New(organization, apiToken string, httpClient http.Client) TursoClient {
+func (t TursoClient) New(organization, apiToken, baseURL string, httpClient http.Client) TursoDatabaseAPI {
 	return TursoClient{
 		organization: organization,
 		token:        apiToken,
 		httpClient:   httpClient,
-		baseURL:      "https://api.turso.tech/v1",
+		baseURL:      baseURL,
 	}
 }
 

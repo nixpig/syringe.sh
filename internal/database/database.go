@@ -81,6 +81,7 @@ func NewUserDBConnection(publicKey ssh.PublicKey) (*sql.DB, error) {
 	api := c.New(
 		os.Getenv("DATABASE_ORG"),
 		os.Getenv("API_TOKEN"),
+		os.Getenv("API_BASE_URL"),
 		http.Client{},
 	)
 

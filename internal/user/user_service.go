@@ -2,6 +2,7 @@ package user
 
 import (
 	"crypto/sha1"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
@@ -9,7 +10,6 @@ import (
 	"time"
 
 	"github.com/charmbracelet/ssh"
-	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/secret"
 	"github.com/nixpig/syringe.sh/pkg/turso"
 	"github.com/nixpig/syringe.sh/pkg/validation"
@@ -56,8 +56,8 @@ type CreateDatabaseResponse struct {
 }
 
 type TursoAPISettings struct {
-	URL   string
-	Token string
+	BaseURL string
+	Token   string
 }
 
 type UserService interface {
@@ -67,11 +67,12 @@ type UserService interface {
 }
 
 type UserServiceImpl struct {
-	store            UserStore
-	validate         validation.Validator
-	httpClient       http.Client
-	tursoAPISettings TursoAPISettings
-	tursoClient      turso.TursoDatabaseAPI
+	store             UserStore
+	validate          validation.Validator
+	httpClient        http.Client
+	tursoAPISettings  TursoAPISettings
+	tursoClient       turso.TursoDatabaseAPI
+	databaseConnector func(databaseURL, databaseToken string) (*sql.DB, error)
 }
 
 func NewUserServiceImpl(
@@ -80,13 +81,15 @@ func NewUserServiceImpl(
 	httpClient http.Client,
 	tursoAPISettings TursoAPISettings,
 	tursoClient turso.TursoDatabaseAPI,
+	databaseConnector func(databaseURL, databaseToken string) (*sql.DB, error),
 ) UserServiceImpl {
 	return UserServiceImpl{
-		store:            store,
-		validate:         validate,
-		httpClient:       httpClient,
-		tursoAPISettings: tursoAPISettings,
-		tursoClient:      tursoClient,
+		store:             store,
+		validate:          validate,
+		httpClient:        httpClient,
+		tursoAPISettings:  tursoAPISettings,
+		tursoClient:       tursoClient,
+		databaseConnector: databaseConnector,
 	}
 }
 
@@ -164,7 +167,12 @@ func (u UserServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	api := u.tursoClient.New(databaseDetails.DatabaseOrg, u.tursoAPISettings.Token, u.httpClient)
+	api := u.tursoClient.New(
+		databaseDetails.DatabaseOrg,
+		u.tursoAPISettings.Token,
+		u.tursoAPISettings.BaseURL,
+		u.httpClient,
+	)
 
 	list, err := api.ListDatabases()
 	if err != nil {
@@ -179,7 +187,10 @@ func (u UserServiceImpl) CreateDatabase(
 		return nil, fmt.Errorf("database already exists in returned list")
 	}
 
-	createdDatabaseDetails, err := api.CreateDatabase(databaseDetails.Name, databaseDetails.DatabaseGroup)
+	createdDatabaseDetails, err := api.CreateDatabase(
+		databaseDetails.Name,
+		databaseDetails.DatabaseGroup,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +200,7 @@ func (u UserServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	userDB, err := database.Connection(
+	userDB, err := u.databaseConnector(
 		"libsql://"+createdDatabaseDetails.Database.HostName,
 		createdToken.Jwt,
 	)

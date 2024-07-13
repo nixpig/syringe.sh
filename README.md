@@ -85,9 +85,9 @@ The identity to use is selected with the following order of precedence.
 1. The `identity` property in [settings file](#settings-file).
 1. The running SSH agent, if available.
 
-Note: when using the SSH agent directly, the syringe.sh host must also be configured in SSH config.
+If you have an SSH agent running and the specified identity is not already loaded into the SSH agent, it will be added.
 
-In any case, if you have an SSH agent running and the specified identity is not already loaded into the SSH agent, you will be prompted to add it.
+Note: when using the SSH agent directly (i.e. identity not specified as flag or in settings), the syringe.sh host must also be configured in SSH config.
 
 ### Settings file
 
@@ -95,10 +95,10 @@ syringe.sh uses a settings file located in your user config directory, for examp
 
 The settings file uses a `key=value` format, with each key/value pair on a new line.
 
-#### Settings
-
-| Key                   | Value          | Description                                                                                                                                                        |
-| --------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `identity`            | `string`       | Path to the SSH identity file to use. Equivalent to the `-i` flag to `ssh` or the `IdentityFile` parameter in SSH config. For example: `/home/nixpig/.ssh/id_rsa`. |
-| `add_to_agent`        | `true` `false` | Whether to add the identity to the running SSH agent when loaded.                                                                                                  |
-| `add_to_agent_prompt` | `true` `false` | Whether to prompt before adding the identity to the running SSH agent.                                                                                             |
+| Key                   | Value                            | Description                                                                                                                                                        |
+| --------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `identity`            | `string`                         | Path to the SSH identity file to use. Equivalent to the `-i` flag to `ssh` or the `IdentityFile` parameter in SSH config. For example: `/home/nixpig/.ssh/id_rsa`. |
+| `add_to_agent`        | `boolean` (default: `true`)      | Whether to add the identity to the running SSH agent when loaded.                                                                                                  |
+| `add_to_agent_prompt` | `boolean` (default: `false`)     | Whether to prompt before adding the identity to the running SSH agent.                                                                                             |
+| `hostname`            | `string` (default: `syringe.sh`) |                                                                                                                                                                    |
+| `port`                | `number` (default: `22`)         |                                                                                                                                                                    |
