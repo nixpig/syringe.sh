@@ -5,8 +5,10 @@ import (
 	"crypto/rsa"
 	"errors"
 	"os"
+	"strings"
 	"testing"
 
+	tt "github.com/gruntwork-io/terratest/modules/ssh"
 	"github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/nixpig/syringe.sh/test"
 	"github.com/stretchr/testify/mock"
@@ -45,13 +47,13 @@ func TestSSHUtils(t *testing.T) {
 		"test auth method from identity happy path": testAuthMethodFromIdentityHappyPath,
 		"test auth method get public key error":     testAuthMethodGetPublicKeyError,
 		"test auth method get signer error":         testAuthMethodGetSignerError,
-		// "test auth method from agent happy path":  testAuthMethodFromAgentHappyPath,
+
+		"test auth method from agent happy path":            testAuthMethodFromAgentHappyPath,
+		"test auth method from agent get private key error": testAuthMethodFromAgentGetPrivateKeyError,
 	}
 
 	for scenario, fn := range scenarios {
-		t.Run(scenario, func(t *testing.T) {
-			fn(t)
-		})
+		t.Run(scenario, fn)
 	}
 
 }
@@ -392,5 +394,46 @@ func testAuthMethodGetSignerError(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, authMethod)
 
+	mockTermReadPassword.Unset()
+}
+
+func testAuthMethodFromAgentHappyPath(t *testing.T) {
+	keyPair := tt.GenerateRSAKeyPair(t, 4096)
+
+	sshAgent := tt.SshAgentWithKeyPair(t, keyPair)
+
+	defer sshAgent.Stop()
+
+	os.Setenv("SSH_AUTH_SOCK", sshAgent.SocketFile())
+
+	// different key than is already in the agent, so it goes through the 'add key to agent' branch
+	authMethod, err := ssh.AuthMethod("../../test/crypt_test_rsa", bytes.NewBufferString(""))
+	require.NoError(t, err)
+
+	require.Implements(t, (*gossh.AuthMethod)(nil), authMethod)
+
+	os.Setenv("SSH_AUTH_SOCK", "")
+}
+
+func testAuthMethodFromAgentGetPrivateKeyError(t *testing.T) {
+	keyPair := tt.GenerateRSAKeyPair(t, 4096)
+
+	sshAgent := tt.SshAgentWithKeyPair(t, keyPair)
+
+	defer sshAgent.Stop()
+
+	os.Setenv("SSH_AUTH_SOCK", sshAgent.SocketFile())
+
+	// use incorrect passphrase to force error in 'get private key' flow
+	mockTermReadPassword := mockTerm.
+		On("ReadPassword", mock.Anything).
+		Return([]byte("incorrect passphrase in here"), nil)
+
+	// different key than is already in the agent, so it goes through the 'add key to agent' branch
+	authMethod, err := ssh.AuthMethod("../../test/crypt_test_pass_rsa", bytes.NewBufferString(""))
+	require.True(t, strings.HasPrefix(err.Error(), "failed to read private key"))
+	require.Empty(t, authMethod)
+
+	os.Setenv("SSH_AUTH_SOCK", "")
 	mockTermReadPassword.Unset()
 }
