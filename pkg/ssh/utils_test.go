@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/nixpig/syringe.sh/pkg/ssh"
@@ -40,6 +41,11 @@ func TestSSHUtils(t *testing.T) {
 
 		"test new signers func happy path":       testNewSignersFuncHappyPath,
 		"test new signers func no signers error": testNewSignersFuncNoSignersError,
+
+		"test auth method from identity happy path": testAuthMethodFromIdentityHappyPath,
+		"test auth method get public key error":     testAuthMethodGetPublicKeyError,
+		"test auth method get signer error":         testAuthMethodGetSignerError,
+		// "test auth method from agent happy path":  testAuthMethodFromAgentHappyPath,
 	}
 
 	for scenario, fn := range scenarios {
@@ -343,6 +349,48 @@ func testGetSignerWithPasswordHappyPath(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Implements(t, (*gossh.Signer)(nil), signer)
+
+	mockTermReadPassword.Unset()
+}
+
+func testAuthMethodFromIdentityHappyPath(t *testing.T) {
+	identity := "../../test/crypt_test_rsa"
+	os.Setenv("SSH_AUTH_SOCK", "") // empty to fallback to identity
+
+	out := bytes.NewBufferString("")
+
+	authMethod, err := ssh.AuthMethod(identity, out)
+
+	require.NoError(t, err)
+	require.Implements(t, (*gossh.AuthMethod)(nil), authMethod)
+}
+
+func testAuthMethodGetPublicKeyError(t *testing.T) {
+	// force error  from GetPublicKey with invalid file path
+	identity := "not_found_file_path"
+
+	out := bytes.NewBufferString("")
+
+	authMethod, err := ssh.AuthMethod(identity, out)
+
+	require.Error(t, err)
+	require.Nil(t, authMethod)
+}
+
+func testAuthMethodGetSignerError(t *testing.T) {
+	// force error from GetSigner with incorrect password
+	identity := "../../test/crypt_test_pass_rsa"
+
+	out := bytes.NewBufferString("")
+
+	mockTermReadPassword := mockTerm.
+		On("ReadPassword", mock.Anything).
+		Return([]byte("something wrong in here"), nil)
+
+	authMethod, err := ssh.AuthMethod(identity, out)
+
+	require.Error(t, err)
+	require.Nil(t, authMethod)
 
 	mockTermReadPassword.Unset()
 }

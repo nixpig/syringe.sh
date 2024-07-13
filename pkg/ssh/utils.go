@@ -127,10 +127,6 @@ func AuthMethod(identity string, out io.Writer) (gossh.AuthMethod, error) {
 	}
 
 	sshAuthSock := os.Getenv("SSH_AUTH_SOCK")
-	if sshAuthSock == "" {
-		return nil, errors.New("SSH_AUTH_SOCK not set")
-	}
-
 	sshAgentClient, err := NewSSHAgentClient(sshAuthSock)
 	if err != nil {
 		fmt.Println("unable to connect to agent, falling back to identity")

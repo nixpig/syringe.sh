@@ -77,6 +77,7 @@ run_server:
 clean:
 	rm -rf tmp
 	rm -f *.out
+	go clean
 
 .PHONY: env
 env: 
