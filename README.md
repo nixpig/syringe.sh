@@ -42,11 +42,11 @@ Secrets can only be decrypted locally using your private key. Without your priva
 ### P1
 
 - [ ] Add unit tests for other areas
+- [ ] Build and publish artifact on GitHub
+- [ ] Install script that downloads binary and creates config file and such (maybe config file is created on first run??)
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
   - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?
   - Just use testcontainers??
-- [ ] Build and publish artifact on GitHub
-- [ ] Install script that downloads binary and creates config file and such (maybe config file is created on first run??)
 
 ### P2
 
