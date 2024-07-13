@@ -184,7 +184,7 @@ func (u UserServiceImpl) CreateDatabase(
 	})
 
 	if exists != -1 {
-		return nil, fmt.Errorf("database already exists in returned list")
+		return nil, fmt.Errorf("database already exists")
 	}
 
 	createdDatabaseDetails, err := api.CreateDatabase(
