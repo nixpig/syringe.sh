@@ -15,6 +15,8 @@ func TestSSHConfig(t *testing.T) {
 		"test add identity to ssh config existing identity":          testAddIdentityToSSHConfigExistingIdentity,
 		"test add identity to ssh config don't match on home prefix": testAddIdentityToSSHConfigHomePrefix,
 		"test add identity to ssh config match on home prefix":       testAddIdentityToSSHConfigHomePrefixMatch,
+		"test add identity to invalid ssh config file error":         testAddIdentityToInvalidSSHConfigFileError,
+		"test add empty identity to ssh config error":                testAddEmptyIdentityToSSHConfigError,
 	}
 
 	for scenario, fn := range scenarios {
@@ -140,4 +142,32 @@ func testAddIdentityToSSHConfigHomePrefixMatch(t *testing.T) {
 		"Host localhost\nAddKeysToAgent yes\nIgnoreUnknown UseKeychain\nUseKeychain yes\nIdentityFile ~/crypt_test_rsa\n",
 		string(w),
 	)
+}
+
+func testAddIdentityToInvalidSSHConfigFileError(t *testing.T) {
+	os.Setenv("APP_HOST", "localhost")
+	f, err := os.CreateTemp("", "tmp_ssh_config")
+	require.NoError(t, err)
+	// remove so read error
+	f.Close()
+	os.Remove(f.Name())
+
+	id := "../../test/crypt_test_rsa"
+
+	err = ssh.AddIdentityToSSHConfig(id, f)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "file already closed")
+}
+
+func testAddEmptyIdentityToSSHConfigError(t *testing.T) {
+	os.Setenv("APP_HOST", "")
+	f, err := os.CreateTemp("", "tmp_ssh_config")
+	require.NoError(t, err)
+	defer os.Remove(f.Name())
+	defer f.Close()
+
+	id := "../../test/crypt_test_rsa"
+
+	err = ssh.AddIdentityToSSHConfig(id, f)
+	require.EqualError(t, err, "ssh_config: empty pattern")
 }
