@@ -24,35 +24,7 @@ import (
 	gossh "golang.org/x/crypto/ssh"
 )
 
-type MockTursoClient struct {
-	mock.Mock
-}
-
-func (m *MockTursoClient) CreateDatabase(name, group string) (*turso.TursoDatabaseResponse, error) {
-	args := m.Called(name, group)
-
-	return args.Get(0).(*turso.TursoDatabaseResponse), args.Error(1)
-}
-
-func (m *MockTursoClient) ListDatabases() (*turso.TursoDatabases, error) {
-	args := m.Called()
-
-	return args.Get(0).(*turso.TursoDatabases), args.Error(1)
-}
-
-func (m *MockTursoClient) CreateToken(name, expiration string) (*turso.TursoToken, error) {
-	args := m.Called(name, expiration)
-
-	return args.Get(0).(*turso.TursoToken), args.Error(1)
-}
-
-func (m *MockTursoClient) New(organization, apiToken, baseURL string, httpClient http.Client) turso.TursoDatabaseAPI {
-	m.Called(organization, apiToken, httpClient)
-
-	return mockTursoClient
-}
-
-var mockTursoClient = new(MockTursoClient)
+var mockTursoClient = new(test.MockTursoClient)
 
 func TestUserCmd(t *testing.T) {
 	scenarios := map[string]func(
@@ -194,10 +166,10 @@ func testUserRegisterHappyPath(
 
 	mockTursoClientOnNew := mockTursoClient.On(
 		"New",
-		os.Getenv("DATABASE_ORG"),
+		"mock_db_org",
 		"mock_api_token",
 		mock.Anything,
-	).Return(&mockTursoClient)
+	).Return(mockTursoClient)
 
 	projectsQuery := `
 		create table if not exists projects_ (
@@ -333,10 +305,10 @@ func testUserRegisterRetryCreateTablesError(
 
 	mockTursoClientOnNew := mockTursoClient.On(
 		"New",
-		os.Getenv("DATABASE_ORG"),
+		"mock_db_org",
 		"mock_api_token",
 		mock.Anything,
-	).Return(&mockTursoClient)
+	).Return(mockTursoClient)
 
 	projectsQuery := `
 		create table if not exists projects_ (
@@ -428,10 +400,10 @@ func testUserRegisterDatabaseAlreadyExists(
 
 	mockTursoClientOnNew := mockTursoClient.On(
 		"New",
-		os.Getenv("DATABASE_ORG"),
+		"mock_db_org",
 		"mock_api_token",
 		mock.Anything,
-	).Return(&mockTursoClient)
+	).Return(mockTursoClient)
 
 	mainDBMock.
 		ExpectQuery(regexp.QuoteMeta(`
