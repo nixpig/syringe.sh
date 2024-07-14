@@ -58,17 +58,7 @@ func TestSSHUtils(t *testing.T) {
 
 }
 
-type MockTerm struct {
-	mock.Mock
-}
-
-func (mt *MockTerm) ReadPassword(fd int) ([]byte, error) {
-	args := mt.Called(fd)
-
-	return args.Get(0).([]byte), args.Error(1)
-}
-
-var mockTerm = new(MockTerm)
+var mockTerm = new(test.MockTerm)
 
 func testGetPrivateKeyEmptyPassphraseError(t *testing.T) {
 	w := bytes.NewBufferString("")

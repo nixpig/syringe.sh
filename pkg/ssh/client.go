@@ -5,7 +5,6 @@ import (
 	"io"
 	"net"
 	"os"
-	"path/filepath"
 
 	"github.com/skeema/knownhosts"
 	gossh "golang.org/x/crypto/ssh"
@@ -52,6 +51,7 @@ func NewSSHClient(
 	port int,
 	username string,
 	authMethod gossh.AuthMethod,
+	knownHosts string,
 ) (*SSHClient, error) {
 	sshConfig := &gossh.ClientConfig{
 		User: username,
@@ -59,9 +59,7 @@ func NewSSHClient(
 
 		HostKeyCallback: gossh.HostKeyCallback(
 			func(hostname string, remote net.Addr, key gossh.PublicKey) error {
-				khPath := filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
-
-				kh, err := knownhosts.New(khPath)
+				kh, err := knownhosts.New(knownHosts)
 				if err != nil {
 					return fmt.Errorf("failed to open knownhosts file: %w", err)
 				}
@@ -73,7 +71,7 @@ func NewSSHClient(
 				}
 
 				if knownhosts.IsHostUnknown(err) {
-					khHandle, err := os.OpenFile(khPath, os.O_APPEND|os.O_WRONLY, 0600)
+					khHandle, err := os.OpenFile(knownHosts, os.O_APPEND|os.O_WRONLY, 0600)
 					if err != nil {
 						return fmt.Errorf("failed to open known hosts file for writing: %w", err)
 					}

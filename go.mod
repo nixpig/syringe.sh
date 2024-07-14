@@ -19,6 +19,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/charmbracelet/wish v1.4.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/gliderlabs/ssh v0.3.7 // indirect
 	github.com/gruntwork-io/terratest v0.47.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect

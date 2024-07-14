@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"os/user"
+	"path/filepath"
 	"strings"
 
 	"github.com/nixpig/syringe.sh/pkg"
@@ -19,7 +21,7 @@ func NewHandlerCLI(
 	host string,
 	port int,
 	out io.Writer,
-	newSSHClient func(host string, port int, username string, authMethod gossh.AuthMethod) (*ssh.SSHClient, error),
+	newSSHClient func(host string, port int, username string, authMethod gossh.AuthMethod, knownHosts string) (*ssh.SSHClient, error),
 ) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		currentUser, err := user.Current()
@@ -57,6 +59,7 @@ func NewHandlerCLI(
 			port,
 			currentUser.Username,
 			authMethod,
+			filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"),
 		)
 		if err != nil {
 			return err

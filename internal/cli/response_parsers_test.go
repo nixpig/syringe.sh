@@ -2,28 +2,16 @@ package cli_test
 
 import (
 	"bytes"
-	"crypto/rsa"
 	"errors"
 	"io"
 	"testing"
 
 	"github.com/nixpig/syringe.sh/internal/cli"
 	"github.com/nixpig/syringe.sh/test"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-type MockCrypt struct {
-	mock.Mock
-}
-
-func (m *MockCrypt) Decrypt(cypherText string, privateKey *rsa.PrivateKey) (string, error) {
-	args := m.Called(cypherText, privateKey)
-
-	return args.String(0), args.Error(1)
-}
-
-var mockCrypt = new(MockCrypt)
+var mockCrypt = new(test.MockCrypt)
 
 func TestResponseParsers(t *testing.T) {
 	scenarios := map[string]func(t *testing.T){
