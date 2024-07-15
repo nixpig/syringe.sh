@@ -21,7 +21,13 @@ func NewHandlerCLI(
 	host string,
 	port int,
 	out io.Writer,
-	newSSHClient func(host string, port int, username string, authMethod gossh.AuthMethod, knownHosts string) (*ssh.SSHClient, error),
+	newSSHClient func(
+		host string,
+		port int,
+		username string,
+		authMethod gossh.AuthMethod,
+		knownHosts string,
+	) (*ssh.SSHClient, error),
 ) pkg.CobraHandler {
 	return func(cmd *cobra.Command, args []string) error {
 		currentUser, err := user.Current()

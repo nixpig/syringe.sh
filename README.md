@@ -3,7 +3,7 @@
 
 # 🔐 `syringe.sh`
 
-Distributed database-per-user encrypted secrets management over SSH protocol.
+Self-hostable distributed database-per-user encrypted secrets management over SSH.
 
 > **⚠️ This project is a work in progress and not yet ready for general use.**
 >
@@ -21,32 +21,16 @@ Secrets can only be decrypted locally using your private key. Without your priva
 
 ## TODO
 
-- [x] Confirm authentication before calling cmd, e.g. with unregistered user calling project command results in NPE
-- [x] Merge client and server codebases into one
-- [x] Share command configuration for both cli client and server
-- [x] Secret injection and run passed command
-  - [x] Pass a `io.Writer` into `run` so that we can read secrets from it to inject instead of directly printing to terminal out
-- [x] Update and enable the disabled unit tests
-- [x] Utilise settings file to specify/save which identity to use (viper)
-- [x] Load ssh config from file
-  - [x] Single identity for host
-- [x] Use SSH agent by default - check if key is in agent, if key isn't already in agent when loaded, prompt user to add to agent (add a flag for this too!)
-- [x] Encryption of secrets
-  - [x] RSA
-  - [x] Encrypt on client before sending
-  - [x] Decrypt on client
-    - [x] secret get
-    - [x] secret list
-    - [x] inject
-
 ### P1
 
-- [ ] Add unit tests for other areas
+- [x] Add unit tests for other areas
 - [ ] Build and publish artifact on GitHub
 - [ ] Install script that downloads binary and creates config file and such (maybe config file is created on first run??)
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
   - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?
   - Just use testcontainers??
+- [ ] Genericise storage solution so whole thing can self-hosted and backed by sqlite databases
+- [ ] Dockerise the server app
 
 ### P2
 
@@ -54,20 +38,17 @@ Secrets can only be decrypted locally using your private key. Without your priva
 - [ ] Email confirmation on new user registration?
 - [ ] Add 'syringe config' command to create/update config file?
 - [ ] Accept spaces in secret values
-- [x] Explicit (not implicit) user registration
 - [ ] Improve error handling, errors and messaging
-- [x] Exit codes on error
 - [ ] Proper good refactor and tidy-up (primarily of database stuff)
 
 ### P3
 
 - [ ] Formatted and --plain output of commands, e.g. table when listing secrets
-- [?] Multiple identities for host - prompt user to choose which to use (have a default - add a flag to just use default (or specific) without prompt)
 - [ ] Add functionality to 'link' local directories/projects to specific project/environment - save in config file
 - [ ] Remove use of third-party package for SSH client (in CLI client)
 - [ ] Pull the Turso stuff out into separate SDK package??
-- [ ] Genericise storage solution so whole thing can be run locally backed by sqlite databases
 - [ ] Create a wrapper package around the various SSH related stuff like config and known hosts
+- [ ] Add multiple keys for the same user
 
 ## Supported SSH key types
 
