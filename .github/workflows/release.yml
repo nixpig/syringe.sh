@@ -32,4 +32,4 @@ jobs:
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: goreleaser release
+        run: go run github.com/goreleaser/goreleaser/v2@latest release
