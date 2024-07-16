@@ -93,7 +93,12 @@ Secrets can be managed using 'projects' and 'environments'.
 ### CLI
 
 1. Download the corresponding binary from the [releases](https://github.com/nixpig/syringe.sh/releases) page and put it into your path.
+1. Rename the binary to `syringe`.
 1. Run `syringe` from your terminal.
+
+> [!NOTE]
+>
+> In future a more simple install script will be available.
 
 ### Server
 
@@ -102,7 +107,7 @@ Secrets can be managed using 'projects' and 'environments'.
 
 > [!NOTE]
 >
-> The intention is to provide the server component packaged as a Docker image.
+> In future this will be packaged for easy configuration and deployment.
 
 ## Supported SSH key types
 
