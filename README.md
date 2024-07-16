@@ -100,7 +100,7 @@ Secrets can be managed using 'projects' and 'environments'.
 1. Download the corresponding binary from the [releases](https://github.com/nixpig/syringe.sh/releases) page and put it into your path.
 1. Package and deploy per your requirements.
 
-> [!INFO]
+> [!NOTE]
 >
 > The intention is to provide the server component packaged as a Docker image.
 
