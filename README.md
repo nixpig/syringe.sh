@@ -88,6 +88,22 @@ Secrets can be managed using 'projects' and 'environments'.
 - [ ] Allow deletion of user and data
 - [ ] Add 'syringe config' command to create/update config file, e.g. `syringe config set hostname localhost`?
 
+## Installation
+
+### CLI
+
+1. Download the corresponding binary from the [releases](https://github.com/nixpig/syringe.sh/releases) page and put it into your path.
+1. Run `syringe` from your terminal.
+
+### Server
+
+1. Download the corresponding binary from the [releases](https://github.com/nixpig/syringe.sh/releases) page and put it into your path.
+1. Package and deploy per your requirements.
+
+> [!INFO]
+>
+> The intention is to provide the server component packaged as a Docker image.
+
 ## Supported SSH key types
 
 - RSA
