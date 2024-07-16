@@ -10,7 +10,7 @@ import (
 	"github.com/kevinburke/ssh_config"
 )
 
-func AddIdentityToSSHConfig(identity string, f *os.File) error {
+func AddIdentityToSSHConfig(identity string, hostname string, f *os.File) error {
 	var err error
 
 	cfg, err := configFromFile(f)
@@ -18,7 +18,7 @@ func AddIdentityToSSHConfig(identity string, f *os.File) error {
 		return err
 	}
 
-	sshConfigHost, err := hostFromConfig(cfg, os.Getenv("APP_HOST"), false)
+	sshConfigHost, err := hostFromConfig(cfg, hostname, false)
 	if err == nil {
 		if hostHasIdentity(sshConfigHost, identity) {
 			return nil
@@ -28,7 +28,7 @@ func AddIdentityToSSHConfig(identity string, f *os.File) error {
 	} else {
 		if err := addHost(
 			cfg,
-			os.Getenv("APP_HOST"),
+			hostname,
 			identity,
 		); err != nil {
 			return err

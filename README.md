@@ -5,9 +5,11 @@
 
 Self-hostable distributed database-per-user encrypted secrets management over SSH.
 
-> **⚠️ This project is a work in progress and not yet ready for general use.**
+> [!CAUTION]
 >
-> &nbsp;&nbsp; Feel free to browse the code while it's being developed, but use at your own risk.
+> This project is a work in progress and not yet ready for general use.
+>
+> Feel free to browse the code while it's being developed, but use at your own risk.
 
 SSH (Secure Shell) is a cryptographic network protocol for secure communication between computers over an unsecured network that uses keys for secure authentication. If you've ever `ssh`'d into a remote machine or used CLI tools like `git` then you've used SSH.
 
@@ -24,17 +26,19 @@ Secrets can only be decrypted locally using your private key. Without your priva
 ### P1
 
 - [x] Add unit tests for other areas
+- [ ] Pull all config from configuration
 - [ ] Build and publish artifact on GitHub
-- [ ] Install script that downloads binary and creates config file and such (maybe config file is created on first run??)
+- [ ] Install script that downloads cli binary and creates config file and such (maybe config file is created on first run??)
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
   - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?
   - Just use testcontainers??
 - [ ] Genericise storage solution so whole thing can self-hosted and backed by sqlite databases
-- [ ] Dockerise the server app
+- [ ] Build and publish deployable Docker image for server
 
 ### P2
 
 - [ ] Update syringe.sh domain
+- [ ] Set up demo server on syringe.sh
 - [ ] Email confirmation on new user registration?
 - [ ] Add 'syringe config' command to create/update config file?
 - [ ] Accept spaces in secret values
@@ -49,6 +53,7 @@ Secrets can only be decrypted locally using your private key. Without your priva
 - [ ] Pull the Turso stuff out into separate SDK package??
 - [ ] Create a wrapper package around the various SSH related stuff like config and known hosts
 - [ ] Add multiple keys for the same user
+- [ ] Allow deletion of user and data
 
 ## Supported SSH key types
 
@@ -57,6 +62,8 @@ Secrets can only be decrypted locally using your private key. Without your priva
 ## Usage
 
 ### Specifying an identity
+
+An _identity_ is a path to an SSH key, for example `~/.ssh/id_rsa`.
 
 An identity must be specified to connect over SSH and to encrypt/decrypt secrets.
 
@@ -76,10 +83,16 @@ syringe.sh uses a settings file located in your user config directory, for examp
 
 The settings file uses a `key=value` format, with each key/value pair on a new line.
 
-| Key                   | Value                            | Description                                                                                                                                                        |
-| --------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `identity`            | `string`                         | Path to the SSH identity file to use. Equivalent to the `-i` flag to `ssh` or the `IdentityFile` parameter in SSH config. For example: `/home/nixpig/.ssh/id_rsa`. |
-| `add_to_agent`        | `boolean` (default: `true`)      | Whether to add the identity to the running SSH agent when loaded.                                                                                                  |
-| `add_to_agent_prompt` | `boolean` (default: `false`)     | Whether to prompt before adding the identity to the running SSH agent.                                                                                             |
-| `hostname`            | `string` (default: `syringe.sh`) |                                                                                                                                                                    |
-| `port`                | `number` (default: `22`)         |                                                                                                                                                                    |
+| Key        | Value                            | Description                                                                                                                                                        |
+| ---------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `identity` | `string`                         | Path to the SSH identity file to use. Equivalent to the `-i` flag to `ssh` or the `IdentityFile` parameter in SSH config. For example: `/home/nixpig/.ssh/id_rsa`. |
+| `hostname` | `string` (default: `syringe.sh`) |                                                                                                                                                                    |
+| `port`     | `number` (default: `22`)         |                                                                                                                                                                    |
+
+#### Example settings file
+
+```bash
+identity=$HOME/.ssh/id_rsa
+hostname=localhost
+port=23234
+```

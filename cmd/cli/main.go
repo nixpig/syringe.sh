@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/nixpig/syringe.sh/internal/cli"
 	"github.com/nixpig/syringe.sh/internal/environment"
@@ -14,25 +15,30 @@ import (
 	"github.com/nixpig/syringe.sh/pkg/helpers"
 	"github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/spf13/cobra"
-)
-
-const (
-	host = "localhost"
-	port = 23234
+	"github.com/spf13/viper"
 )
 
 func main() {
-	os.Setenv("APP_HOST", "localhost")
-	cmdRoot := root.New(context.Background())
+	v := viper.New()
+
+	if err := initialiseConfig(v); err != nil {
+		fmt.Println("Error: failed to initialise config")
+		os.Exit(1)
+	}
+
+	hostname := v.GetString("hostname")
+	port := v.GetInt("port")
+
+	cmdRoot := root.New(context.Background(), v)
 
 	handlerCLI := cli.NewHandlerCLI(
-		host,
+		hostname,
 		port,
 		cmdRoot.OutOrStdout(),
 		ssh.NewSSHClient,
 	)
 
-	handlerInjectCLI := secret.NewCLIHandlerSecretInject(host, port, cmdRoot.OutOrStdout())
+	handlerInjectCLI := secret.NewCLIHandlerSecretInject(hostname, port, cmdRoot.OutOrStdout())
 
 	// -- project
 	cmdProject := project.NewCmdProject()
@@ -83,4 +89,42 @@ func main() {
 	if err := cmdRoot.Execute(); err != nil {
 		os.Exit(1)
 	}
+}
+
+func initialiseConfig(v *viper.Viper) error {
+	userConfigDir, err := os.UserConfigDir()
+	if err != nil {
+		return err
+	}
+
+	syringeConfigDir := filepath.Join(userConfigDir, "syringe")
+
+	if err := os.MkdirAll(syringeConfigDir, os.ModePerm); err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(
+		filepath.Join(syringeConfigDir, "settings"),
+		os.O_RDWR|os.O_CREATE,
+		0666,
+	)
+	if err != nil {
+		return err
+	}
+	f.Close()
+
+	v.SetConfigFile(filepath.Join(
+		syringeConfigDir,
+		"settings",
+	))
+
+	v.SetConfigType("env")
+
+	if err := v.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return err
+		}
+	}
+
+	return nil
 }

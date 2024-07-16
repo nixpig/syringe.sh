@@ -24,7 +24,7 @@ func TestCmdRoot(t *testing.T) {
 
 func testRootCmdHappyPath(t *testing.T) {
 	ctx := context.Background()
-	cmdRoot := root.New(ctx)
+	cmdRoot := root.New(ctx, nil)
 
 	cmdRoot.SetArgs([]string{
 		"-i",

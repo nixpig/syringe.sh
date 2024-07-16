@@ -25,15 +25,15 @@ func TestSSHConfig(t *testing.T) {
 }
 
 func testAddIdentityToSSHConfigNewHost(t *testing.T) {
-	os.Setenv("APP_HOST", "localhost")
 	f, err := os.CreateTemp("", "tmp_ssh_config")
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
 	defer f.Close()
 
 	id := "../../test/crypt_test_rsa"
+	hostname := "localhost"
 
-	err = ssh.AddIdentityToSSHConfig(id, f)
+	err = ssh.AddIdentityToSSHConfig(id, hostname, f)
 	require.NoError(t, err)
 
 	// read contents of file and check
@@ -48,7 +48,7 @@ func testAddIdentityToSSHConfigNewHost(t *testing.T) {
 }
 
 func testAddIdentityToSSHConfigExistingHost(t *testing.T) {
-	os.Setenv("APP_HOST", "localhost")
+	hostname := "localhost"
 	f, err := os.CreateTemp("", "tmp_ssh_config")
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
@@ -58,7 +58,7 @@ func testAddIdentityToSSHConfigExistingHost(t *testing.T) {
 
 	id := "../../test/crypt_test_rsa"
 
-	err = ssh.AddIdentityToSSHConfig(id, f)
+	err = ssh.AddIdentityToSSHConfig(id, hostname, f)
 	require.NoError(t, err)
 
 	w, err := os.ReadFile(f.Name())
@@ -72,7 +72,7 @@ func testAddIdentityToSSHConfigExistingHost(t *testing.T) {
 }
 
 func testAddIdentityToSSHConfigExistingIdentity(t *testing.T) {
-	os.Setenv("APP_HOST", "localhost")
+	hostname := "localhost"
 	f, err := os.CreateTemp("", "tmp_ssh_config")
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
@@ -82,7 +82,7 @@ func testAddIdentityToSSHConfigExistingIdentity(t *testing.T) {
 
 	id := "../../test/crypt_test_rsa"
 
-	err = ssh.AddIdentityToSSHConfig(id, f)
+	err = ssh.AddIdentityToSSHConfig(id, hostname, f)
 	require.NoError(t, err)
 
 	w, err := os.ReadFile(f.Name())
@@ -96,7 +96,7 @@ func testAddIdentityToSSHConfigExistingIdentity(t *testing.T) {
 }
 
 func testAddIdentityToSSHConfigHomePrefix(t *testing.T) {
-	os.Setenv("APP_HOST", "localhost")
+	hostname := "localhost"
 	f, err := os.CreateTemp("", "tmp_ssh_config")
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
@@ -106,7 +106,7 @@ func testAddIdentityToSSHConfigHomePrefix(t *testing.T) {
 
 	id := "../../test/crypt_test_rsa"
 
-	err = ssh.AddIdentityToSSHConfig(id, f)
+	err = ssh.AddIdentityToSSHConfig(id, hostname, f)
 	require.NoError(t, err)
 
 	w, err := os.ReadFile(f.Name())
@@ -120,7 +120,7 @@ func testAddIdentityToSSHConfigHomePrefix(t *testing.T) {
 }
 
 func testAddIdentityToSSHConfigHomePrefixMatch(t *testing.T) {
-	os.Setenv("APP_HOST", "localhost")
+	hostname := "localhost"
 	os.Setenv("HOME", "/home/test")
 	f, err := os.CreateTemp("", "tmp_ssh_config")
 	require.NoError(t, err)
@@ -131,7 +131,7 @@ func testAddIdentityToSSHConfigHomePrefixMatch(t *testing.T) {
 
 	id := "/home/test/crypt_test_rsa"
 
-	err = ssh.AddIdentityToSSHConfig(id, f)
+	err = ssh.AddIdentityToSSHConfig(id, hostname, f)
 	require.NoError(t, err)
 
 	w, err := os.ReadFile(f.Name())
@@ -145,7 +145,7 @@ func testAddIdentityToSSHConfigHomePrefixMatch(t *testing.T) {
 }
 
 func testAddIdentityToInvalidSSHConfigFileError(t *testing.T) {
-	os.Setenv("APP_HOST", "localhost")
+	hostname := "localhost"
 	f, err := os.CreateTemp("", "tmp_ssh_config")
 	require.NoError(t, err)
 	// remove so read error
@@ -154,20 +154,20 @@ func testAddIdentityToInvalidSSHConfigFileError(t *testing.T) {
 
 	id := "../../test/crypt_test_rsa"
 
-	err = ssh.AddIdentityToSSHConfig(id, f)
+	err = ssh.AddIdentityToSSHConfig(id, hostname, f)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "file already closed")
 }
 
 func testAddEmptyIdentityToSSHConfigError(t *testing.T) {
-	os.Setenv("APP_HOST", "")
 	f, err := os.CreateTemp("", "tmp_ssh_config")
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
 	defer f.Close()
 
+	hostname := "" // empty
 	id := "../../test/crypt_test_rsa"
 
-	err = ssh.AddIdentityToSSHConfig(id, f)
+	err = ssh.AddIdentityToSSHConfig(id, hostname, f)
 	require.EqualError(t, err, "ssh_config: empty pattern")
 }

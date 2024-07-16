@@ -1,9 +1,6 @@
 package root
 
 import (
-	"os"
-	"path/filepath"
-
 	"github.com/nixpig/syringe.sh/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -11,7 +8,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func New(ctx context.Context) *cobra.Command {
+func New(ctx context.Context, v *viper.Viper) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Version: config.Version,
 		Use:     "syringe",
@@ -49,13 +46,9 @@ Supported key formats:
 
   For more examples, go to https://syringe.sh/examples`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			v := viper.New()
-
-			if err := initialiseConfig(v); err != nil {
-				return err
+			if v != nil {
+				bindFlags(cmd, v)
 			}
-
-			bindFlags(cmd, v)
 
 			return nil
 		},
@@ -88,44 +81,6 @@ If no identity specified as flag or in settings file, SSH agent is used and syri
 	rootCmd.SetContext(ctx)
 
 	return rootCmd
-}
-
-func initialiseConfig(v *viper.Viper) error {
-	userConfigDir, err := os.UserConfigDir()
-	if err != nil {
-		return err
-	}
-
-	syringeConfigDir := filepath.Join(userConfigDir, "syringe")
-
-	if err := os.MkdirAll(syringeConfigDir, os.ModePerm); err != nil {
-		return err
-	}
-
-	f, err := os.OpenFile(
-		filepath.Join(syringeConfigDir, "settings"),
-		os.O_RDWR|os.O_CREATE,
-		0666,
-	)
-	if err != nil {
-		return err
-	}
-	f.Close()
-
-	v.SetConfigFile(filepath.Join(
-		syringeConfigDir,
-		"settings",
-	))
-
-	v.SetConfigType("env")
-
-	if err := v.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func bindFlags(cmd *cobra.Command, v *viper.Viper) error {

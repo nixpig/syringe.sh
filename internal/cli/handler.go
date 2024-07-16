@@ -18,11 +18,11 @@ import (
 )
 
 func NewHandlerCLI(
-	host string,
+	hostname string,
 	port int,
 	out io.Writer,
 	newSSHClient func(
-		host string,
+		hostname string,
 		port int,
 		username string,
 		authMethod gossh.AuthMethod,
@@ -56,12 +56,12 @@ func NewHandlerCLI(
 
 		defer configFile.Close()
 
-		if err := ssh.AddIdentityToSSHConfig(identity, configFile); err != nil {
+		if err := ssh.AddIdentityToSSHConfig(identity, hostname, configFile); err != nil {
 			return fmt.Errorf("failed to add or update identity in ssh config file: %w", err)
 		}
 
 		client, err := newSSHClient(
-			host,
+			hostname,
 			port,
 			currentUser.Username,
 			authMethod,

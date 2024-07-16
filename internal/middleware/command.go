@@ -68,7 +68,7 @@ func NewMiddlewareCommand(
 			}
 
 			// -- COMMANDS
-			cmdRoot := root.New(ctx)
+			cmdRoot := root.New(ctx, nil)
 
 			// -- USER CMD
 			cmdUser := user.NewCmdUser()
