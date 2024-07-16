@@ -21,14 +21,38 @@ Secrets are encrypted locally using your key before being sent to the server and
 
 Secrets can only be decrypted locally using your private key. Without your private key, nobody can decrypt and read your secrets. It's important you don't lose this, else your secrets will be lost forever.
 
+```
+syringe secret set SKEY value
+  ┌──────────────────┐                    ┌─────────────────┐
+  │      ┌────────────┐    Encrypted      │┌───────┐        │
+  │ CLI  │ 🔐 Encrypt ├───────────────────►│ Store │ Server │
+  │      └────────────┘       SSH         │└───┬───┘        │
+  └──────────────────┘                    └────│────────────┘
+                                          ┌────▼────┐
+                                          │ User DB │┐
+                                          └┬────────┘│
+                                           └─────────┘
+
+syringe secret get SKEY
+  ┌──────────────────┐                    ┌─────────────────┐
+  │      ┌────────────┐    Encrypted      │┌───────┐        │
+  │ CLI  │ 🔓️ Decrypt ◄───────────────────►│ Store │ Server │
+  │      └────┬───────┘       SSH         │└───────┘        │
+  └───────────│───────┘                   └─────────────────┘
+         ┌────▼────┐
+         │ STD OUT │
+         └─────────┘
+
+```
+
+Secrets can be managed using 'projects' and 'environments'.
+
 ## TODO
 
 ### P1
 
-- [x] Add unit tests for other areas
-- [ ] Pull all config from configuration
 - [ ] Build and publish artifact on GitHub
-- [ ] Install script that downloads cli binary and creates config file and such (maybe config file is created on first run??)
+- [ ] Install script that downloads cli binary into path.
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
   - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?
   - Just use testcontainers??
@@ -40,10 +64,9 @@ Secrets can only be decrypted locally using your private key. Without your priva
 - [ ] Update syringe.sh domain
 - [ ] Set up demo server on syringe.sh
 - [ ] Email confirmation on new user registration?
-- [ ] Add 'syringe config' command to create/update config file?
-- [ ] Accept spaces in secret values
+- [ ] Accept spaces in secret values when quoted
 - [ ] Improve error handling, errors and messaging
-- [ ] Proper good refactor and tidy-up (primarily of database stuff)
+- [ ] Proper good refactor and tidy-up!! Best practices around configuration management with Viper.
 
 ### P3
 
@@ -54,6 +77,7 @@ Secrets can only be decrypted locally using your private key. Without your priva
 - [ ] Create a wrapper package around the various SSH related stuff like config and known hosts
 - [ ] Add multiple keys for the same user
 - [ ] Allow deletion of user and data
+- [ ] Add 'syringe config' command to create/update config file, e.g. `syringe config set hostname localhost`?
 
 ## Supported SSH key types
 
@@ -79,15 +103,15 @@ Note: when using the SSH agent directly (i.e. identity not specified as flag or 
 
 ### Settings file
 
-syringe.sh uses a settings file located in your user config directory, for example: `/home/nixpig/.config/syringe/settings`. If this doesn't exist, you will be prompted to create it any time you run a `syringe` command.
+syringe.sh uses a settings file located in your user config directory, for example: `/home/nixpig/.config/syringe/settings`. If this doesn't exist, it will be created for you when you run any `syringe` command.
 
 The settings file uses a `key=value` format, with each key/value pair on a new line.
 
-| Key        | Value                            | Description                                                                                                                                                        |
-| ---------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `identity` | `string`                         | Path to the SSH identity file to use. Equivalent to the `-i` flag to `ssh` or the `IdentityFile` parameter in SSH config. For example: `/home/nixpig/.ssh/id_rsa`. |
-| `hostname` | `string` (default: `syringe.sh`) |                                                                                                                                                                    |
-| `port`     | `number` (default: `22`)         |                                                                                                                                                                    |
+| Key        | Type     | Description                                                                                                                                                        |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `identity` | `string` | Path to the SSH identity file to use. Equivalent to the `-i` flag to `ssh` or the `IdentityFile` parameter in SSH config. For example: `/home/nixpig/.ssh/id_rsa`. |
+| `hostname` | `string` | (default: `syringe.sh`)                                                                                                                                            |
+| `port`     | `number` | (default: `22`)                                                                                                                                                    |
 
 #### Example settings file
 

@@ -26,7 +26,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	v.SetDefault("hostname", "syringe.sh")
 	hostname := v.GetString("hostname")
+
+	v.SetDefault("port", 22)
 	port := v.GetInt("port")
 
 	cmdRoot := root.New(context.Background(), v)
