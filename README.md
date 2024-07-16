@@ -33,11 +33,10 @@ Secrets can only be decrypted locally using your private key. Without your priva
   │      └────────────┘│          SSH           │└───┬───┘        │
   └────────────────────┘                        └────│────────────┘
                                                 ┌────▼────┐
-                                                │ User DB │┐
-                                                └┬────────┘│
+                                                │ User DB │┐  K: SKEY
+                                                └┬────────┘│  V: <encrypted>
                                                  └─────────┘
 
-syringe secret get SKEY
 ┌─────────────────────────┐
 │ STDIN                   │
 │ syringe secret get SKEY │
