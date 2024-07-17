@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/nixpig/syringe.sh/config"
 	"github.com/skeema/knownhosts"
 	gossh "golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
@@ -54,8 +55,9 @@ func NewSSHClient(
 	knownHosts string,
 ) (*SSHClient, error) {
 	sshConfig := &gossh.ClientConfig{
-		User: username,
-		Auth: []gossh.AuthMethod{authMethod},
+		User:          username,
+		ClientVersion: config.Client,
+		Auth:          []gossh.AuthMethod{authMethod},
 
 		HostKeyCallback: gossh.HostKeyCallback(
 			func(hostname string, remote net.Addr, key gossh.PublicKey) error {
