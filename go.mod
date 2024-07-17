@@ -16,7 +16,6 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
-	github.com/tursodatabase/libsql-client-go v0.0.0-20240416075003-747366ff79c4
 	golang.org/x/crypto v0.24.0
 )
 

@@ -151,33 +151,7 @@ func (u UserServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	// TODO: need to check if db already exists!!
-
-	// list, err := api.ListDatabases()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	//
-	// exists := slices.IndexFunc(list.Databases, func(db turso.TursoDatabase) bool {
-	// 	return db.Name == databaseDetails.Name
-	// })
-	//
-	// if exists != -1 {
-	// 	return nil, fmt.Errorf("database already exists")
-	// }
-
-	// createdDatabaseDetails, err := api.CreateDatabase(
-	// 	databaseDetails.Name,
-	// 	databaseDetails.DatabaseGroup,
-	// )
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// createdToken, err := api.CreateToken(createdDatabaseDetails.Database.Name, "5m")
-	// if err != nil {
-	// 	return nil, err
-	// }
+	// TODO: need to check if db already exists before trying to create!!
 
 	userDB, err := u.databaseConnector(
 		fmt.Sprintf("%s.db", databaseDetails.Name),

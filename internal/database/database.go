@@ -9,7 +9,6 @@ import (
 	"github.com/charmbracelet/ssh"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nixpig/syringe.sh/pkg/serrors"
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	gossh "golang.org/x/crypto/ssh"
 )
 
@@ -85,30 +84,13 @@ func MigrateAppDB(db *sql.DB) error {
 }
 
 func NewUserDBConnection(publicKey ssh.PublicKey) (*sql.DB, error) {
-	// c := turso.TursoClient{}
-	// api := c.New(
-	// 	os.Getenv("DATABASE_ORG"),
-	// 	os.Getenv("API_TOKEN"),
-	// 	os.Getenv("API_BASE_URL"),
-	// 	http.Client{},
-	// )
-
 	marshalledKey := gossh.MarshalAuthorizedKey(publicKey)
 
 	hashedKey := fmt.Sprintf("%x", sha1.Sum(marshalledKey))
-	// expiration := "30s"
-
-	// token, err := api.CreateToken(hashedKey, expiration)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to create token:\n%s", err)
-	// }
-
 	db, err := Connection(
 		fmt.Sprintf("%s.db", hashedKey),
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
-		// "libsql://"+hashedKey+"-"+os.Getenv("DATABASE_ORG")+".turso.io",
-		// string(token.Jwt),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating database connection:\n%s", err)

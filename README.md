@@ -85,7 +85,6 @@ Secrets can be managed using 'projects' and 'environments'.
 - [ ] Formatted and --plain output of commands, e.g. table when listing secrets
 - [ ] Add functionality to 'link' local directories/projects to specific project/environment - save in config file
 - [ ] Remove use of third-party package for SSH client (in CLI client)
-- [ ] Pull the Turso stuff out into separate SDK package??
 - [ ] Create a wrapper package around the various SSH related stuff like config and known hosts
 - [ ] Add multiple keys for the same user
 - [ ] Allow deletion of user and data
