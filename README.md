@@ -1,5 +1,6 @@
 [![Workflow Status](https://github.com/nixpig/syringe.sh/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/nixpig/syringe.sh/actions/workflows/build.yml?query=branch%3Amain)
 [![Coverage Status](https://coveralls.io/repos/github/nixpig/syringe.sh/badge.svg?branch=main)](https://coveralls.io/github/nixpig/syringe.sh?branch=main)
+[![Go Report Card](https://goreportcard.com/badge/github.com/nixpig/syringe.sh)](https://goreportcard.com/report/github.com/nixpig/syringe.sh)
 
 # 🔐 `syringe.sh`
 
@@ -61,7 +62,7 @@ Secrets can be managed using 'projects' and 'environments'.
 ### P1
 
 - [ ] Genericise storage solution so whole thing can self-hosted and backed by sqlite databases
-- [ ] Build and publish artifact on GitHub
+- [ ] Build and publish artifact(s) on GitHub
 - [ ] Build and publish deployable Docker image for server
 - [ ] Install script that downloads cli binary into path.
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
@@ -72,10 +73,10 @@ Secrets can be managed using 'projects' and 'environments'.
 
 - [ ] Update syringe.sh domain
 - [ ] Set up demo server on syringe.sh
-- [ ] Email confirmation on new user registration?
 - [ ] Accept spaces in secret values when quoted
 - [ ] Improve error handling, errors and messaging
 - [ ] Proper good refactor and tidy-up!! Best practices around configuration management with Viper.
+- [ ] Email confirmation on new user registration?
 
 ### P3
 
