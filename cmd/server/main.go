@@ -38,8 +38,9 @@ func main() {
 	// -- DATABASE
 	log.Info().Msg("connecting to database")
 	appDB, err := database.Connection(
-		os.Getenv("DATABASE_URL"),
-		os.Getenv("DATABASE_TOKEN"),
+		os.Getenv("DB_FILENAME"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
 	)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to connect to database")
@@ -47,6 +48,13 @@ func main() {
 	}
 
 	defer appDB.Close()
+
+	// -- RUN DB MIGRATION
+	log.Info().Msg("running database migrations")
+	if err := database.MigrateUp(appDB); err != nil {
+		log.Error().Err(err).Msg("failed to run database migration")
+		os.Exit(1)
+	}
 
 	// -- DEPENDENCY CONSTRUCTION
 	log.Info().Msg("building app components")
@@ -130,6 +138,8 @@ func (s Server) Start(host, port string) error {
 			done <- nil
 		}
 	}()
+
+	s.logger.Info().Msg("server started")
 
 	<-done
 

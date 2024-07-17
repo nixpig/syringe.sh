@@ -23,14 +23,15 @@ func NewMiddlewareAuth(
 				sess.Stderr().Write([]byte(fmt.Sprintf("Unsupported client %s.\nPlease use the syringe CLI, available at: \n  https://github.com/nixpig/syringe.sh\n", clientVersion)))
 				return
 			}
+
 			user, err := authService.AuthenticateUser(auth.AuthenticateUserRequest{
 				Username:  sess.User(),
 				PublicKey: sess.PublicKey(),
 			})
 			if err != nil {
-				logger.Warn().Msg("user not authenticated")
+				logger.Warn().Err(err).Msg("failed to authenticate user")
 
-				sess.Stderr().Write([]byte("Public key not recognised.\n"))
+				sess.Stderr().Write([]byte("Failed to authenticate.\n"))
 
 				return
 			}

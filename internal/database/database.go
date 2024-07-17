@@ -4,12 +4,11 @@ import (
 	"crypto/sha1"
 	"database/sql"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/charmbracelet/ssh"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/nixpig/syringe.sh/pkg/serrors"
-	"github.com/nixpig/syringe.sh/pkg/turso"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -18,10 +17,19 @@ type DBConfig struct {
 	Location string
 }
 
-func Connection(databaseURL, databaseToken string) (*sql.DB, error) {
-	databaseConnectionString := databaseURL + "?authToken=" + databaseToken
+func Connection(
+	filename,
+	user,
+	password string,
+) (*sql.DB, error) {
+	databaseConnectionString := fmt.Sprintf(
+		"file:%s?_auth&_auth_user=%s&_auth_pass=%s&_auth_crypt=sha1",
+		filename,
+		user,
+		password,
+	)
 
-	db, err := sql.Open("libsql", databaseConnectionString)
+	db, err := sql.Open("sqlite3", databaseConnectionString)
 	if err != nil {
 		return nil, err
 	}
@@ -77,27 +85,30 @@ func MigrateAppDB(db *sql.DB) error {
 }
 
 func NewUserDBConnection(publicKey ssh.PublicKey) (*sql.DB, error) {
-	c := turso.TursoClient{}
-	api := c.New(
-		os.Getenv("DATABASE_ORG"),
-		os.Getenv("API_TOKEN"),
-		os.Getenv("API_BASE_URL"),
-		http.Client{},
-	)
+	// c := turso.TursoClient{}
+	// api := c.New(
+	// 	os.Getenv("DATABASE_ORG"),
+	// 	os.Getenv("API_TOKEN"),
+	// 	os.Getenv("API_BASE_URL"),
+	// 	http.Client{},
+	// )
 
 	marshalledKey := gossh.MarshalAuthorizedKey(publicKey)
 
 	hashedKey := fmt.Sprintf("%x", sha1.Sum(marshalledKey))
-	expiration := "30s"
+	// expiration := "30s"
 
-	token, err := api.CreateToken(hashedKey, expiration)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create token:\n%s", err)
-	}
+	// token, err := api.CreateToken(hashedKey, expiration)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to create token:\n%s", err)
+	// }
 
 	db, err := Connection(
-		"libsql://"+hashedKey+"-"+os.Getenv("DATABASE_ORG")+".turso.io",
-		string(token.Jwt),
+		fmt.Sprintf("%s.db", hashedKey),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		// "libsql://"+hashedKey+"-"+os.Getenv("DATABASE_ORG")+".turso.io",
+		// string(token.Jwt),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating database connection:\n%s", err)

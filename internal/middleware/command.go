@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"net/http"
-	"os"
 
 	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/internal/auth"
@@ -18,7 +16,6 @@ import (
 	"github.com/nixpig/syringe.sh/internal/user"
 	"github.com/nixpig/syringe.sh/pkg/ctxkeys"
 	"github.com/nixpig/syringe.sh/pkg/helpers"
-	"github.com/nixpig/syringe.sh/pkg/turso"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
@@ -76,12 +73,6 @@ func NewMiddlewareCommand(
 			userService := user.NewUserServiceImpl(
 				user.NewSqliteUserStore(appDB),
 				validate,
-				http.Client{},
-				user.TursoAPISettings{
-					BaseURL: os.Getenv("API_BASE_URL"),
-					Token:   os.Getenv("API_TOKEN"),
-				},
-				turso.TursoClient{},
 				database.Connection,
 			)
 

@@ -6,12 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"slices"
-	"time"
 
 	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/internal/secret"
-	"github.com/nixpig/syringe.sh/pkg/turso"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -55,11 +52,6 @@ type CreateDatabaseResponse struct {
 	HostName string
 }
 
-type TursoAPISettings struct {
-	BaseURL string
-	Token   string
-}
-
 type UserService interface {
 	RegisterUser(user RegisterUserRequest) (*RegisterUserResponse, error)
 	AddPublicKey(publicKey AddPublicKeyRequest) (*AddPublicKeyResponse, error)
@@ -70,25 +62,17 @@ type UserServiceImpl struct {
 	store             UserStore
 	validate          validation.Validator
 	httpClient        http.Client
-	tursoAPISettings  TursoAPISettings
-	tursoClient       turso.TursoDatabaseAPI
-	databaseConnector func(databaseURL, databaseToken string) (*sql.DB, error)
+	databaseConnector func(filename, user, password string) (*sql.DB, error)
 }
 
 func NewUserServiceImpl(
 	store UserStore,
 	validate validation.Validator,
-	httpClient http.Client,
-	tursoAPISettings TursoAPISettings,
-	tursoClient turso.TursoDatabaseAPI,
-	databaseConnector func(databaseURL, databaseToken string) (*sql.DB, error),
+	databaseConnector func(filename, user, password string) (*sql.DB, error),
 ) UserServiceImpl {
 	return UserServiceImpl{
 		store:             store,
 		validate:          validate,
-		httpClient:        httpClient,
-		tursoAPISettings:  tursoAPISettings,
-		tursoClient:       tursoClient,
 		databaseConnector: databaseConnector,
 	}
 }
@@ -167,42 +151,38 @@ func (u UserServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	api := u.tursoClient.New(
-		databaseDetails.DatabaseOrg,
-		u.tursoAPISettings.Token,
-		u.tursoAPISettings.BaseURL,
-		u.httpClient,
-	)
+	// TODO: need to check if db already exists!!
 
-	list, err := api.ListDatabases()
-	if err != nil {
-		return nil, err
-	}
+	// list, err := api.ListDatabases()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	//
+	// exists := slices.IndexFunc(list.Databases, func(db turso.TursoDatabase) bool {
+	// 	return db.Name == databaseDetails.Name
+	// })
+	//
+	// if exists != -1 {
+	// 	return nil, fmt.Errorf("database already exists")
+	// }
 
-	exists := slices.IndexFunc(list.Databases, func(db turso.TursoDatabase) bool {
-		return db.Name == databaseDetails.Name
-	})
+	// createdDatabaseDetails, err := api.CreateDatabase(
+	// 	databaseDetails.Name,
+	// 	databaseDetails.DatabaseGroup,
+	// )
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	if exists != -1 {
-		return nil, fmt.Errorf("database already exists")
-	}
-
-	createdDatabaseDetails, err := api.CreateDatabase(
-		databaseDetails.Name,
-		databaseDetails.DatabaseGroup,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	createdToken, err := api.CreateToken(createdDatabaseDetails.Database.Name, "5m")
-	if err != nil {
-		return nil, err
-	}
+	// createdToken, err := api.CreateToken(createdDatabaseDetails.Database.Name, "5m")
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	userDB, err := u.databaseConnector(
-		"libsql://"+createdDatabaseDetails.Database.HostName,
-		createdToken.Jwt,
+		fmt.Sprintf("%s.db", databaseDetails.Name),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
 	)
 	if err != nil {
 		return nil, err
@@ -211,21 +191,9 @@ func (u UserServiceImpl) CreateDatabase(
 	envStore := secret.NewSqliteSecretStore(userDB)
 	envService := secret.NewSecretServiceImpl(envStore, validation.New())
 
-	var count time.Duration
-	increment := time.Second * 5
-	timeout := time.Second * 60
-	for err := envService.CreateTables(); err != nil; err = envService.CreateTables() {
-		time.Sleep(increment)
-		count = count + increment
-		if count >= timeout {
-			return nil, fmt.Errorf(
-				fmt.Sprintf(
-					"timed out after %d seconds trying to create tables",
-					timeout/time.Second,
-				),
-			)
-		}
+	if err := envService.CreateTables(); err != nil {
+		return nil, err
 	}
 
-	return &CreateDatabaseResponse{Name: createdDatabaseDetails.Database.Name}, nil
+	return &CreateDatabaseResponse{Name: databaseDetails.Name}, nil
 }

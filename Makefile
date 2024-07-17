@@ -7,6 +7,7 @@ SERVER_APP_PACKAGE_PATH := cmd/server/*.go
 SERVER_APP_BINARY_NAME := syringeserver
 CLI_APP_PACKAGE_PATH := cmd/cli/*.go
 CLI_APP_BINARY_NAME := syringe
+CGO_ENABLED=1 # required for mattn/go-sqlite3
 
 .PHONY: tidy
 tidy: 
