@@ -22,7 +22,7 @@ func main() {
 	v := viper.New()
 
 	if err := initialiseConfig(v); err != nil {
-		fmt.Println("Error: failed to initialise config")
+		fmt.Fprintf(os.Stderr, "Error: failed to initialise config")
 		os.Exit(1)
 	}
 
@@ -69,7 +69,7 @@ func main() {
 	cmdSecret := secret.NewCmdSecret()
 
 	cmdSecretSet := secret.NewCmdSecretSet(handlerCLI)
-	cmdSecretSet.PreRunE = cli.PreRunEEncrypt
+	cmdSecretSet.PreRunE = cli.PreRunESecretSet
 
 	cmdSecret.AddCommand(
 		cmdSecretSet,

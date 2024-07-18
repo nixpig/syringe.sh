@@ -151,11 +151,11 @@ func (s Server) Start(host, port string) error {
 
 	s.logger.Info().Msg("stopping server")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
-		s.logger.Error().Err(err).Msg("failed to stop server")
+		s.logger.Error().Err(err).Msg("failed to gracefully shutdown server")
 		return err
 	}
 

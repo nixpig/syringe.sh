@@ -19,8 +19,8 @@ func NewMiddlewareAuth(
 			clientVersion := sess.Context().ClientVersion()
 
 			if clientVersion != config.Client {
-				logger.Warn().Str("clientVersion", clientVersion).Msg("invalid client")
-				sess.Stderr().Write([]byte(fmt.Sprintf("Unsupported client %s.\nPlease use the syringe CLI, available at: \n  https://github.com/nixpig/syringe.sh\n", clientVersion)))
+				logger.Error().Str("clientVersion", clientVersion).Msg("invalid client")
+				sess.Stderr().Write([]byte(fmt.Sprintf("Error: unsupported client %s.\nPlease use the syringe CLI, available at: \n  https://github.com/nixpig/syringe.sh\n", clientVersion)))
 				return
 			}
 
@@ -29,9 +29,9 @@ func NewMiddlewareAuth(
 				PublicKey: sess.PublicKey(),
 			})
 			if err != nil {
-				logger.Warn().Err(err).Msg("failed to authenticate user")
+				logger.Error().Err(err).Msg("failed to authenticate user")
 
-				sess.Stderr().Write([]byte("Failed to authenticate.\n"))
+				sess.Stderr().Write([]byte("Error: failed to authenticate.\n"))
 
 				return
 			}

@@ -33,7 +33,7 @@ func testAuthPreRunAuthenticated(t *testing.T) {
 
 	cmd.SetContext(ctx)
 
-	err := auth.PreRunE(cmd, args)
+	err := auth.PreRunEAuth(cmd, args)
 	require.NoError(t, err)
 }
 
@@ -46,6 +46,6 @@ func testAuthPreRunNotAuthenticated(t *testing.T) {
 
 	cmd.SetContext(ctx)
 
-	err := auth.PreRunE(cmd, args)
+	err := auth.PreRunEAuth(cmd, args)
 	require.EqualError(t, err, "not authenticated")
 }

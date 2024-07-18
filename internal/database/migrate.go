@@ -14,6 +14,10 @@ type Migrator interface {
 	Down() error
 }
 
+type Migration struct {
+	migrate *migrate.Migrate
+}
+
 func NewMigration(db *sql.DB, migrationsDir string) (*Migration, error) {
 	instance, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
@@ -36,10 +40,6 @@ func NewMigration(db *sql.DB, migrationsDir string) (*Migration, error) {
 	}
 
 	return &Migration{migrate: m}, nil
-}
-
-type Migration struct {
-	migrate *migrate.Migrate
 }
 
 func (m Migration) Up() error {

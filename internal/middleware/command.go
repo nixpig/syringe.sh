@@ -35,7 +35,7 @@ func NewMiddlewareCommand(
 			ctx, ok := sess.Context().(context.Context)
 			if !ok {
 				logger.Error().Err(errors.New("context error")).Msg("failed to get session context")
-				sess.Stderr().Write([]byte("failed to get context from session"))
+				sess.Stderr().Write([]byte("Error: failed to get context from session"))
 				return
 			}
 
@@ -44,10 +44,10 @@ func NewMiddlewareCommand(
 
 			authenticated, ok := sess.Context().Value(ctxkeys.Authenticated).(bool)
 			if !ok {
-				logger.Warn().
+				logger.Error().
 					Str("session", sess.Context().SessionID()).
 					Msg("failed to get authentication status from context")
-				sess.Stderr().Write([]byte("Failed to establish authentication status"))
+				sess.Stderr().Write([]byte("Error: failed to establish authentication status"))
 				return
 			}
 
@@ -61,7 +61,7 @@ func NewMiddlewareCommand(
 					logger.Error().Err(err).
 						Str("session", sess.Context().SessionID()).
 						Msg("failed to obtain user database connection")
-					sess.Stderr().Write([]byte("Failed to obtain database connection using the provided public key"))
+					sess.Stderr().Write([]byte("Error: failed to obtain database connection using the provided public key"))
 					return
 				}
 
@@ -69,10 +69,9 @@ func NewMiddlewareCommand(
 				defer userDB.Close()
 			}
 
-			// -- COMMANDS
 			cmdRoot := root.New(ctx, nil)
 
-			// -- USER CMD
+			// -- user
 			cmdUser := user.NewCmdUser()
 
 			userService := user.NewUserServiceImpl(
@@ -82,100 +81,120 @@ func NewMiddlewareCommand(
 
 			handlerUserRegister := user.NewHandlerUserRegister(userService)
 			cmdUser.AddCommand(user.NewCmdUserRegister(handlerUserRegister))
-			cmdRoot.AddCommand(cmdUser)
 
-			// -- PROJECT CMD
+			// -- project
 			cmdProject := project.NewCmdProject()
-			cmdProject.PersistentPreRunE = auth.PreRunE
+			cmdProject.PersistentPreRunE = auth.PreRunEAuth
 
 			projectService := project.NewProjectServiceImpl(
 				project.NewSqliteProjectStore(userDB),
 				validate,
 			)
 
-			handlerProjectAdd := project.NewHandlerProjectAdd(projectService)
-			cmdProjectAdd := project.NewCmdProjectAdd(handlerProjectAdd)
-			cmdProject.AddCommand(cmdProjectAdd)
+			cmdProjectAdd := project.NewCmdProjectAdd(
+				project.NewHandlerProjectAdd(projectService),
+			)
 
-			handlerProjectRemove := project.NewHandlerProjectRemove(projectService)
-			cmdProjectRemove := project.NewCmdProjectRemove(handlerProjectRemove)
-			cmdProject.AddCommand(cmdProjectRemove)
+			cmdProjectRemove := project.NewCmdProjectRemove(
+				project.NewHandlerProjectRemove(projectService),
+			)
 
-			handlerProjectRename := project.NewHandlerProjectRename(projectService)
-			cmdProjectRename := project.NewCmdProjectRename(handlerProjectRename)
-			cmdProject.AddCommand(cmdProjectRename)
+			cmdProjectRename := project.NewCmdProjectRename(
+				project.NewHandlerProjectRename(projectService),
+			)
 
-			handlerProjectList := project.NewHandlerProjectList(projectService)
-			cmdProjectList := project.NewCmdProjectList(handlerProjectList)
-			cmdProject.AddCommand(cmdProjectList)
+			cmdProjectList := project.NewCmdProjectList(
+				project.NewHandlerProjectList(projectService),
+			)
 
-			cmdRoot.AddCommand(cmdProject)
+			cmdProject.AddCommand(
+				cmdProjectAdd,
+				cmdProjectRemove,
+				cmdProjectRename,
+				cmdProjectList,
+			)
 
-			// -- ENVIRONMENT CMD
+			// -- environment
 			cmdEnvironment := environment.NewCmdEnvironment()
-			cmdEnvironment.PersistentPreRunE = auth.PreRunE
+			cmdEnvironment.PersistentPreRunE = auth.PreRunEAuth
 
 			environmentService := environment.NewEnvironmentServiceImpl(
 				environment.NewSqliteEnvironmentStore(userDB),
 				validate,
 			)
 
-			handlerEnvironmentAdd := environment.NewHandlerEnvironmentAdd(environmentService)
-			cmdEnvironmentAdd := environment.NewCmdEnvironmentAdd(handlerEnvironmentAdd)
-			cmdEnvironment.AddCommand(cmdEnvironmentAdd)
+			cmdEnvironmentAdd := environment.NewCmdEnvironmentAdd(
+				environment.NewHandlerEnvironmentAdd(environmentService),
+			)
 
-			handlerEnvironmentRemove := environment.NewHandlerEnvironmentRemove(environmentService)
-			cmdEnvironmentRemove := environment.NewCmdEnvironmentRemove(handlerEnvironmentRemove)
-			cmdEnvironment.AddCommand(cmdEnvironmentRemove)
+			cmdEnvironmentRemove := environment.NewCmdEnvironmentRemove(
+				environment.NewHandlerEnvironmentRemove(environmentService),
+			)
 
-			handlerEnvironmentRename := environment.NewHandlerEnvironmentRename(environmentService)
-			cmdEnvironmentRename := environment.NewCmdEnvironmentRename(handlerEnvironmentRename)
-			cmdEnvironment.AddCommand(cmdEnvironmentRename)
+			cmdEnvironmentRename := environment.NewCmdEnvironmentRename(
+				environment.NewHandlerEnvironmentRename(environmentService),
+			)
 
-			handlerEnvironmentList := environment.NewHandlerEnvironmentList(environmentService)
-			cmdEnvironmentList := environment.NewCmdEnvironmentList(handlerEnvironmentList)
-			cmdEnvironment.AddCommand(cmdEnvironmentList)
+			cmdEnvironmentList := environment.NewCmdEnvironmentList(
+				environment.NewHandlerEnvironmentList(environmentService),
+			)
 
-			cmdRoot.AddCommand(cmdEnvironment)
+			cmdEnvironment.AddCommand(
+				cmdEnvironmentAdd,
+				cmdEnvironmentRemove,
+				cmdEnvironmentRename,
+				cmdEnvironmentList,
+			)
 
 			// -- SECRET CMD
 			cmdSecret := secret.NewCmdSecret()
-			cmdSecret.PersistentPreRunE = auth.PreRunE
+			cmdSecret.PersistentPreRunE = auth.PreRunEAuth
 
 			secretService := secret.NewSecretServiceImpl(
 				secret.NewSqliteSecretStore(userDB),
 				validate,
 			)
 
-			handlerSecretSet := secret.NewSSHHandlerSecretSet(secretService)
-			cmdSecretSet := secret.NewCmdSecretSet(handlerSecretSet)
-			cmdSecret.AddCommand(cmdSecretSet)
+			cmdSecretSet := secret.NewCmdSecretSet(
+				secret.NewSSHHandlerSecretSet(secretService),
+			)
 
-			handlerSecretGet := secret.NewSSHHandlerSecretGet(secretService)
-			cmdSecretGet := secret.NewCmdSecretGet(handlerSecretGet)
-			cmdSecret.AddCommand(cmdSecretGet)
+			cmdSecretGet := secret.NewCmdSecretGet(
+				secret.NewSSHHandlerSecretGet(secretService),
+			)
 
-			handlerSecretList := secret.NewSSHHandlerSecretList(secretService)
-			cmdSecretList := secret.NewCmdSecretList(handlerSecretList)
-			cmdSecret.AddCommand(cmdSecretList)
+			cmdSecretList := secret.NewCmdSecretList(
+				secret.NewSSHHandlerSecretList(secretService),
+			)
 
-			handlerSecretRemove := secret.NewSSHHandlerSecretRemove(secretService)
-			cmdSecretRemove := secret.NewCmdSecretRemove(handlerSecretRemove)
-			cmdSecret.AddCommand(cmdSecretRemove)
+			cmdSecretRemove := secret.NewCmdSecretRemove(
+				secret.NewSSHHandlerSecretRemove(secretService),
+			)
 
-			handlerSecretInject := secret.NewSSHHandlerSecretInject(secretService)
-			cmdSecretInject := secret.NewCmdSecretInject(handlerSecretInject)
-			cmdSecretInject.PersistentPreRunE = auth.PreRunE
-			cmdSecret.AddCommand(cmdSecretInject)
+			cmdSecretInject := secret.NewCmdSecretInject(
+				secret.NewSSHHandlerSecretInject(secretService),
+			)
+			cmdSecretInject.PersistentPreRunE = auth.PreRunEAuth
 
-			cmdRoot.AddCommand(cmdSecret)
+			cmdSecret.AddCommand(
+				cmdSecretSet,
+				cmdSecretGet,
+				cmdSecretList,
+				cmdSecretRemove,
+				cmdSecretInject,
+			)
+
+			cmdRoot.AddCommand(
+				cmdUser,
+				cmdProject,
+				cmdEnvironment,
+				cmdSecret,
+			)
 
 			helpers.WalkCmd(cmdRoot, func(c *cobra.Command) {
 				c.Flags().BoolP("help", "h", false, fmt.Sprintf("Help for the '%s' command", c.Name()))
 				c.Flags().BoolP("version", "v", false, "Print version information")
 			})
-
-			// --------------------------------------
 
 			cmdRoot.SetArgs(sess.Command())
 			cmdRoot.SetIn(sess)

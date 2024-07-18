@@ -62,11 +62,17 @@ Secrets can be managed using 'projects' and 'environments'.
 ### P1
 
 - [ ] Tidy up all the database stuff
+- [ ] Refactor CLI handler construction
+- [ ] Refactor response parsers
+- [ ] Refactor `pkg/ssh` package
+- [ ] Address any `TODO`s
+
 - [ ] Build and publish artifact(s) on GitHub
 - [ ] Build and publish deployable Docker image for server
 - [ ] Bundle migrations into packaged binary
 - [ ] Make server key configurable?
 - [ ] Install script that downloads cli binary into path.
+- [ ] Tests for database package and migrations
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
   - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?
   - Just use testcontainers??

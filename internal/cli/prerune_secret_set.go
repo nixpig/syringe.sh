@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func PreRunEEncrypt(cmd *cobra.Command, args []string) error {
+func PreRunESecretSet(cmd *cobra.Command, args []string) error {
 	identity, err := cmd.Flags().GetString("identity")
 	if err != nil {
 		return err
