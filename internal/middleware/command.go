@@ -73,7 +73,6 @@ func NewMiddlewareCommand(
 			userService := user.NewUserServiceImpl(
 				user.NewSqliteUserStore(appDB),
 				validate,
-				database.Connection,
 			)
 
 			handlerUserRegister := user.NewHandlerUserRegister(userService)

@@ -11,6 +11,7 @@ import (
 
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
+	"github.com/golang-migrate/migrate/v4"
 	"github.com/joho/godotenv"
 	"github.com/nixpig/syringe.sh/internal/auth"
 	"github.com/nixpig/syringe.sh/internal/database"
@@ -51,8 +52,15 @@ func main() {
 
 	// -- RUN DB MIGRATION
 	log.Info().Msg("running database migrations")
-	if err := database.MigrateUp(appDB); err != nil {
-		log.Error().Err(err).Msg("failed to run database migration")
+
+	migrator, err := database.NewMigration(appDB, "migrations/app")
+	if err != nil {
+		log.Error().Err(err).Msg("failed to create migration")
+		os.Exit(1)
+	}
+
+	if err := migrator.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Error().Err(err).Msg("failed to run migration")
 		os.Exit(1)
 	}
 
@@ -61,8 +69,6 @@ func main() {
 	validate := validation.New()
 	authStore := auth.NewSqliteAuthStore(appDB)
 	authService := auth.NewAuthService(authStore, validate)
-
-	// -- CMD
 
 	// -- SERVER
 	sshServer := newServer(

@@ -64,6 +64,7 @@ Secrets can be managed using 'projects' and 'environments'.
 - [ ] Tidy up all the database stuff
 - [ ] Build and publish artifact(s) on GitHub
 - [ ] Build and publish deployable Docker image for server
+- [ ] Bundle migrations into packaged binary
 - [ ] Make server key configurable?
 - [ ] Install script that downloads cli binary into path.
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet

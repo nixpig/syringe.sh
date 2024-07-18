@@ -9,25 +9,43 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func MigrateUp(db *sql.DB) error {
+type Migrator interface {
+	Up() error
+	Down() error
+}
+
+func NewMigration(db *sql.DB, migrationsDir string) (*Migration, error) {
 	instance, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	src, err := (&file.File{}).Open("migrations/app")
+	src, err := (&file.File{}).Open(migrationsDir)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	m, err := migrate.NewWithInstance("file", src, "sqlite3", instance)
+	m, err := migrate.NewWithInstance(
+		"file",
+		src,
+		"sqlite3",
+		instance,
+	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return err
-	}
+	return &Migration{migrate: m}, nil
+}
 
-	return nil
+type Migration struct {
+	migrate *migrate.Migrate
+}
+
+func (m Migration) Up() error {
+	return m.migrate.Up()
+}
+
+func (m Migration) Down() error {
+	return m.migrate.Down()
 }

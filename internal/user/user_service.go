@@ -2,16 +2,14 @@ package user
 
 import (
 	"crypto/sha1"
-	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/charmbracelet/ssh"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
-	"github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -62,21 +60,18 @@ type UserService interface {
 }
 
 type UserServiceImpl struct {
-	store             UserStore
-	validate          validation.Validator
-	httpClient        http.Client
-	databaseConnector func(filename, user, password string) (*sql.DB, error)
+	store      UserStore
+	validate   validation.Validator
+	httpClient http.Client
 }
 
 func NewUserServiceImpl(
 	store UserStore,
 	validate validation.Validator,
-	databaseConnector func(filename, user, password string) (*sql.DB, error),
 ) UserServiceImpl {
 	return UserServiceImpl{
-		store:             store,
-		validate:          validate,
-		databaseConnector: databaseConnector,
+		store:    store,
+		validate: validate,
 	}
 }
 
@@ -156,7 +151,7 @@ func (u UserServiceImpl) CreateDatabase(
 
 	// TODO: need to check if db already exists before trying to create!!
 
-	userDB, err := u.databaseConnector(
+	userDB, err := database.Connection(
 		fmt.Sprintf("%s.db", databaseDetails.Name),
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
@@ -165,17 +160,10 @@ func (u UserServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	instance, err := sqlite3.WithInstance(userDB, &sqlite3.Config{})
-	if err != nil {
-		return nil, err
-	}
-
-	src, err := (&file.File{}).Open("migrations/user")
-	if err != nil {
-		return nil, err
-	}
-
-	m, err := migrate.NewWithInstance("file", src, "sqlite3", instance)
+	m, err := database.NewMigration(
+		userDB,
+		"migrations/user",
+	)
 	if err != nil {
 		return nil, err
 	}
