@@ -61,8 +61,6 @@ Secrets can be managed using 'projects' and 'environments'.
 
 ### P1
 
-- [x] Genericise storage solution so whole thing can self-hosted and backed by sqlite databases
-- [ ] Convert user tables creating to migration instead of inline
 - [ ] Tidy up all the database stuff
 - [ ] Build and publish artifact(s) on GitHub
 - [ ] Build and publish deployable Docker image for server

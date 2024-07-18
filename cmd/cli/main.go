@@ -41,47 +41,56 @@ func main() {
 		ssh.NewSSHClient,
 	)
 
-	handlerInjectCLI := secret.NewCLIHandlerSecretInject(hostname, port, cmdRoot.OutOrStdout())
+	handlerInjectCLI := secret.NewCLIHandlerSecretInject(
+		hostname,
+		port,
+		cmdRoot.OutOrStdout(),
+	)
 
 	// -- project
 	cmdProject := project.NewCmdProject()
-	cmdProject.AddCommand(project.NewCmdProjectList(handlerCLI))
-	cmdProject.AddCommand(project.NewCmdProjectAdd(handlerCLI))
-	cmdProject.AddCommand(project.NewCmdProjectRename(handlerCLI))
-	cmdProject.AddCommand(project.NewCmdProjectRemove(handlerCLI))
-	cmdRoot.AddCommand(cmdProject)
+	cmdProject.AddCommand(
+		project.NewCmdProjectList(handlerCLI),
+		project.NewCmdProjectAdd(handlerCLI),
+		project.NewCmdProjectRename(handlerCLI),
+		project.NewCmdProjectRemove(handlerCLI),
+	)
 
 	// -- environment
 	cmdEnvironment := environment.NewCmdEnvironment()
-	cmdEnvironment.AddCommand(environment.NewCmdEnvironmentList(handlerCLI))
-	cmdEnvironment.AddCommand(environment.NewCmdEnvironmentAdd(handlerCLI))
-	cmdEnvironment.AddCommand(environment.NewCmdEnvironmentRename(handlerCLI))
-	cmdEnvironment.AddCommand(environment.NewCmdEnvironmentRemove(handlerCLI))
-	cmdRoot.AddCommand(cmdEnvironment)
+	cmdEnvironment.AddCommand(
+		environment.NewCmdEnvironmentList(handlerCLI),
+		environment.NewCmdEnvironmentAdd(handlerCLI),
+		environment.NewCmdEnvironmentRename(handlerCLI),
+		environment.NewCmdEnvironmentRemove(handlerCLI),
+	)
 
 	// -- secret
 	cmdSecret := secret.NewCmdSecret()
 
 	cmdSecretSet := secret.NewCmdSecretSet(handlerCLI)
 	cmdSecretSet.PreRunE = cli.PreRunEEncrypt
-	cmdSecret.AddCommand(cmdSecretSet)
 
-	cmdSecretList := secret.NewCmdSecretList(handlerCLI)
-	cmdSecret.AddCommand(cmdSecretList)
-
-	cmdSecretInject := secret.NewCmdSecretInject(handlerInjectCLI)
-	cmdSecret.AddCommand(cmdSecretInject)
-
-	cmdSecret.AddCommand(secret.NewCmdSecretGet(handlerCLI))
-
-	cmdSecret.AddCommand(secret.NewCmdSecretRemove(handlerCLI))
-
-	cmdRoot.AddCommand(cmdSecret)
+	cmdSecret.AddCommand(
+		cmdSecretSet,
+		secret.NewCmdSecretList(handlerCLI),
+		secret.NewCmdSecretInject(handlerInjectCLI),
+		secret.NewCmdSecretGet(handlerCLI),
+		secret.NewCmdSecretRemove(handlerCLI),
+	)
 
 	// -- user
 	cmdUser := user.NewCmdUser()
-	cmdUser.AddCommand(user.NewCmdUserRegister(handlerCLI))
-	cmdRoot.AddCommand(cmdUser)
+	cmdUser.AddCommand(
+		user.NewCmdUserRegister(handlerCLI),
+	)
+
+	cmdRoot.AddCommand(
+		cmdProject,
+		cmdEnvironment,
+		cmdSecret,
+		cmdUser,
+	)
 
 	// update help and version for all subcommands
 	helpers.WalkCmd(cmdRoot, func(c *cobra.Command) {

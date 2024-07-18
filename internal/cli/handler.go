@@ -21,6 +21,8 @@ func NewHandlerCLI(
 	hostname string,
 	port int,
 	out io.Writer,
+
+	// TODO: really don't like this passing here
 	newSSHClient func(
 		hostname string,
 		port int,

@@ -16,6 +16,7 @@ func NewCLIHandlerSecretInject(host string, port int, out io.Writer) pkg.CobraHa
 	return func(cmd *cobra.Command, args []string) error {
 		w := bytes.NewBufferString("")
 
+		// TODO: this feels hacky
 		injectHandler := cli.NewHandlerCLI(
 			host,
 			port,
