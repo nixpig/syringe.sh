@@ -61,11 +61,12 @@ Secrets can be managed using 'projects' and 'environments'.
 
 ### P1
 
-- [ ] Genericise storage solution so whole thing can self-hosted and backed by sqlite databases
-- [ ] Conver user tables creating to migration instead of inline
+- [x] Genericise storage solution so whole thing can self-hosted and backed by sqlite databases
+- [ ] Convert user tables creating to migration instead of inline
 - [ ] Tidy up all the database stuff
 - [ ] Build and publish artifact(s) on GitHub
 - [ ] Build and publish deployable Docker image for server
+- [ ] Make server key configurable?
 - [ ] Install script that downloads cli binary into path.
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
   - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?

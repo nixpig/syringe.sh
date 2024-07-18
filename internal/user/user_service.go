@@ -8,7 +8,10 @@ import (
 	"os"
 
 	"github.com/charmbracelet/ssh"
-	"github.com/nixpig/syringe.sh/internal/secret"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -162,10 +165,22 @@ func (u UserServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	envStore := secret.NewSqliteSecretStore(userDB)
-	envService := secret.NewSecretServiceImpl(envStore, validation.New())
+	instance, err := sqlite3.WithInstance(userDB, &sqlite3.Config{})
+	if err != nil {
+		return nil, err
+	}
 
-	if err := envService.CreateTables(); err != nil {
+	src, err := (&file.File{}).Open("migrations/user")
+	if err != nil {
+		return nil, err
+	}
+
+	m, err := migrate.NewWithInstance("file", src, "sqlite3", instance)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return nil, err
 	}
 

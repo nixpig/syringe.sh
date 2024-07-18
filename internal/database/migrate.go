@@ -15,7 +15,7 @@ func MigrateUp(db *sql.DB) error {
 		return err
 	}
 
-	src, err := (&file.File{}).Open("migrations/")
+	src, err := (&file.File{}).Open("migrations/app")
 	if err != nil {
 		return err
 	}
@@ -24,10 +24,6 @@ func MigrateUp(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	// m, err := migrate.New("file://migrations", "sqlite3:syringe.db")
-	// if err != nil {
-	// 	return err
-	// }
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		return err

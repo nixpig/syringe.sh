@@ -48,7 +48,6 @@ type ListSecretsResponse struct {
 }
 
 type SecretService interface {
-	CreateTables() error
 	Set(secret SetSecretRequest) error
 	Get(request GetSecretRequest) (*GetSecretResponse, error)
 	List(request ListSecretsRequest) (*ListSecretsResponse, error)
@@ -68,14 +67,6 @@ func NewSecretServiceImpl(
 		store:    store,
 		validate: validate,
 	}
-}
-
-func (s SecretServiceImpl) CreateTables() error {
-	if err := s.store.CreateTables(); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (s SecretServiceImpl) Set(secret SetSecretRequest) error {
