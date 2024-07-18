@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/internal/auth"
@@ -51,7 +52,11 @@ func NewMiddlewareCommand(
 			}
 
 			if authenticated {
-				userDB, err = database.NewUserDBConnection(sess.PublicKey())
+				userDB, err = database.Connection(
+					fmt.Sprintf("%s.db", sess.PublicKey()),
+					os.Getenv("DB_USER"),
+					os.Getenv("DB_PASSWORD"),
+				)
 				if err != nil {
 					logger.Error().Err(err).
 						Str("session", sess.Context().SessionID()).
