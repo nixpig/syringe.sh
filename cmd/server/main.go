@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net"
 	"os"
 	"os/signal"
@@ -58,7 +59,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := migrator.Up(); err != nil && err != migrate.ErrNoChange {
+	if err := migrator.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		log.Error().Err(err).Msg("failed to run migration")
 		os.Exit(1)
 	}

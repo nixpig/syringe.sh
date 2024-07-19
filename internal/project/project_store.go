@@ -2,6 +2,7 @@ package project
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/nixpig/syringe.sh/pkg/serrors"
 )
@@ -82,7 +83,7 @@ func (s SqliteProjectStore) List() (*[]Project, error) {
 	`
 
 	rows, err := s.db.Query(query)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, serrors.ErrNoProjectsFound
 	}
 	if err != nil {

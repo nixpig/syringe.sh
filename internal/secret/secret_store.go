@@ -2,6 +2,7 @@ package secret
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/nixpig/syringe.sh/pkg/serrors"
 )
@@ -119,7 +120,7 @@ func (s SqliteSecretStore) List(project, environment string) (*[]Secret, error) 
 		sql.Named("project", project),
 		sql.Named("environment", environment),
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, serrors.ErrNoSecretsFound
 	}
 	if err != nil {

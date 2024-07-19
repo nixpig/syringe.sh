@@ -2,6 +2,7 @@ package environment
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/nixpig/syringe.sh/pkg/serrors"
 )
@@ -129,7 +130,7 @@ func (s SqliteEnvironmentStore) List(projectName string) (*[]Environment, error)
 		query,
 		sql.Named("projectName", projectName),
 	)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, serrors.ErrNoEnvironmentsFound
 	}
 	if err != nil {

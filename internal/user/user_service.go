@@ -2,6 +2,7 @@ package user
 
 import (
 	"crypto/sha1"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -168,7 +169,7 @@ func (u UserServiceImpl) CreateDatabase(
 		return nil, err
 	}
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return nil, err
 	}
 
