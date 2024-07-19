@@ -9,21 +9,21 @@ builds:
     binary: syringeserver
     env:
       - CGO_ENABLED=0
-    goos:
-      - linux
-      - darwin
+    targets:
+      - linux_amd64
+      - darwin_arm64
 
   - id: syringe-cli
     main: cmd/cli/main.go
     binary: syringe
     env:
       - CGO_ENABLED=0
-    goos:
-      - linux
-      - darwin
+    targets:
+      - linux_amd64
+      - darwin_arm64
 
 archives:
-  - format: binary
+  - format: tar.gz
 
 changelog:
   sort: asc

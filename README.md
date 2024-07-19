@@ -91,9 +91,13 @@ Secrets can be managed using 'projects' and 'environments'.
 
 ### CLI
 
-1. Download the corresponding binary from the [releases](https://github.com/nixpig/syringe.sh/releases) page and put it into your path.
-1. Rename the binary to `syringe`.
-1. Run `syringe` from your terminal.
+Download the binary for your operating system and architecture from the [releases](https://github.com/nixpig/syringe.sh/releases) page to a directory in your path.
+
+**Example:**
+
+```
+wget https://github.com/nixpig/syringe.sh/releases/download/0.0.6/syringe_0.0.6_linux_amd64 -O /usr/bin/syringe
+```
 
 > [!NOTE]
 >
