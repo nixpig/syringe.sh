@@ -24,14 +24,16 @@ builds:
 
 archives:
   - id: syringe-cli
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     builds:
       - syringe-cli
-    format: tar.gz
 
   - id: syringe-server
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     builds:
       - syringe-server
-    format: tar.gz
 
 changelog:
   sort: asc
