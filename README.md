@@ -91,18 +91,19 @@ Secrets can be managed using 'projects' and 'environments'.
 
 ### CLI
 
-Download the package for your operating system and architecture from the [releases](https://github.com/nixpig/syringe.sh/releases) page and extract to a directory in your path.
+1. Download the package for your operating system and architecture from the [releases](https://github.com/nixpig/syringe.sh/releases) page and extract to a directory in your path, e.g.
 
-**Example:**
+   ```
+   $ wget -qO- https://github.com/nixpig/syringe.sh/releases/download/0.0.9/syringe.sh_syringe_0.0.9_linux_amd64.tar.gz | tar -xzvf - -C /usr/bin
+   ```
 
-```
-wget https://github.com/nixpig/syringe.sh/releases/download/0.0.6/syringe_0.0.6_linux_amd64 -O /usr/bin/syringe
-wget -qO- https://github.com/nixpig/syringe.sh/releases/download/0.0.7/syringe.sh_0.0.7_linux_amd64.tar.gz | tar -xvzC /usr/bin
-```
+1. Run the `syringe` command to get started.
 
 > [!NOTE]
 >
-> In future a more simple install script will be available.
+> Without additional configuration, the `syringe` command will connect to the demo server at syringe.sh.
+>
+> Feel free to have a play around there before you decide whether to spin up your own server.
 
 ### Server
 
