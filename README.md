@@ -87,9 +87,9 @@ Secrets can be managed using 'projects' and 'environments'.
 - [ ] Add 'syringe config' command to create/update config file, e.g. `syringe config set hostname localhost`?
 - [ ] Refactor `pkg/ssh` package
 
-## Installation
+## CLI
 
-### CLI
+### Installation
 
 1. Download the package for your operating system and architecture from the [releases](https://github.com/nixpig/syringe.sh/releases) page and extract to a directory in your path, e.g.
 
@@ -105,20 +105,17 @@ Secrets can be managed using 'projects' and 'environments'.
 >
 > Feel free to have a play around there before you decide whether to spin up your own server.
 
-### Server
+### Usage
 
-1. Download the corresponding binary from the [releases](https://github.com/nixpig/syringe.sh/releases) page and put it into your path.
-1. Package and deploy per your requirements.
-
-> [!NOTE]
+> [!TIP]
 >
-> In future this will be packaged for easy configuration and deployment.
+> Run `syringe help` to view documentation for all available commands and example usage.
 
-## Supported SSH key types
+### Supported SSH key types
+
+The following key types are supported for the syringe client.
 
 - RSA
-
-## Usage
 
 ### Specifying an identity
 
@@ -145,8 +142,8 @@ The settings file uses a `key=value` format, with each key/value pair on a new l
 | Key        | Type     | Description                                                                                                                                                        |
 | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `identity` | `string` | Path to the SSH identity file to use. Equivalent to the `-i` flag to `ssh` or the `IdentityFile` parameter in SSH config. For example: `/home/nixpig/.ssh/id_rsa`. |
-| `hostname` | `string` | (default: `syringe.sh`)                                                                                                                                            |
-| `port`     | `number` | (default: `22`)                                                                                                                                                    |
+| `hostname` | `string` | The hostname of the server to connect to (default: `syringe.sh`).                                                                                                  |
+| `port`     | `number` | The port the server is running on (default: `22`).                                                                                                                 |
 
 #### Example settings file
 
@@ -155,3 +152,22 @@ identity=$HOME/.ssh/id_rsa
 hostname=localhost
 port=23234
 ```
+
+## Server
+
+The recommended method of running the server is using Docker.
+
+```
+docker run
+```
+
+#### Environment
+
+| Name            | Description |
+| --------------- | ----------- |
+| `APP_HOST`      |             |
+| `APP_PORT`      |             |
+| `HOST_KEY_PATH` |             |
+| `DB_FILENAME`   |             |
+| `DB_USER`       |             |
+| `DB_PASSWORD`   |             |
