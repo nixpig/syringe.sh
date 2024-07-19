@@ -77,6 +77,8 @@ func NewHandlerCLI(
 
 		sshcmd := buildCommand(cmd, args)
 
+		// TODO: don't like this nested if/switch stuff
+
 		if cmd.Parent().Use == "secret" {
 			switch cmd.CalledAs() {
 

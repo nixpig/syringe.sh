@@ -8,9 +8,11 @@ require (
 	github.com/charmbracelet/wish v1.4.0
 	github.com/gliderlabs/ssh v0.3.7
 	github.com/go-playground/validator/v10 v10.21.0
+	github.com/golang-migrate/migrate/v4 v4.17.1
 	github.com/gruntwork-io/terratest v0.47.0
 	github.com/joho/godotenv v1.5.1
 	github.com/kevinburke/ssh_config v1.2.0
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/rs/zerolog v1.33.0
 	github.com/skeema/knownhosts v1.2.2
 	github.com/spf13/cobra v1.8.1
@@ -22,12 +24,10 @@ require (
 require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/golang-migrate/migrate v3.5.4+incompatible // indirect
-	github.com/golang-migrate/migrate/v4 v4.17.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
-	github.com/mattn/go-sqlite3 v1.14.22 // indirect
 	github.com/mattn/go-zglob v0.0.2-0.20190814121620-e3c945676326 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect

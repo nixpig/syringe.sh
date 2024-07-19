@@ -4,7 +4,7 @@
 version: 2
 
 builds:
-  - id: syringeserver
+  - id: syringe-server
     main: cmd/server/main.go
     binary: syringeserver
     env:
@@ -13,7 +13,7 @@ builds:
       - linux
       - darwin
 
-  - id: syringecli
+  - id: syringe-cli
     main: cmd/cli/main.go
     binary: syringe
     env:
@@ -23,7 +23,17 @@ builds:
       - darwin
 
 archives:
-  - format: binary
+  - id: syringe-server
+    format: tar.gz
+    strip_binary_directory: true
+    builds:
+      - syringe-server
+
+  - id: syringe-cli
+    format: tar.gz
+    strip_binary_directory: true
+    builds:
+      - syringe-cli
 
 changelog:
   sort: asc
