@@ -163,14 +163,14 @@ docker run
 
 #### Environment
 
-| Name            | Description |
-| --------------- | ----------- |
-| `APP_HOST`      |             |
-| `APP_PORT`      |             |
-| `HOST_KEY_PATH` |             |
-| `DB_FILENAME`   |             |
-| `DB_USER`       |             |
-| `DB_PASSWORD`   |             |
+| Name            | Description                                                  |
+| --------------- | ------------------------------------------------------------ |
+| `APP_HOST`      | The host on which to run the server, likely `localhost`.     |
+| `APP_PORT`      | The port on which to run the server, likely `22`.            |
+| `HOST_KEY_PATH` | The path to private key on server, e.g. `~/.ssh/id_rsa`      |
+| `DB_FILENAME`   | The filename to use for the app database, e.g. `syringe.db`. |
+| `DB_USER`       | The username of app database, e.g. `admin`.                  |
+| `DB_PASSWORD`   | The password of user for app database, e.g. `p4ssw0rd`.      |
 
 ## Obligatory disclaimers
 
