@@ -9,8 +9,10 @@ import (
 
 	"github.com/charmbracelet/ssh"
 	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nixpig/syringe.sh/internal/database"
+	"github.com/nixpig/syringe.sh/migrations"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -161,9 +163,14 @@ func (u UserServiceImpl) CreateDatabase(
 		return nil, fmt.Errorf("failed to open user database: %w", err)
 	}
 
+	migrations, err := iofs.New(migrations.User, "user")
+	if err != nil {
+		return nil, err
+	}
+
 	m, err := database.NewMigration(
 		userDB,
-		"migrations/user",
+		migrations,
 	)
 	if err != nil {
 		return nil, err

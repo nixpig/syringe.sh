@@ -12,10 +12,12 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/joho/godotenv"
 	"github.com/nixpig/syringe.sh/internal/auth"
 	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/middleware"
+	"github.com/nixpig/syringe.sh/migrations"
 	"github.com/nixpig/syringe.sh/pkg/validation"
 	"github.com/rs/zerolog"
 )
@@ -53,7 +55,16 @@ func main() {
 	// -- RUN DB MIGRATION
 	log.Info().Msg("running database migrations")
 
-	migrator, err := database.NewMigration(appDB, "migrations/app")
+	migrations, err := iofs.New(migrations.App, "app")
+	if err != nil {
+		log.Error().Err(err).Msg("failed to create migrations fs")
+		os.Exit(1)
+	}
+
+	migrator, err := database.NewMigration(
+		appDB,
+		migrations,
+	)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to create migration")
 		os.Exit(1)

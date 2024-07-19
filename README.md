@@ -63,14 +63,12 @@ Secrets can be managed using 'projects' and 'environments'.
 
 - [ ] Tidy up all the database stuff
 - [ ] Refactor CLI handler construction
-- [ ] Refactor response parsers
 - [ ] Refactor `pkg/ssh` package
 - [ ] Address any `TODO`s
 - [ ] Tidy up the middlewares
 
 - [ ] Build and publish artifact(s) on GitHub
 - [ ] Build and publish deployable Docker image for server
-- [ ] Bundle migrations into packaged binary
 - [ ] Make server key configurable?
 - [ ] Install script that downloads cli binary into path.
 - [ ] Tests for database package and migrations

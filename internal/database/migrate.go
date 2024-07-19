@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
-	"github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/golang-migrate/migrate/v4/source"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -27,20 +27,15 @@ func (m Migration) Down() error {
 	return m.migrate.Down()
 }
 
-func NewMigration(db *sql.DB, migrations string) (*Migration, error) {
+func NewMigration(db *sql.DB, migrations source.Driver) (*Migration, error) {
 	instance, err := sqlite3.WithInstance(db, &sqlite3.Config{})
-	if err != nil {
-		return nil, err
-	}
-
-	src, err := (&file.File{}).Open(migrations)
 	if err != nil {
 		return nil, err
 	}
 
 	m, err := migrate.NewWithInstance(
 		"file",
-		src,
+		migrations,
 		"sqlite3",
 		instance,
 	)
