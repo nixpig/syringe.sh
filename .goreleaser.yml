@@ -23,17 +23,7 @@ builds:
       - darwin
 
 archives:
-  - id: syringe-server
-    format: tar.gz
-    strip_binary_directory: true
-    builds:
-      - syringe-server
-
-  - id: syringe-cli
-    format: tar.gz
-    strip_binary_directory: true
-    builds:
-      - syringe-cli
+  - format: binary
 
 changelog:
   sort: asc
