@@ -171,3 +171,9 @@ docker run
 | `DB_FILENAME`   |             |
 | `DB_USER`       |             |
 | `DB_PASSWORD`   |             |
+
+## Obligatory disclaimers
+
+The public syringe.sh server is for demo purposes and may not be actively monitored or maintained. You absolutely should **not** store any secret or private data there.
+
+If you use this software, you are responsible for your own security. While secrets are encrypted during transit and on the server, it is up to you to take any further measures to secure the server and your data to prevent unauthorized access.
