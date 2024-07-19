@@ -23,7 +23,15 @@ builds:
       - darwin_arm64
 
 archives:
-  - format: tar.gz
+  - id: syringe-cli
+    builds:
+      - syringe-cli
+    format: tar.gz
+
+  - id: syringe-server
+    builds:
+      - syringe-server
+    format: tar.gz
 
 changelog:
   sort: asc
