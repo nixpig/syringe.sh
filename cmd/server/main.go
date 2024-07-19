@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"net"
 	"os"
 	"os/signal"
@@ -38,7 +37,7 @@ func main() {
 
 	// -- DATABASE
 	log.Info().Msg("connecting to database")
-	appDB, err := database.Connection(
+	appDB, err := database.NewConnection(
 		os.Getenv("DB_FILENAME"),
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
@@ -139,7 +138,7 @@ func (s Server) Start(host, port string) error {
 		Msg("starting server")
 
 	go func() {
-		if err = server.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+		if err = server.ListenAndServe(); err != nil && err != ssh.ErrServerClosed {
 			s.logger.Error().Err(err).Msg("failed to start server")
 			done <- nil
 		}
@@ -154,7 +153,7 @@ func (s Server) Start(host, port string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 
-	if err := server.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+	if err := server.Shutdown(ctx); err != nil && err != ssh.ErrServerClosed {
 		s.logger.Error().Err(err).Msg("failed to gracefully shutdown server")
 		return err
 	}

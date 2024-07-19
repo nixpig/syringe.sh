@@ -7,7 +7,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func Connection(
+func NewConnection(
 	filename,
 	user,
 	password string,
@@ -21,11 +21,11 @@ func Connection(
 
 	db, err := sql.Open("sqlite3", databaseConnectionString)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open database file (%s): %w", databaseConnectionString, err)
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to ping database (%s): %w", databaseConnectionString, err)
 	}
 
 	return db, nil

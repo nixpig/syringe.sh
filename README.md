@@ -66,6 +66,7 @@ Secrets can be managed using 'projects' and 'environments'.
 - [ ] Refactor response parsers
 - [ ] Refactor `pkg/ssh` package
 - [ ] Address any `TODO`s
+- [ ] Tidy up the middlewares
 
 - [ ] Build and publish artifact(s) on GitHub
 - [ ] Build and publish deployable Docker image for server

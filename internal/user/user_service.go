@@ -151,13 +151,13 @@ func (u UserServiceImpl) CreateDatabase(
 
 	// TODO: need to check if db already exists before trying to create!!
 
-	userDB, err := database.Connection(
+	userDB, err := database.NewConnection(
 		fmt.Sprintf("%s.db", databaseDetails.Name),
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open user database: %w", err)
 	}
 
 	m, err := database.NewMigration(

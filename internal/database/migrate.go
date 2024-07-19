@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -18,13 +19,21 @@ type Migration struct {
 	migrate *migrate.Migrate
 }
 
-func NewMigration(db *sql.DB, migrationsDir string) (*Migration, error) {
+func (m Migration) Up() error {
+	return m.migrate.Up()
+}
+
+func (m Migration) Down() error {
+	return m.migrate.Down()
+}
+
+func NewMigration(db *sql.DB, migrations string) (*Migration, error) {
 	instance, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
 		return nil, err
 	}
 
-	src, err := (&file.File{}).Open(migrationsDir)
+	src, err := (&file.File{}).Open(migrations)
 	if err != nil {
 		return nil, err
 	}
@@ -36,16 +45,8 @@ func NewMigration(db *sql.DB, migrationsDir string) (*Migration, error) {
 		instance,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create new sqlite3 migrate instance: %w", err)
 	}
 
 	return &Migration{migrate: m}, nil
-}
-
-func (m Migration) Up() error {
-	return m.migrate.Up()
-}
-
-func (m Migration) Down() error {
-	return m.migrate.Down()
 }

@@ -2,10 +2,13 @@ package middleware
 
 import (
 	"context"
+	"crypto/sha1"
 	"database/sql"
 	"errors"
 	"fmt"
 	"os"
+
+	gossh "golang.org/x/crypto/ssh"
 
 	"github.com/charmbracelet/ssh"
 	"github.com/nixpig/syringe.sh/internal/auth"
@@ -52,8 +55,9 @@ func NewMiddlewareCommand(
 			}
 
 			if authenticated {
-				userDB, err = database.Connection(
-					fmt.Sprintf("%s.db", sess.PublicKey()),
+				marshalledKey := gossh.MarshalAuthorizedKey(sess.PublicKey())
+				userDB, err = database.NewConnection(
+					fmt.Sprintf("%s.db", fmt.Sprintf("%x", sha1.Sum(marshalledKey))),
 					os.Getenv("DB_USER"),
 					os.Getenv("DB_PASSWORD"),
 				)
@@ -61,7 +65,7 @@ func NewMiddlewareCommand(
 					logger.Error().Err(err).
 						Str("session", sess.Context().SessionID()).
 						Msg("failed to obtain user database connection")
-					sess.Stderr().Write([]byte("Error: failed to obtain database connection using the provided public key"))
+					sess.Stderr().Write([]byte(fmt.Sprintf("Error: failed to obtain database connection using the provided public key: %s", err)))
 					return
 				}
 
