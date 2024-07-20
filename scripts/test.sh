@@ -8,6 +8,7 @@ while getopts "x:" flag; do
   esac
 done
 
-echo HANGER is $HANGER
-echo REBELBASE is $REBELBASE
+echo SUPER_SECRET is $SUPER_SECRET
+echo MORE is $MORE
+echo MOAARRRR is $MOAARRRR
 

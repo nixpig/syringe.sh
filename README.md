@@ -57,6 +57,8 @@ Secrets can only be decrypted locally using your private key. Without your priva
 
 Secrets can be managed using 'projects' and 'environments'.
 
+![demo of syringe.sh](demo.gif)
+
 ## TODO
 
 - [ ] Proper good refactor and tidy-up!! Best practices around configuration management with Viper.
