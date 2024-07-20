@@ -155,10 +155,7 @@ func (u UserServiceImpl) CreateDatabase(
 	// TODO: need to check if db already exists before trying to create!!
 
 	userDB, err := database.NewConnection(
-		fmt.Sprintf(
-			"%s/%s.db", os.Getenv("DATA_PATH"),
-			databaseDetails.Name,
-		),
+		database.GetDatabasePath(databaseDetails.Name),
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
 	)

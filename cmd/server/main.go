@@ -42,7 +42,7 @@ func main() {
 	// -- DATABASE
 	log.Info().Msg("connecting to database")
 	appDB, err := database.NewConnection(
-		fmt.Sprintf("%s/%s", os.Getenv("DATA_PATH"), config.AppDB),
+		database.GetDatabasePath(config.AppDB),
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
 	)

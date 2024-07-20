@@ -5,13 +5,13 @@ services:
       context: .
       args:
         # (required) The version of syringe server to use.
-        - VERSION=0.0.12
+        - VERSION=0.0.13
     environment:
       # (optional) Path inside container to server's private key. If it doesn't exist, a new key will be created at this path.
       - HOST_KEY_PATH=/home/syringe/.ssh/id_ed25519
 
       # (optional) Path inside container of mountpoint to data volume where to create databases. Required if volume mounted.
-      - DATA_PATH=/data
+      # - DATA_PATH=/home/syringe/data
 
       # (required) Username to use for app database.
       - DB_USER=admin
@@ -24,8 +24,10 @@ services:
       - 2222:22
     volumes:
       # (optional) Volume to mount for databases. If you don't provide this, you'll lose your data every time.
-      - syringedata:/data
-      - /home/nixpig/projects/syringe.sh/server/.ssh/id_ed25519:/home/syringe/.ssh/id_ed25519
+      # - /syringedata:/home/syringe/data
 
-volumes:
-  syringedata:
+      # (optional) Volume to mount for host key. If you don't provide it, a new key will be generated every time.
+      - /home/nixpig/projects/syringe.sh/server/.ssh/id_ed25519:/home/syringe/.ssh/id_ed25519
+# (optional) Volume to use when mounting a volume to store databases.
+# volumes:
+#   syringedata:

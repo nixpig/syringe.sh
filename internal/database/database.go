@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"os"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -29,4 +30,13 @@ func NewConnection(
 	}
 
 	return db, nil
+}
+
+func GetDatabasePath(name string) string {
+	basePath := os.Getenv("DATA_PATH")
+	if basePath != "" {
+		return fmt.Sprintf("%s/%s", basePath, name)
+	}
+
+	return name
 }
