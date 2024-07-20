@@ -157,23 +157,19 @@ port=23234
 
 The recommended method of running the server is using Docker.
 
-```
-docker run
-```
+An example [`Dockerfile`](https://github.com/nixpig/syringe.sh/blob/main/Dockerfile) and [`docker-compose.yml`](https://github.com/nixpig/syringe.sh/blob/main/docker-compose.yml) are included in the repository.
 
 #### Environment
 
 | Name            | Description                                                  |
 | --------------- | ------------------------------------------------------------ |
-| `APP_HOST`      | The host on which to run the server, likely `localhost`.     |
-| `APP_PORT`      | The port on which to run the server, likely `22`.            |
 | `HOST_KEY_PATH` | The path to private key on server, e.g. `~/.ssh/id_rsa`      |
 | `DB_FILENAME`   | The filename to use for the app database, e.g. `syringe.db`. |
 | `DB_USER`       | The username of app database, e.g. `admin`.                  |
 | `DB_PASSWORD`   | The password of user for app database, e.g. `p4ssw0rd`.      |
 
-## Obligatory disclaimers
+## Disclaimers
 
 The public syringe.sh server is for demo purposes and may not be actively monitored or maintained. You absolutely should **not** store any secret or private data there.
 
-If you use this software, you are responsible for your own security. While secrets are encrypted during transit and on the server, it is up to you to take any further measures to secure the server and your data to prevent unauthorized access.
+You are responsible for your own security. It is up to you to evaluate the suitability of this software before using it and to take any necessary measures to secure your data to prevent unauthorized access.

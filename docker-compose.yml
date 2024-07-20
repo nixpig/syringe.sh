@@ -1,0 +1,21 @@
+version: "3"
+services:
+  server:
+    build:
+      context: .
+      args:
+        - VERSION=0.0.11
+    network_mode: bridge
+    environment:
+      - HOST_KEY_PATH=/home/syringe/.ssh/id_ed25519
+      - DB_USER=admin
+      - DB_PASSWORD=p4ssw0rd
+    ports:
+      - 2222:22
+    volumes:
+      # - data:/data
+      - /home/nixpig/projects/syringe.sh/server/.ssh/id_ed25519:/home/.ssh/id_ed25519
+
+volumes:
+  syringedb:
+    external: true

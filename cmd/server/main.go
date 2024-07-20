@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -14,6 +15,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/joho/godotenv"
+	"github.com/nixpig/syringe.sh/config"
 	"github.com/nixpig/syringe.sh/internal/auth"
 	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/middleware"
@@ -32,16 +34,15 @@ func main() {
 		}).With().Timestamp().Logger()
 
 	// -- ENV
-	log.Info().Msg("loading environment")
+	log.Info().Msg("loading .env")
 	if err := godotenv.Load(".env"); err != nil {
-		log.Error().Err(err).Msg("failed to load '.env' file")
-		os.Exit(1)
+		log.Warn().Err(err).Msg("failed to load '.env' file")
 	}
 
 	// -- DATABASE
 	log.Info().Msg("connecting to database")
 	appDB, err := database.NewConnection(
-		os.Getenv("DB_FILENAME"),
+		config.AppDB,
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
 	)
@@ -94,8 +95,8 @@ func main() {
 	)
 
 	if err := sshServer.Start(
-		os.Getenv("APP_HOST"),
-		os.Getenv("APP_PORT"),
+		config.AppHost,
+		fmt.Sprint(config.AppPort),
 	); err != nil {
 		log.Error().Err(err).Msg("failed to start ssh server")
 		os.Exit(1)
