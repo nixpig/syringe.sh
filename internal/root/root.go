@@ -58,10 +58,9 @@ Supported key formats:
 For more help on how to use syringe.sh, go to https://syringe.sh/help`
 
 	warningMessage :=
-		"\n\n\033[31m⚠ WARNING\033[0m\n" +
-			"  \033[33m~\033[0m This software is currently in development.\n" +
-			"  \033[33m~\033[0m Many of the features may not work as documented, or even at all.\n" +
-			"  \033[33m~\033[0m You probably (almost certainly!) don't want to use this software just yet.\033[0m\n"
+		"\n\n\033[31m⚠ WARNING:\033[0m" +
+			"\033[0m This software is currently in development." +
+			"\033[0m Use at your own risk.\033[0m\n"
 
 	rootCmd.SetHelpTemplate(
 		rootCmd.HelpTemplate() +

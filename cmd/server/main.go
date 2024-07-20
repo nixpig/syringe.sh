@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -94,9 +93,20 @@ func main() {
 		os.Getenv("HOST_KEY_PATH"),
 	)
 
+	// TODO: better configuration management for server side of things
+	port := os.Getenv("APP_PORT")
+	if port == "" {
+		port = config.AppHost
+	}
+
+	host := os.Getenv("APP_HOST")
+	if host == "" {
+		host = config.AppHost
+	}
+
 	if err := sshServer.Start(
-		config.AppHost,
-		fmt.Sprint(config.AppPort),
+		host,
+		port,
 	); err != nil {
 		log.Error().Err(err).Msg("failed to start ssh server")
 		os.Exit(1)

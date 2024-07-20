@@ -58,7 +58,7 @@ func NewMiddlewareCommand(
 				marshalledKey := gossh.MarshalAuthorizedKey(sess.PublicKey())
 				userDB, err = database.NewConnection(
 					database.GetDatabasePath(
-						fmt.Sprintf("%x", sha1.Sum(marshalledKey)),
+						fmt.Sprintf("%x.db", sha1.Sum(marshalledKey)),
 					),
 					os.Getenv("DB_USER"),
 					os.Getenv("DB_PASSWORD"),
