@@ -2,7 +2,8 @@ FROM golang:1.22.5
 
 ARG VERSION
 
-RUN useradd -ms /bin/bash syringe
+RUN useradd -m -u 1001 -s /bin/bash syringe
+
 USER syringe
 
 RUN wget -qO- https://github.com/nixpig/syringe.sh/releases/download/${VERSION}/syringe.sh_syringeserver_${VERSION}_linux_amd64.tar.gz | tar -xzvf - -C /go/bin
