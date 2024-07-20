@@ -59,33 +59,14 @@ Secrets can be managed using 'projects' and 'environments'.
 
 ## TODO
 
-### P1
-
-- [ ] Build and publish artifact(s) on GitHub
-- [ ] Build and publish deployable Docker image for server
-- [ ] Install script that downloads cli binary into path.
+- [ ] Proper good refactor and tidy-up!! Best practices around configuration management with Viper.
+- [ ] Update syringe.sh domain
+- [ ] Set up demo server on syringe.sh
 - [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
 
   - Tests for database package and migrations
   - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?
   - Just use testcontainers??
-
-- [ ] Proper good refactor and tidy-up!! Best practices around configuration management with Viper.
-
-### TODO:
-
-- [ ] Update syringe.sh domain
-- [ ] Set up demo server on syringe.sh
-
-- [ ] Accept spaces in secret values when quoted
-- [ ] Formatted and --plain output of commands, e.g. table when listing secrets
-- [ ] Add functionality to 'link' local directories/projects to specific project/environment - save in config file
-- [ ] Improve error handling, errors and messaging
-- [ ] Email confirmation on new user registration?
-- [ ] Add multiple keys for the same user
-- [ ] Allow deletion of user and data
-- [ ] Add 'syringe config' command to create/update config file, e.g. `syringe config set hostname localhost`?
-- [ ] Refactor `pkg/ssh` package
 
 ## CLI
 
