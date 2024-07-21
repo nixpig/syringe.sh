@@ -180,7 +180,7 @@ func (s SqliteSecretStore) Remove(project, environment, key string) error {
 	}
 
 	if rows == 0 {
-		return errors.New(fmt.Sprintf("secret '%s' not found", key))
+		return fmt.Errorf("secret '%s' not found", key)
 	}
 
 	return nil

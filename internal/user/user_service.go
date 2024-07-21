@@ -91,14 +91,14 @@ func (u UserServiceImpl) RegisterUser(
 	}
 
 	if exists {
-		return nil, errors.New(fmt.Sprintf("user '%s' already exists", user.Username))
+		return nil, fmt.Errorf("user '%s' already exists", user.Username)
 	}
 
 	marshalledKey := gossh.MarshalAuthorizedKey(user.PublicKey)
 	databaseName := fmt.Sprintf("%x", sha1.Sum(marshalledKey))
 
 	if _, err := os.Stat(databaseName); err == nil {
-		return nil, errors.New(fmt.Sprintf("user '%s' already exists", user.Username))
+		return nil, fmt.Errorf("user '%s' already exists", user.Username)
 	}
 
 	insertedUser, err := u.store.InsertUser(

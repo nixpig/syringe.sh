@@ -74,7 +74,7 @@ func (s SqliteEnvironmentStore) Remove(name, projectName string) error {
 	}
 
 	if rows == 0 {
-		return errors.New(fmt.Sprintf("environment '%s' not found", name))
+		return fmt.Errorf("environment '%s' not found", name)
 	}
 
 	return nil
@@ -111,7 +111,7 @@ func (s SqliteEnvironmentStore) Rename(originalName, newName, projectName string
 	}
 
 	if rows == 0 {
-		return errors.New(fmt.Sprintf("environment '%s' not found", originalName))
+		return fmt.Errorf("environment '%s' not found", originalName)
 	}
 
 	return nil
