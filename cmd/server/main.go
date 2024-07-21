@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -86,7 +87,7 @@ func main() {
 	// TODO: better configuration management for server side of things
 	port := os.Getenv("APP_PORT")
 	if port == "" {
-		port = config.AppHost
+		port = fmt.Sprintf("%d", config.AppPort)
 	}
 
 	host := os.Getenv("APP_HOST")
