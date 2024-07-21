@@ -1,6 +1,9 @@
 package user
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+)
 
 type User struct {
 	ID        int
@@ -18,6 +21,7 @@ type Key struct {
 }
 
 type UserStore interface {
+	Exists(username string) (bool, error)
 	InsertUser(username, email, status string) (*User, error)
 	InsertKey(userID int, publicKey string) (*Key, error)
 }
@@ -84,4 +88,17 @@ func (s SqliteUserStore) InsertKey(userID int, publicKey string) (*Key, error) {
 	}
 
 	return &insertedKey, nil
+}
+
+func (s SqliteUserStore) Exists(username string) (bool, error) {
+	query := `
+		select 1 from users_ where username_ = $username
+	`
+
+	rows, err := s.db.Query(query, sql.Named("username", username))
+	if err != nil {
+		return false, fmt.Errorf("check user exists database error: %w", err)
+	}
+
+	return rows.Next(), nil
 }

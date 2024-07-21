@@ -85,6 +85,22 @@ func (u UserServiceImpl) RegisterUser(
 		return nil, err
 	}
 
+	exists, err := u.store.Exists(user.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	if exists {
+		return nil, errors.New(fmt.Sprintf("user '%s' already exists", user.Username))
+	}
+
+	marshalledKey := gossh.MarshalAuthorizedKey(user.PublicKey)
+	databaseName := fmt.Sprintf("%x", sha1.Sum(marshalledKey))
+
+	if _, err := os.Stat(databaseName); err == nil {
+		return nil, errors.New(fmt.Sprintf("user '%s' already exists", user.Username))
+	}
+
 	insertedUser, err := u.store.InsertUser(
 		user.Username,
 		user.Email,
@@ -93,8 +109,6 @@ func (u UserServiceImpl) RegisterUser(
 	if err != nil {
 		return nil, err
 	}
-
-	marshalledKey := gossh.MarshalAuthorizedKey(user.PublicKey)
 
 	insertedKey, err := u.AddPublicKey(AddPublicKeyRequest{
 		UserID:    insertedUser.ID,
@@ -106,7 +120,7 @@ func (u UserServiceImpl) RegisterUser(
 
 	insertedDatabase, err := u.CreateDatabase(
 		CreateDatabaseRequest{
-			Name:          fmt.Sprintf("%x", sha1.Sum(marshalledKey)),
+			Name:          databaseName,
 			UserID:        insertedUser.ID,
 			DatabaseOrg:   os.Getenv("DATABASE_ORG"),
 			DatabaseGroup: os.Getenv("DATABASE_GROUP"),
@@ -151,8 +165,6 @@ func (u UserServiceImpl) CreateDatabase(
 	if err := u.validate.Struct(databaseDetails); err != nil {
 		return nil, err
 	}
-
-	// TODO: need to check if db already exists before trying to create!!
 
 	userDB, err := database.NewConnection(
 		database.GetDatabasePath(fmt.Sprintf("%s.db", databaseDetails.Name)),
