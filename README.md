@@ -55,7 +55,9 @@ Secrets can only be decrypted locally using your private key. Without your priva
 
 ```
 
-Secrets can be managed using 'projects' and 'environments'.
+Secrets are managed using 'projects' and 'environments'.
+
+## A quick demo
 
 ![demo of syringe.sh](demo.gif)
 
