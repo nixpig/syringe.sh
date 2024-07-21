@@ -281,7 +281,7 @@ func testEnvironmentAddCmdDatabaseError(
 	require.Error(t, err)
 	require.Equal(
 		t,
-		test.ErrorMsg("database exec error\n"),
+		test.ErrorMsg("environment add database error: database_error\n"),
 		errOut.String(),
 	)
 
@@ -473,7 +473,7 @@ func testEnvironmentRemoveCmdDatabaseError(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database exec error\n"),
+		test.ErrorMsg("environment remove database error: database_error\n"),
 		errOut.String(),
 	)
 
@@ -772,7 +772,7 @@ func testEnvironmentRenameCmdDatabaseError(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database exec error\n"),
+		test.ErrorMsg("environment rename database error: database_error\n"),
 		string(out),
 	)
 
@@ -1058,7 +1058,7 @@ func testEnvironmentListCmdDatabaseError(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database query error\n"),
+		test.ErrorMsg("environment list database error: database_error\n"),
 		errOut.String(),
 	)
 
@@ -1295,7 +1295,7 @@ func testEnvironmentRemoveCmdZeroAffectedRows(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("environment not found\n"),
+		test.ErrorMsg("environment 'staging' not found\n"),
 		errOut.String(),
 	)
 

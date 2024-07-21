@@ -5,7 +5,7 @@ services:
       context: .
       args:
         # (required) The version of syringe server to use.
-        - VERSION=0.0.16
+        - VERSION=0.0.17
 
     environment:
       # (optional) Path inside container of mountpoint to data volume where to create databases.

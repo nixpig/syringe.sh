@@ -3,8 +3,7 @@ package secret
 import (
 	"database/sql"
 	"errors"
-
-	"github.com/nixpig/syringe.sh/pkg/serrors"
+	"fmt"
 )
 
 type Secret struct {
@@ -58,7 +57,7 @@ func (s SqliteSecretStore) Set(project, environment, key, value string) error {
 		sql.Named("key", key),
 		sql.Named("value", value),
 	); err != nil {
-		return serrors.ErrDatabaseExec(err)
+		return fmt.Errorf("secret set database error: %w", err)
 	}
 
 	return nil
@@ -95,7 +94,7 @@ func (s SqliteSecretStore) Get(project, environment, key string) (*Secret, error
 		&secret.Project,
 		&secret.Environment,
 	); err != nil {
-		return nil, serrors.ErrDatabaseExec(err)
+		return nil, fmt.Errorf("secret get database error: %w", err)
 	}
 
 	return &secret, nil
@@ -121,10 +120,10 @@ func (s SqliteSecretStore) List(project, environment string) (*[]Secret, error) 
 		sql.Named("environment", environment),
 	)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, serrors.ErrNoSecretsFound
+		return nil, errors.New("no secrets found")
 	}
 	if err != nil {
-		return nil, serrors.ErrDatabaseQuery(err)
+		return nil, fmt.Errorf("secret list database error: %w", err)
 	}
 
 	var secrets []Secret
@@ -172,7 +171,7 @@ func (s SqliteSecretStore) Remove(project, environment, key string) error {
 		sql.Named("key", key),
 	)
 	if err != nil {
-		return serrors.ErrDatabaseExec(err)
+		return fmt.Errorf("secret remove database error: %w", err)
 	}
 
 	rows, err := res.RowsAffected()
@@ -181,7 +180,7 @@ func (s SqliteSecretStore) Remove(project, environment, key string) error {
 	}
 
 	if rows == 0 {
-		return serrors.ErrSecretNotFound
+		return errors.New(fmt.Sprintf("secret '%s' not found", key))
 	}
 
 	return nil

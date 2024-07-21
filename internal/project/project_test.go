@@ -207,7 +207,7 @@ func testProjectAddCmdDatabaseError(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database exec error\n"),
+		test.ErrorMsg("project add database error: database_error\n"),
 		errOut.String(),
 	)
 
@@ -360,7 +360,7 @@ func testProjectRemoveCmdDatabaseError(
 	require.Error(t, err)
 	require.Equal(
 		t,
-		test.ErrorMsg("database exec error\n"),
+		test.ErrorMsg("project remove database error: database_error\n"),
 		errOut.String(),
 	)
 
@@ -444,7 +444,7 @@ func testProjectRemoveCmdZeroAffectedRows(
 	require.Error(t, err)
 	require.Equal(
 		t,
-		test.ErrorMsg("project not found\n"),
+		test.ErrorMsg("project 'my_cool_project' not found\n"),
 		errOut.String(),
 	)
 
@@ -630,7 +630,7 @@ func testProjectRenameCmdDatabaseError(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database exec error\n"),
+		test.ErrorMsg("project rename database error: database_error\n"),
 		errOut.String(),
 	)
 
@@ -749,7 +749,7 @@ func testProjectListCmdDatabaseError(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database query error\n"),
+		test.ErrorMsg("project list database error: database_error\n"),
 		errOut.String(),
 	)
 

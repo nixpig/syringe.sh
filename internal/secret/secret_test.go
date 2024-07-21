@@ -385,7 +385,7 @@ func testSecretSetCmdDatabaseError(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database exec error\n"),
+		test.ErrorMsg("secret set database error: database_error\n"),
 		errOut.String(),
 	)
 
@@ -694,7 +694,7 @@ func testSecretGetCmdDatabaseError(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database exec error\n"),
+		test.ErrorMsg("secret get database error: database_error\n"),
 		errOut.String(),
 	)
 
@@ -923,7 +923,7 @@ func testSecretListCmdDatabaseError(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database query error\n"),
+		test.ErrorMsg("secret list database error: database_error\n"),
 		errOut.String(),
 	)
 
@@ -1158,7 +1158,7 @@ func testSecretRemoveCmdDatabaseError(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("database exec error\n"),
+		test.ErrorMsg("secret remove database error: database_error\n"),
 		errOut.String(),
 	)
 
@@ -1503,7 +1503,7 @@ func testSecretRemoveCmdZeroResults(
 
 	require.Equal(
 		t,
-		test.ErrorMsg("secret not found\n"),
+		test.ErrorMsg("secret 'key_1' not found\n"),
 		errOut.String(),
 	)
 
