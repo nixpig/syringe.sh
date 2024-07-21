@@ -31,27 +31,31 @@ func ErrorMsg(e string) string {
 }
 
 func ProjectAddedSuccessMsg(name string) string {
-	return fmt.Sprintf("Project '%s' added\n", name)
+	return fmt.Sprintf("Project '%s' added.\n", name)
 }
 
 func ProjectRemovedSuccessMsg(name string) string {
-	return fmt.Sprintf("Project '%s' removed\n", name)
+	return fmt.Sprintf("Project '%s' removed.\n", name)
 }
 
 func ProjectRenamedSuccessMsg(name, newName string) string {
-	return fmt.Sprintf("Project '%s' renamed to '%s'\n", name, newName)
+	return fmt.Sprintf("Project '%s' renamed to '%s'.\n", name, newName)
 }
 
 func EnvironmentAddedSuccessMsg(environment, project string) string {
-	return fmt.Sprintf("Environment '%s' added to project '%s'\n", environment, project)
+	return fmt.Sprintf("Environment '%s' added to project '%s'.\n", environment, project)
 }
 
 func EnvironmentRemovedSuccessMsg(environment, project string) string {
-	return fmt.Sprintf("Environment '%s' removed from project '%s'\n", environment, project)
+	return fmt.Sprintf("Environment '%s' removed from project '%s'.\n", environment, project)
 }
 
 func EnvironmentRenamedSuccessMsg(name, newName, project string) string {
-	return fmt.Sprintf("Environment '%s' renamed to '%s' in project '%s'\n", name, newName, project)
+	return fmt.Sprintf("Environment '%s' renamed to '%s' in project '%s'.\n", name, newName, project)
+}
+
+func SecretSetSuccessMsg(key string) string {
+	return fmt.Sprintf("Secret '%s' set.\n", key)
 }
 
 func GenerateKeyPair() (ssh.PublicKey, *rsa.PrivateKey, error) {

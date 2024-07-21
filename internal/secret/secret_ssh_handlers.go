@@ -25,7 +25,8 @@ func NewSSHHandlerSecretSet(secretService SecretService) pkg.CobraHandler {
 			return err
 		}
 
-		cmd.Print("")
+		cmd.Println(fmt.Sprintf("Secret '%s' set.", key))
+
 		return nil
 	}
 }
@@ -46,7 +47,7 @@ func NewSSHHandlerSecretGet(secretService SecretService) pkg.CobraHandler {
 			return err
 		}
 
-		cmd.Print(secret.Value)
+		cmd.Println(secret.Value)
 
 		return nil
 	}
@@ -91,7 +92,7 @@ func NewSSHHandlerSecretRemove(secretService SecretService) pkg.CobraHandler {
 			return err
 		}
 
-		cmd.Print("")
+		cmd.Println("")
 
 		return nil
 	}
@@ -117,7 +118,7 @@ func NewSSHHandlerSecretInject(secretService SecretService) pkg.CobraHandler {
 
 		injectableSecrets := strings.Join(secretsList, " ")
 
-		cmd.Println(injectableSecrets)
+		cmd.Print(injectableSecrets)
 
 		return nil
 	}

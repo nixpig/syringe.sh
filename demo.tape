@@ -7,6 +7,8 @@ Set FontFamily "Operator Mono Lig"
 Set Theme "Catppuccin Mocha"
 Set Width 1200
 Set Height 600
+Set WindowBar Rings
+Set BorderRadius 10
 
 # register
 Hide
@@ -113,7 +115,7 @@ Sleep 2s
 Hide
 Type "clear"
 Enter
-Type "# inject secrets into a command/script"
+Type "# inject secrets into a command/script as env vars"
 Enter
 Show
 Sleep 250ms

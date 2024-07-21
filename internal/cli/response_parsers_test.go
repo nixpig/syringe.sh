@@ -51,12 +51,12 @@ func testListResponseParserSingleSecretHappyPath(t *testing.T) {
 
 	b, err := parser.Write([]byte("mock_key=mock_encrypted_value"))
 	require.NoError(t, err)
-	require.Equal(t, 29, b)
+	require.Equal(t, 30, b)
 
 	written, err := io.ReadAll(w)
 	require.NoError(t, err)
 
-	require.Equal(t, "mock_key=mock_decrypted_value", string(written))
+	require.Equal(t, "mock_key=mock_decrypted_value\n", string(written))
 }
 
 func testListResponseParserMultipleSecretsHappyPath(t *testing.T) {
@@ -78,12 +78,12 @@ func testListResponseParserMultipleSecretsHappyPath(t *testing.T) {
 
 	b, err := parser.Write([]byte("mock_key_1=mock_encrypted_value_1\nmock_key_2=mock_encrypted_value_2"))
 	require.NoError(t, err)
-	require.Equal(t, 67, b)
+	require.Equal(t, 68, b)
 
 	written, err := io.ReadAll(w)
 	require.NoError(t, err)
 
-	require.Equal(t, "mock_key_1=mock_decrypted_value_1\nmock_key_2=mock_decrypted_value_2", string(written))
+	require.Equal(t, "mock_key_1=mock_decrypted_value_1\nmock_key_2=mock_decrypted_value_2\n", string(written))
 }
 
 func testListResponseParserDecryptError(t *testing.T) {
@@ -127,12 +127,12 @@ func testGetResponseParserHappyPath(t *testing.T) {
 
 	b, err := parser.Write([]byte("mock_encrypted_value"))
 	require.NoError(t, err)
-	require.Equal(t, 20, b)
+	require.Equal(t, 21, b)
 
 	written, err := io.ReadAll(w)
 	require.NoError(t, err)
 
-	require.Equal(t, "mock_decrypted_value", string(written))
+	require.Equal(t, "mock_decrypted_value\n", string(written))
 }
 
 func testGetResponseParserDecryptError(t *testing.T) {

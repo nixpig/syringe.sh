@@ -140,7 +140,7 @@ func testSecretSetCmdHappyPath(
 
 	require.Equal(
 		t,
-		"", // maybe we want to print out like a 'secret added' message in future?
+		test.SecretSetSuccessMsg("secret_key"),
 		cmdOut.String(),
 	)
 
@@ -505,7 +505,7 @@ func testSecretGetCmdHappyPath(
 
 	require.Equal(
 		t,
-		"secret_value",
+		"secret_value\n",
 		cmdOut.String(),
 	)
 
@@ -867,7 +867,7 @@ func testSecretRemoveCmdHappyPath(
 
 	require.Equal(
 		t,
-		"", // maybe we want to execute a 'success' message or something in future
+		"\n", // maybe we want to execute a 'success' message or something in future
 		cmdOut.String(),
 	)
 
@@ -1575,7 +1575,7 @@ func testSecretInjectCmdHappyPath(
 
 	require.Equal(
 		t,
-		"SECRET_KEY_1=SECRET_VALUE_1 SECRET_KEY_2=SECRET_VALUE_2\n",
+		"SECRET_KEY_1=SECRET_VALUE_1 SECRET_KEY_2=SECRET_VALUE_2",
 		cmdOut.String(),
 	)
 

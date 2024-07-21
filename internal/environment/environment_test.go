@@ -1007,7 +1007,7 @@ func testEnvironmentListCmdHappyPath(
 
 	require.Equal(
 		t,
-		"dev\nstaging\nprod",
+		"dev\nstaging\nprod\n",
 		cmdOut.String(),
 	)
 

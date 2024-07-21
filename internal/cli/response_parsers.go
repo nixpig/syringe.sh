@@ -41,7 +41,7 @@ func (lrp ListResponseParser) Write(p []byte) (int, error) {
 		lines[i] = strings.Join(parts, "=")
 	}
 
-	return lrp.w.Write([]byte(strings.Join(lines, "\n")))
+	return lrp.w.Write([]byte(strings.Join(lines, "\n") + "\n"))
 }
 
 type GetResponseParser struct {
@@ -68,7 +68,7 @@ func (grp GetResponseParser) Write(p []byte) (int, error) {
 		return 0, err
 	}
 
-	return grp.w.Write([]byte(decrypted))
+	return grp.w.Write([]byte(decrypted + "\n"))
 }
 
 type InjectResponseParser struct {

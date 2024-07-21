@@ -679,7 +679,7 @@ func testProjectListCmdHappyPath(
 	require.Equal(
 		t,
 		cmdOut.String(),
-		"my_cool_project\nmy_awesome_project\nmy_super_project",
+		"my_cool_project\nmy_awesome_project\nmy_super_project\n",
 	)
 
 	require.NoError(t, mock.ExpectationsWereMet())

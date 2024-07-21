@@ -21,7 +21,7 @@ func NewHandlerEnvironmentAdd(environmentService EnvironmentService) pkg.CobraHa
 			return err
 		}
 
-		cmd.Println(fmt.Sprintf("Environment '%s' added to project '%s'", environmentName, project))
+		cmd.Println(fmt.Sprintf("Environment '%s' added to project '%s'.", environmentName, project))
 
 		return nil
 	}
@@ -40,7 +40,7 @@ func NewHandlerEnvironmentRemove(environmentService EnvironmentService) pkg.Cobr
 			return err
 		}
 
-		cmd.Println(fmt.Sprintf("Environment '%s' removed from project '%s'", environmentName, project))
+		cmd.Println(fmt.Sprintf("Environment '%s' removed from project '%s'.", environmentName, project))
 
 		return nil
 	}
@@ -61,7 +61,7 @@ func NewHandlerEnvironmentRename(environmentService EnvironmentService) pkg.Cobr
 			return err
 		}
 
-		cmd.Println(fmt.Sprintf("Environment '%s' renamed to '%s' in project '%s'", name, newName, project))
+		cmd.Println(fmt.Sprintf("Environment '%s' renamed to '%s' in project '%s'.", name, newName, project))
 
 		return nil
 	}
@@ -83,7 +83,7 @@ func NewHandlerEnvironmentList(environmentService EnvironmentService) pkg.CobraH
 			environmentNames[i] = e.Name
 		}
 
-		cmd.Print(strings.Join(environmentNames, "\n"))
+		cmd.Println(strings.Join(environmentNames, "\n"))
 
 		return nil
 	}

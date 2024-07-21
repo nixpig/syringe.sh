@@ -82,16 +82,6 @@ func main() {
 	authService := auth.NewAuthService(authStore, validate)
 
 	// -- SERVER
-	sshServer := newServer(
-		&log,
-		[]wish.Middleware{
-			middleware.NewMiddlewareCommand(&log, appDB, validate),
-			middleware.NewMiddlewareAuth(&log, authService),
-			middleware.NewMiddlewareLogging(&log),
-		},
-		time.Duration(time.Second*30),
-		os.Getenv("HOST_KEY_PATH"),
-	)
 
 	// TODO: better configuration management for server side of things
 	port := os.Getenv("APP_PORT")
@@ -104,64 +94,88 @@ func main() {
 		host = config.AppHost
 	}
 
-	if err := sshServer.Start(
+	sshServer, err := newServer(
 		host,
 		port,
-	); err != nil {
+		&log,
+		[]wish.Middleware{
+			middleware.NewMiddlewareCommand(&log, appDB, validate),
+			middleware.NewMiddlewareAuth(&log, authService),
+			middleware.NewMiddlewareLogging(&log),
+		},
+		time.Duration(time.Second*30),
+		os.Getenv("HOST_KEY_PATH"),
+	)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to create server")
+		os.Exit(1)
+
+	}
+
+	_, err = sshServer.Start()
+	if err != nil {
 		log.Error().Err(err).Msg("failed to start ssh server")
 		os.Exit(1)
 	}
 }
 
 type Server struct {
+	host        string
+	port        string
 	logger      *zerolog.Logger
 	middleware  []wish.Middleware
 	timeout     time.Duration
 	hostKeyPath string
+	wishServer  *ssh.Server
 }
 
 func newServer(
+	host string,
+	port string,
 	logger *zerolog.Logger,
 	middleware []wish.Middleware,
 	timeout time.Duration,
 	hostKeyPath string,
-) Server {
-	return Server{
-		logger:      logger,
-		middleware:  middleware,
-		timeout:     timeout,
-		hostKeyPath: hostKeyPath,
-	}
-}
-
-func (s Server) Start(host, port string) error {
+) (*Server, error) {
 	server, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, port)),
-		wish.WithHostKeyPath(s.hostKeyPath),
-		wish.WithMaxTimeout(s.timeout),
+		wish.WithHostKeyPath(hostKeyPath),
+		wish.WithMaxTimeout(timeout),
 		wish.WithPublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
 			allowed := key.Type() == "ssh-rsa"
 			return allowed
 		}),
 		wish.WithMiddleware(
-			s.middleware...,
+			middleware...,
 		),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	return &Server{
+		host:        host,
+		port:        port,
+		logger:      logger,
+		middleware:  middleware,
+		timeout:     timeout,
+		hostKeyPath: hostKeyPath,
+		wishServer:  server,
+	}, nil
+}
+
+func (s Server) Start() (chan os.Signal, error) {
 	done := make(chan os.Signal, 1)
 
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	s.logger.Info().
-		Str("host", host).
-		Str("port", port).
+		Str("host", s.host).
+		Str("port", s.port).
 		Msg("starting server")
 
 	go func() {
-		if err = server.ListenAndServe(); err != nil && err != ssh.ErrServerClosed {
+		if err := s.wishServer.ListenAndServe(); err != nil && err != ssh.ErrServerClosed {
 			s.logger.Error().Err(err).Msg("failed to start server")
 			done <- nil
 		}
@@ -171,12 +185,16 @@ func (s Server) Start(host, port string) error {
 
 	<-done
 
+	return done, nil
+}
+
+func (s Server) Stop() error {
 	s.logger.Info().Msg("stopping server")
 
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 
-	if err := server.Shutdown(ctx); err != nil && err != ssh.ErrServerClosed {
+	if err := s.wishServer.Shutdown(ctx); err != nil && err != ssh.ErrServerClosed {
 		s.logger.Error().Err(err).Msg("failed to gracefully shutdown server")
 		return err
 	}

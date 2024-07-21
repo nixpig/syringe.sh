@@ -20,7 +20,7 @@ func NewHandlerProjectList(projectService ProjectService) pkg.CobraHandler {
 			projectNames[i] = p.Name
 		}
 
-		cmd.Print(strings.Join(projectNames, "\n"))
+		cmd.Println(strings.Join(projectNames, "\n"))
 
 		return nil
 	}
@@ -36,7 +36,7 @@ func NewHandlerProjectAdd(projectService ProjectService) pkg.CobraHandler {
 			return err
 		}
 
-		cmd.Println(fmt.Sprintf("Project '%s' added", projectName))
+		cmd.Println(fmt.Sprintf("Project '%s' added.", projectName))
 
 		return nil
 	}
@@ -52,7 +52,7 @@ func NewHandlerProjectRemove(projectService ProjectService) pkg.CobraHandler {
 			return err
 		}
 
-		cmd.Println(fmt.Sprintf("Project '%s' removed", projectName))
+		cmd.Println(fmt.Sprintf("Project '%s' removed.", projectName))
 
 		return nil
 	}
@@ -70,7 +70,7 @@ func NewHandlerProjectRename(projectService ProjectService) pkg.CobraHandler {
 			return err
 		}
 
-		cmd.Println(fmt.Sprintf("Project '%s' renamed to '%s'", name, newName))
+		cmd.Println(fmt.Sprintf("Project '%s' renamed to '%s'.", name, newName))
 
 		return nil
 	}
