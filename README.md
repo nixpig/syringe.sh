@@ -59,17 +59,6 @@ Secrets can be managed using 'projects' and 'environments'.
 
 ![demo of syringe.sh](demo.gif)
 
-## TODO
-
-- [ ] Proper good refactor and tidy-up!! Best practices around configuration management with Viper.
-- [ ] Update syringe.sh domain
-- [ ] Set up demo server on syringe.sh
-- [ ] E2E tests with the CLI (or SSH?) client, including a couple like trying to create secrets for a non-existent project or environmnet
-
-  - Tests for database package and migrations
-  - Work out how to start/stop server asynchronously and run tests. Could be containerised using testcontainers?
-  - Just use testcontainers??
-
 ## CLI
 
 ### Installation
