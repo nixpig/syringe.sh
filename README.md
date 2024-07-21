@@ -85,6 +85,24 @@ Secrets are managed using 'projects' and 'environments'.
 >
 > Run `syringe help` to view documentation for all available commands and example usage.
 
+| Command                                                                            | Flags                       | Description                 |
+| ---------------------------------------------------------------------------------- | --------------------------- | --------------------------- |
+| `syringe user register`                                                            |                             | Register user by identity   |
+| `syringe project list`                                                             |                             | List projects               |
+| `syringe project add PROJECT_NAME`                                                 |                             | Add project                 |
+| `syringe project remove PROJECT_NAME`                                              |                             | Remove project              |
+| `syringe project rename CURRENT_PROJECT_NAME NEW_PROJECT_NAME`                     |                             | Rename project              |
+| `syringe environment list [flags]`                                                 |                             | List environments           |
+| `syringe environment add [flags] ENVIRONMENT_NAME`                                 | `--project`                 | Add environment             |
+| `syringe environment remove [flags] ENVIRONMENT_NAME`                              | `--project`                 | Remove environment          |
+| `syringe environment rename [flags] CURRENT_ENVIRONMENT_NAME NEW_ENVIRONMENT_NAME` | `--project`                 | Rename environment          |
+| `syringe secret list [flags]`                                                      | `--project` `--environment` | List Secrets                |
+| `syringe secret set [flags] SECRET_NAME SECRET_VALUE`                              | `--project` `--environment` | Set secret                  |
+| `syringe secret get [flags] SECRET_NAME`                                           | `--project` `--environment` | Get secret                  |
+| `syringe secret remove [flags] SECRET_NAME`                                        | `--project` `--environment` | Remove secret               |
+| `syringe secret inject [flags] -- SUBCOMMAND`                                      | `--project` `--environment` | Inject secrets into command |
+| `syringe help`                                                                     |                             | Get help                    |
+
 ### Supported SSH key types
 
 The following key types are supported for the syringe client.
