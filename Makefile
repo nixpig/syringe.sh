@@ -3,10 +3,8 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-SERVER_APP_PACKAGE_PATH := cmd/server/*.go
-SERVER_APP_BINARY_NAME := syringeserver
-CLI_APP_PACKAGE_PATH := cmd/cli/*.go
-CLI_APP_BINARY_NAME := syringe
+BINARY_NAME := syringe
+PACKAGE_PATH := cmd/cli/*.go
 CGO_ENABLED=1 # required for mattn/go-sqlite3
 
 .PHONY: tidy
@@ -38,54 +36,21 @@ coverage:
 coveralls:
 	go run github.com/mattn/goveralls@latest -coverprofile=coverage.out -service=github
 
-.PHONY: build_cli
-build_cli:
-	go build -o tmp/bin/${CLI_APP_BINARY_NAME} ${CLI_APP_PACKAGE_PATH}
+.PHONY: build
+build:
+	go build -o tmp/bin/${BINARY_NAME}
 
-.PHONY: build_server
-build_server:
-	go build -o tmp/bin/${SERVER_APP_BINARY_NAME} ${SERVER_APP_PACKAGE_PATH}
-
-.PHONY: watch_cli
-watch_cli:
-		go run github.com/cosmtrek/air@v1.43.0 \
-		--build.cmd "make build_cli" \
-		--build.bin "tmp/bin/${CLI_APP_BINARY_NAME}" \
-		--build.delay "100" \
-		--build.exclude_dir "" \
-		--build.include_ext "go" \
-		--misc.clean_on_exit "true"
-
-.PHONY: watch_server
-watch_server:
-		go run github.com/cosmtrek/air@v1.43.0 \
-		--build.cmd "make build_server" \
-		--build.bin "tmp/bin/${SERVER_APP_BINARY_NAME}" \
-		--build.delay "100" \
-		--build.exclude_dir "" \
-		--build.include_ext "go" \
-		--misc.clean_on_exit "true"
-
-.PHONY: run_cli
-run_cli: 
-	go run ${CLI_APP_PACKAGE_PATH}
-
-.PHONY: run_server
-run_server: 
-	go run ${SERVER_APP_PACKAGE_PATH}
+.PHONY: run
+run: 
+	go run ./...
 
 .PHONY: clean
 clean:
-	rm -rf tmp dist *.out
+	rm -rf tmp *.out
 	go clean
 
 .PHONY: env
 env: 
-	# Echos out environment variables
-	SERVER_APP_PACKAGE_PATH=${SERVER_APP_PACKAGE_PATH}
-	SERVER_APP_BINARY_NAME=${SERVER_APP_BINARY_NAME}
-	CLI_APP_PACKAGE_PATH=${CLI_APP_PACKAGE_PATH}
-	CLI_APP_BINARY_NAME=${CLI_APP_BINARY_NAME}
-	HOST_KEY_PATH=${HOST_KEY_PATH}
-	DB_USER=${DB_USER}
-	DB_PASSWORD=${DB_PASSWORD}
+	# Environment variables
+	PACKAGE_PATH=${PACKAGE_PATH}
+	BINARY_NAME=${BINARY_NAME}

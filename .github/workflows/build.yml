@@ -21,7 +21,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.22.5"
+          go-version: "1.24.0"
 
       - name: Audit
         run: make audit
@@ -38,8 +38,6 @@ jobs:
         run: |
           make coveralls
 
-      - name: Build server
-        run: make build_server
+      - name: Build
+        run: make build
 
-      - name: Build CLI
-        run: make build_cli
