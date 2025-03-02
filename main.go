@@ -1,7 +1,22 @@
 package main
 
-import "fmt"
+import (
+	"context"
+
+	"github.com/charmbracelet/log"
+	"github.com/nixpig/syringe.sh/cmd"
+	"github.com/spf13/viper"
+)
 
 func main() {
-	fmt.Println("Hi, there!")
+	v := viper.New()
+	// if err := initialiseConfig(os.Getenv("SYRINGE_CONFIG_PATH"), v); err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	log.SetLevel(log.DebugLevel)
+
+	if err := cmd.New(v).ExecuteContext(context.Background()); err != nil {
+		log.Fatal("execute command", "err", err)
+	}
 }

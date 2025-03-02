@@ -5,3 +5,34 @@
 # 🔐 `syringe.sh`
 
 Encrypted, passwordless, embeddable key-value store.
+
+
+##
+
+
+
+- `syringe set foo bar` - Set an item named 'foo' with value 'bar'
+- `syringe get foo` - Get the item named 'foo'
+- `syringe delete foo` - Delete the item named 'foo'
+- `syringe list` - List all items
+
+- `--identity` - Specify path the to SSH key to use, defaults to: 
+- `--store` - Specify path to the store to use, defaults to: 
+- `--config` - Specify path to a config file, defaults to: 
+
+Precedence of config and flags.
+- Config _not_ required, but if it's present then use it.
+- Environment variables not required, but if they're present then use them.
+
+## ONLY DEAL WITH FLAGS AND DEFAULT VALUES FOR THE MOMENT!!
+- Flags overrides all.
+
+## Default values
+- identity = whatever is currently loaded in the ssh keyring
+- store = $HOME/.syringe/{id}.db
+
+Config: 
+```env
+identity=
+store=
+```
