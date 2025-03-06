@@ -74,7 +74,7 @@ func New(v *viper.Viper) *cobra.Command {
 		},
 		PersistentPostRun: func(c *cobra.Command, args []string) {
 			if err := db.Close(); err != nil {
-				log.Errorf("close database", "err", err)
+				log.Error("close database", "err", err)
 			}
 		},
 	}
