@@ -13,7 +13,7 @@ type Store interface {
 }
 
 type StoreItem struct {
-	Id    int
+	ID    int
 	Key   string
 	Value string
 }
@@ -53,7 +53,7 @@ func (s *SqliteStore) Get(key string) (*StoreItem, error) {
 
 	var item StoreItem
 
-	if err := row.Scan(&item.Id, &item.Key, &item.Value); err != nil {
+	if err := row.Scan(&item.ID, &item.Key, &item.Value); err != nil {
 		return nil, fmt.Errorf("get key-value from database: %w", err)
 	}
 
@@ -76,7 +76,7 @@ func (s *SqliteStore) List() ([]StoreItem, error) {
 	for rows.Next() {
 		var item StoreItem
 
-		if err := rows.Scan(&item.Id, &item.Key, &item.Value); err != nil {
+		if err := rows.Scan(&item.ID, &item.Key, &item.Value); err != nil {
 			return nil, fmt.Errorf("scan row item: %w", err)
 		}
 
