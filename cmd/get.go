@@ -16,7 +16,7 @@ func Get(
 ) (string, error) {
 	item, err := storeImpl.Get(key)
 	if err != nil {
-		return "", fmt.Errorf("get '%s' from store: %w", err)
+		return "", fmt.Errorf("get '%s' from store: %w", key, err)
 	}
 
 	decryptedValue, err := decrypt(item.Value)

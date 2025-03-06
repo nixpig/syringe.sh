@@ -24,7 +24,7 @@ func Set(
 		Key:   key,
 		Value: encryptedValue,
 	}); err != nil {
-		return fmt.Errorf("set '%s' in store: %w", err)
+		return fmt.Errorf("set '%s' in store: %w", key, err)
 	}
 
 	return nil
