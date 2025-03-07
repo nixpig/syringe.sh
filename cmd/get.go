@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nixpig/syringe.sh/internal/store"
 	"github.com/nixpig/syringe.sh/pkg/ssh"
+	"github.com/nixpig/syringe.sh/stores"
 )
 
 func Get(
 	ctx context.Context,
-	storeImpl *store.SqliteStore,
+	storeImpl *stores.SqliteStore,
 	decrypt ssh.Cryptor,
 	key string,
 ) (string, error) {

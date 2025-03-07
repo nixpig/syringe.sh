@@ -14,8 +14,6 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 
-	log.SetLevel(log.DebugLevel)
-
 	if err := cmd.New(v).ExecuteContext(context.Background()); err != nil {
 		log.Fatal("execute command", "err", err)
 	}

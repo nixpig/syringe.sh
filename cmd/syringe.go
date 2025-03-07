@@ -13,8 +13,8 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/nixpig/syringe.sh/internal/database"
 	"github.com/nixpig/syringe.sh/internal/migrations"
-	"github.com/nixpig/syringe.sh/internal/store"
 	"github.com/nixpig/syringe.sh/pkg/ssh"
+	"github.com/nixpig/syringe.sh/stores"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -37,6 +37,11 @@ func New(v *viper.Viper) *cobra.Command {
 			var err error
 
 			applyFlags(c, v)
+
+			debugLevel, _ := c.Flags().GetBool("debug")
+			if debugLevel {
+				log.SetLevel(log.DebugLevel)
+			}
 
 			identityPath, _ := c.Flags().GetString(identityFlag)
 			storePath, _ := c.Flags().GetString(storeFlag)
@@ -79,20 +84,12 @@ func New(v *viper.Viper) *cobra.Command {
 		},
 	}
 
-	rootCmd.PersistentFlags().StringP(
-		identityFlag,
-		"i",
-		"",
-		"Path to SSH key",
-	)
+	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Set log level to debug")
+
+	rootCmd.PersistentFlags().StringP(identityFlag, "i", "", "Path to SSH key")
 	rootCmd.MarkPersistentFlagRequired(identityFlag)
 
-	rootCmd.PersistentFlags().StringP(
-		storeFlag,
-		"s",
-		"",
-		"Store as name, path or URL",
-	)
+	rootCmd.PersistentFlags().StringP(storeFlag, "s", "", "Store as name, path or URL")
 	rootCmd.MarkPersistentFlagRequired(storeFlag)
 
 	bindFlags(rootCmd, v)
@@ -122,7 +119,7 @@ var setCmd = &cobra.Command{
 
 		return Set(
 			c.Context(),
-			store.NewSqliteStore(db),
+			stores.NewSqliteStore(db),
 			ssh.NewEncryptor(publicKey),
 			args[0],
 			args[1],
@@ -145,7 +142,7 @@ var getCmd = &cobra.Command{
 
 		value, err := Get(
 			c.Context(),
-			store.NewSqliteStore(db),
+			stores.NewSqliteStore(db),
 			ssh.NewDecryptor(privateKey),
 			args[0],
 		)
@@ -165,7 +162,7 @@ var deleteCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Example: "  syringe delete username",
 	RunE: func(c *cobra.Command, args []string) error {
-		return Delete(c.Context(), store.NewSqliteStore(db), args[0])
+		return Delete(c.Context(), stores.NewSqliteStore(db), args[0])
 	},
 }
 
@@ -175,7 +172,7 @@ var listCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(0),
 	Example: "  syringe list",
 	RunE: func(c *cobra.Command, args []string) error {
-		keys, err := List(c.Context(), store.NewSqliteStore(db))
+		keys, err := List(c.Context(), stores.NewSqliteStore(db))
 		if err != nil {
 			return fmt.Errorf("list: %w", err)
 		}

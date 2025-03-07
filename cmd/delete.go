@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nixpig/syringe.sh/internal/store"
+	"github.com/nixpig/syringe.sh/stores"
 )
 
-func Delete(ctx context.Context, storeImpl store.Store, key string) error {
+func Delete(ctx context.Context, storeImpl stores.Store, key string) error {
 	if err := storeImpl.Delete(key); err != nil {
 		return fmt.Errorf("delete '%s': %w", key, err)
 	}

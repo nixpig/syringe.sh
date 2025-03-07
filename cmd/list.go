@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nixpig/syringe.sh/internal/store"
+	"github.com/nixpig/syringe.sh/stores"
 )
 
 func List(
 	ctx context.Context,
-	storeImpl store.Store,
+	storeImpl stores.Store,
 ) ([]string, error) {
 	items, err := storeImpl.List()
 	if err != nil {

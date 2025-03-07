@@ -1,22 +1,9 @@
-package store
+package stores
 
 import (
 	"database/sql"
 	"fmt"
 )
-
-type Store interface {
-	Set(item StoreItem) error
-	Get(key string) (*StoreItem, error)
-	List() ([]StoreItem, error)
-	Delete(key string) error
-}
-
-type StoreItem struct {
-	ID    int
-	Key   string
-	Value string
-}
 
 type SqliteStore struct {
 	db *sql.DB
@@ -27,10 +14,8 @@ func NewSqliteStore(db *sql.DB) *SqliteStore {
 }
 
 func (s *SqliteStore) Set(item StoreItem) error {
-	query := `
-		insert into store_ (key_, value_) values ($key, $value) 
-		on conflict(key_) do update set value_ = $value
-	`
+	query := `insert into store_ (key_, value_) values ($key, $value) 
+on conflict(key_) do update set value_ = $value`
 
 	if _, err := s.db.Exec(
 		query,
@@ -44,10 +29,8 @@ func (s *SqliteStore) Set(item StoreItem) error {
 }
 
 func (s *SqliteStore) Get(key string) (*StoreItem, error) {
-	query := `
-		select id_, key_, value_ from store_
-		where key_ = $key
-	`
+	query := `select id_, key_, value_ from store_
+where key_ = $key`
 
 	row := s.db.QueryRow(query, sql.Named("key", key))
 
@@ -61,9 +44,7 @@ func (s *SqliteStore) Get(key string) (*StoreItem, error) {
 }
 
 func (s *SqliteStore) List() ([]StoreItem, error) {
-	query := `
-		select id_, key_, value_ from store_
-	`
+	query := `select id_, key_, value_ from store_`
 
 	rows, err := s.db.Query(query)
 	if err != nil {
@@ -87,9 +68,7 @@ func (s *SqliteStore) List() ([]StoreItem, error) {
 }
 
 func (s *SqliteStore) Delete(key string) error {
-	query := `
-		delete from store_ where key_ = $key
-	`
+	query := `delete from store_ where key_ = $key`
 
 	if _, err := s.db.Exec(query, sql.Named("key", key)); err != nil {
 		return fmt.Errorf("delete item: %w", err)
