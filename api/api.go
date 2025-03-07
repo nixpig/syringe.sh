@@ -2,19 +2,20 @@ package api
 
 import (
 	"github.com/charmbracelet/log"
-	"github.com/nixpig/syringe.sh/stores"
+	"github.com/nixpig/syringe.sh/internal/items"
 )
 
 type API interface {
-	Set(item stores.StoreItem) error
-	Get(key string) (*stores.StoreItem, error)
-	List() ([]stores.StoreItem, error)
+	Set(*items.Item) error
+	Get(key string) (*items.Item, error)
+	List() ([]items.Item, error)
 	Delete(key string) error
+	Close() error
 }
 
 func New(store string) (API, error) {
 	// if _, err := url.ParseRequestURI(store); err != nil {
-	log.Debug("file api")
+	log.Debug("new store", "store", store)
 	return newFileAPI(store)
 	// }
 

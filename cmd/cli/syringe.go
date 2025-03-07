@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/nixpig/syringe.sh/api"
+	"github.com/nixpig/syringe.sh/internal/items"
 	"github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -76,13 +77,13 @@ var setCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("create new api: %w", err)
 		}
+		defer a.Close()
 
 		return Set(
 			c.Context(),
 			a,
 			ssh.NewEncryptor(publicKey),
-			args[0],
-			args[1],
+			items.New(args[0], args[1]),
 		)
 	},
 }
@@ -104,8 +105,9 @@ var getCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("create new api: %w", err)
 		}
+		defer a.Close()
 
-		value, err := Get(
+		item, err := Get(
 			c.Context(),
 			a,
 			ssh.NewDecryptor(privateKey),
@@ -115,7 +117,7 @@ var getCmd = &cobra.Command{
 			return err
 		}
 
-		c.OutOrStdout().Write([]byte(value))
+		c.OutOrStdout().Write([]byte(item.Value))
 
 		return nil
 	},
@@ -132,6 +134,7 @@ var deleteCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("create new api: %w", err)
 		}
+		defer a.Close()
 
 		return Delete(c.Context(), a, args[0])
 	},
@@ -148,10 +151,16 @@ var listCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("create new api: %w", err)
 		}
+		defer a.Close()
 
-		keys, err := List(c.Context(), a)
+		list, err := List(c.Context(), a)
 		if err != nil {
 			return fmt.Errorf("list: %w", err)
+		}
+
+		keys := make([]string, len(list))
+		for i, l := range list {
+			keys[i] = l.Key
 		}
 
 		c.OutOrStdout().Write([]byte(strings.Join(keys, "\n")))

@@ -10,6 +10,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/nixpig/syringe.sh/internal/database"
+	"github.com/nixpig/syringe.sh/internal/items"
 	"github.com/nixpig/syringe.sh/internal/migrations"
 	"github.com/nixpig/syringe.sh/stores"
 )
@@ -60,15 +61,15 @@ func newFileAPI(path string) (*fileAPI, error) {
 	return &fileAPI{s: store, db: db}, nil
 }
 
-func (l *fileAPI) Set(item stores.StoreItem) error {
+func (l *fileAPI) Set(item *items.Item) error {
 	return l.s.Set(item)
 }
 
-func (l *fileAPI) Get(key string) (*stores.StoreItem, error) {
+func (l *fileAPI) Get(key string) (*items.Item, error) {
 	return l.s.Get(key)
 }
 
-func (l *fileAPI) List() ([]stores.StoreItem, error) {
+func (l *fileAPI) List() ([]items.Item, error) {
 	return l.s.List()
 }
 

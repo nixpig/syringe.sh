@@ -1,14 +1,10 @@
 package stores
 
-type Store interface {
-	Set(item StoreItem) error
-	Get(key string) (*StoreItem, error)
-	List() ([]StoreItem, error)
-	Delete(key string) error
-}
+import "github.com/nixpig/syringe.sh/internal/items"
 
-type StoreItem struct {
-	ID    int
-	Key   string
-	Value string
+type Store interface {
+	Set(item *items.Item) error
+	Get(key string) (*items.Item, error)
+	List() ([]items.Item, error)
+	Delete(key string) error
 }

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/charmbracelet/log"
 	"github.com/nixpig/syringe.sh/api"
+	"github.com/nixpig/syringe.sh/internal/items"
 	"github.com/nixpig/syringe.sh/pkg/ssh"
 )
 
@@ -14,18 +14,16 @@ func Get(
 	a api.API,
 	decrypt ssh.Cryptor,
 	key string,
-) (string, error) {
+) (*items.Item, error) {
 	item, err := a.Get(key)
 	if err != nil {
-		return "", fmt.Errorf("get '%s' from store: %w", key, err)
+		return nil, fmt.Errorf("get '%s' from store: %w", key, err)
 	}
-
-	log.Debug("get", "item", item)
 
 	decryptedValue, err := decrypt(item.Value)
 	if err != nil {
-		return "", fmt.Errorf("decrypt '%s': %w", key, err)
+		return nil, fmt.Errorf("decrypt '%s': %w", key, err)
 	}
 
-	return decryptedValue, nil
+	return items.New(item.Key, decryptedValue), nil
 }
