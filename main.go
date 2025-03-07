@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/charmbracelet/log"
-	"github.com/nixpig/syringe.sh/cmd"
+	cmd "github.com/nixpig/syringe.sh/cmd/cli"
 	"github.com/spf13/viper"
 )
 

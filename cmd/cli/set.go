@@ -1,16 +1,17 @@
-package cmd
+package cli
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/nixpig/syringe.sh/api"
 	"github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/nixpig/syringe.sh/stores"
 )
 
 func Set(
 	ctx context.Context,
-	storeImpl stores.Store,
+	a api.API,
 	encrypt ssh.Cryptor,
 	key string,
 	value string,
@@ -20,7 +21,7 @@ func Set(
 		return fmt.Errorf("encrypt '%s': %w", value, err)
 	}
 
-	if err := storeImpl.Set(stores.StoreItem{
+	if err := a.Set(stores.StoreItem{
 		Key:   key,
 		Value: encryptedValue,
 	}); err != nil {

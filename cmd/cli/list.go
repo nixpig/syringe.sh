@@ -1,17 +1,17 @@
-package cmd
+package cli
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/nixpig/syringe.sh/stores"
+	"github.com/nixpig/syringe.sh/api"
 )
 
 func List(
 	ctx context.Context,
-	storeImpl stores.Store,
+	a api.API,
 ) ([]string, error) {
-	items, err := storeImpl.List()
+	items, err := a.List()
 	if err != nil {
 		return nil, fmt.Errorf("list of items: %w", err)
 	}
