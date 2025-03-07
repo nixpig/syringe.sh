@@ -54,7 +54,7 @@ func New(v *viper.Viper) *cobra.Command {
 		setCmd,
 		getCmd,
 		listCmd,
-		deleteCmd,
+		removeCmd,
 	)
 
 	return rootCmd
@@ -79,7 +79,7 @@ var setCmd = &cobra.Command{
 		}
 		defer a.Close()
 
-		return Set(
+		return set(
 			c.Context(),
 			a,
 			ssh.NewEncryptor(publicKey),
@@ -107,7 +107,7 @@ var getCmd = &cobra.Command{
 		}
 		defer a.Close()
 
-		item, err := Get(
+		item, err := get(
 			c.Context(),
 			a,
 			ssh.NewDecryptor(privateKey),
@@ -123,11 +123,11 @@ var getCmd = &cobra.Command{
 	},
 }
 
-var deleteCmd = &cobra.Command{
-	Use:     "delete [flags] KEY",
-	Short:   "Delete a record from the store",
+var removeCmd = &cobra.Command{
+	Use:     "remove [flags] KEY",
+	Short:   "Remove a record from the store",
 	Args:    cobra.ExactArgs(1),
-	Example: "  syringe delete username",
+	Example: "  syringe remove username",
 	RunE: func(c *cobra.Command, args []string) error {
 		store, _ := c.Flags().GetString(storeFlag)
 		a, err := api.New(store)
@@ -136,7 +136,7 @@ var deleteCmd = &cobra.Command{
 		}
 		defer a.Close()
 
-		return Delete(c.Context(), a, args[0])
+		return remove(c.Context(), a, args[0])
 	},
 }
 
@@ -153,7 +153,7 @@ var listCmd = &cobra.Command{
 		}
 		defer a.Close()
 
-		list, err := List(c.Context(), a)
+		list, err := list(c.Context(), a)
 		if err != nil {
 			return fmt.Errorf("list: %w", err)
 		}

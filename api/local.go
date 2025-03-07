@@ -73,8 +73,8 @@ func (l *fileAPI) List() ([]items.Item, error) {
 	return l.s.List()
 }
 
-func (l *fileAPI) Delete(key string) error {
-	return l.s.Delete(key)
+func (l *fileAPI) Remove(key string) error {
+	return l.s.Remove(key)
 }
 
 func (l *fileAPI) Close() error {

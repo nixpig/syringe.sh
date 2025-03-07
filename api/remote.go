@@ -28,6 +28,6 @@ func (l *hostAPI) List() ([]items.Item, error) {
 	return nil, nil
 }
 
-func (l *hostAPI) Delete(key string) error {
+func (l *hostAPI) Remove(key string) error {
 	return nil
 }

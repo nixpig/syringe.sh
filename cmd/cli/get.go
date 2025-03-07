@@ -9,7 +9,7 @@ import (
 	"github.com/nixpig/syringe.sh/pkg/ssh"
 )
 
-func Get(
+func get(
 	ctx context.Context,
 	a api.API,
 	decrypt ssh.Cryptor,

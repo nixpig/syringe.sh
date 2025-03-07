@@ -9,7 +9,7 @@ import (
 	"github.com/nixpig/syringe.sh/pkg/ssh"
 )
 
-func Set(
+func set(
 	ctx context.Context,
 	a api.API,
 	encrypt ssh.Cryptor,

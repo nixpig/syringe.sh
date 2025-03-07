@@ -13,7 +13,7 @@ Encrypted, passwordless, embeddable key-value store.
 
 - `syringe set foo bar` - Set an item named 'foo' with value 'bar'
 - `syringe get foo` - Get the item named 'foo'
-- `syringe delete foo` - Delete the item named 'foo'
+- `syringe remove foo` - Rmove the item named 'foo'
 - `syringe list` - List all items
 
 - `--identity` - Specify path the to SSH key to use, defaults to: 

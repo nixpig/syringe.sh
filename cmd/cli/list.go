@@ -8,7 +8,7 @@ import (
 	"github.com/nixpig/syringe.sh/internal/items"
 )
 
-func List(
+func list(
 	ctx context.Context,
 	a api.API,
 ) ([]items.Item, error) {

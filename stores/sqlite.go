@@ -69,7 +69,7 @@ func (s *SqliteStore) List() ([]items.Item, error) {
 	return allItems, nil
 }
 
-func (s *SqliteStore) Delete(key string) error {
+func (s *SqliteStore) Remove(key string) error {
 	query := `delete from store_ where key_ = $key`
 
 	if _, err := s.db.Exec(query, sql.Named("key", key)); err != nil {
