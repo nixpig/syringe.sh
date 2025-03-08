@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"slices"
@@ -13,6 +16,7 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/joho/godotenv"
+	gossh "golang.org/x/crypto/ssh"
 )
 
 const (
@@ -22,12 +26,14 @@ const (
 	keyEnv  = "SYRINGE_KEY"
 )
 
-var allowedKeyTypes = []string{"id-rsa"}
+var allowedKeyTypes = []string{"ssh-rsa"}
 
 func main() {
+	log.SetLevel(log.DebugLevel)
+	// TODO: use viper instead of (or in addition to) env file?
 	log.Info("loading environment", "env", env)
 	if err := godotenv.Load(env); err != nil {
-		log.Fatal("failed to load environment", "env", env, "err", err)
+		log.Warn("failed to load environment file", "env", env, "err", err)
 	}
 
 	port := os.Getenv(portEnv)
@@ -42,7 +48,7 @@ func main() {
 
 	key := os.Getenv(keyEnv)
 	if key == "" {
-		log.Info("no host key path configured", "keyEnv", keyEnv)
+		log.Warn("no host key path configured", "keyEnv", keyEnv)
 	}
 
 	log.Info("starting server", "host", host, "port", port)
@@ -56,9 +62,10 @@ func main() {
 
 	server, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, port)),
-		// wish.WithHostKeyPath(key),
+		wish.WithHostKeyPath(key),
 		wish.WithMaxTimeout(time.Second*30),
 		wish.WithPublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
+			log.Debug("check public key auth", "allowed", allowedKeyTypes, "actual", key.Type())
 			return slices.Contains(allowedKeyTypes, key.Type())
 		}),
 		wish.WithMiddleware(middleware...),
@@ -101,6 +108,7 @@ func main() {
 func rateLimitingMiddleware(next ssh.Handler) ssh.Handler {
 	return func(sess ssh.Session) {
 		// rate limiting
+		next(sess)
 	}
 }
 
@@ -123,7 +131,43 @@ func loggingMiddleware(next ssh.Handler) ssh.Handler {
 
 func authMiddleware(next ssh.Handler) ssh.Handler {
 	return func(sess ssh.Session) {
-		// authenticate
+		username := sess.Context().User()
+		k, ok := sess.PublicKey().(gossh.PublicKey)
+		if !ok {
+			log.Error("failed to cast wish public key to go public key")
+		}
+
+		publicKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(k))
+		if err != nil {
+			log.Error("failed to parse authorised key", "err", err)
+			sess.Stderr().Write([]byte(fmt.Sprintf("Error: failed to parse authorised key: %s")))
+		}
+
+		log.Debug("authorised key", "publicKey", publicKey)
+
+		publicKeysURL := fmt.Sprintf("https://github.com/%s.keys", username)
+
+		resp, err := http.Get(publicKeysURL)
+		if err != nil || resp.StatusCode != http.StatusOK {
+			log.Error("failed to get public keys", "publicKeysURL", publicKeysURL)
+			sess.Stderr().Write([]byte(fmt.Sprintf("Error: failed to get public keys from %s", publicKeysURL)))
+			return
+		}
+		defer resp.Body.Close()
+
+		scanner := bufio.NewScanner(resp.Body)
+		for scanner.Scan() {
+			// log.Debug(scanner.Text())
+
+		}
+
+		if err := scanner.Err(); err != nil {
+			log.Errorf("failed to read response body", "err", err)
+			sess.Stderr().Write([]byte(fmt.Sprintf("Error: failed to read keys: %s", err)))
+			return
+		}
+
+		next(sess)
 	}
 }
 
@@ -131,5 +175,6 @@ func storeMiddleware(next ssh.Handler) ssh.Handler {
 	return func(sess ssh.Session) {
 		// parse command
 		// interact with store
+		next(sess)
 	}
 }

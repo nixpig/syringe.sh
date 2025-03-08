@@ -3,9 +3,12 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-BINARY_NAME := syringe
-PACKAGE_PATH := cmd/cli/*.go
-CGO_ENABLED=1 # required for mattn/go-sqlite3
+SERVER_BINARY_NAME := server
+CLI_BINARY_NAME := syringe
+SERVER_PACKAGE_PATH := cmd/server/*.go
+CLI_PACKAGE_PATH := cmd/cli/*.go
+BUILD_OUTPUT_DIR := tmp/bin
+CGO_ENABLED := 1 # required for mattn/go-sqlite3
 
 .PHONY: tidy
 tidy: 
@@ -36,13 +39,23 @@ coverage:
 coveralls:
 	go run github.com/mattn/goveralls@latest -coverprofile=coverage.out -service=github
 
-.PHONY: build
-build:
-	go build -o tmp/bin/${BINARY_NAME}
+.PHONY: server
+server:
+	go build -o ${BUILD_OUTPUT_DIR}/${SERVER_BINARY_NAME} ${SERVER_PACKAGE_PATH}
 
-.PHONY: run
-run: 
-	go run ./...
+.PHONY: cli
+cli:
+	go build -o ${BUILD_OUTPUT_DIR}/${CLI_BINARY_NAME} ${CLI_PACKAGE_PATH}
+
+.PHONY: watch
+watch:
+		go run github.com/cosmtrek/air@v1.43.0 \
+		--build.cmd "make server" \
+		--build.bin "tmp/bin/${SERVER_BINARY_NAME}" \
+		--build.delay "100" \
+		--build.exclude_dir "" \
+		--build.include_ext "go" \
+		--misc.clean_on_exit "true"
 
 .PHONY: clean
 clean:
@@ -52,5 +65,9 @@ clean:
 .PHONY: env
 env: 
 	# Environment variables
-	PACKAGE_PATH=${PACKAGE_PATH}
-	BINARY_NAME=${BINARY_NAME}
+	SERVER_BINARY_NAME=${SERVER_BINARY_NAME}
+	CLI_BINARY_NAME=${CLI_BINARY_NAME}
+	SERVER_PACKAGE_PATH=${SERVER_PACKAGE_PATH}
+	CLI_PACKAGE_PATH=${CLI_PACKAGE_PATH}
+	BUILD_OUTPUT_DIR=${BUILD_OUTPUT_DIR}
+	CGO_ENABLED=${CGO_ENABLED}
