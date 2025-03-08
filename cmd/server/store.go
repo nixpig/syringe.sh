@@ -1,21 +1,25 @@
-package stores
+package main
 
 import (
 	"database/sql"
 	"fmt"
-
-	"github.com/nixpig/syringe.sh/internal/items"
 )
 
-type SqliteStore struct {
+type Store struct {
 	db *sql.DB
 }
 
-func NewSqliteStore(db *sql.DB) *SqliteStore {
-	return &SqliteStore{db}
+type Item struct {
+	ID    string
+	Key   string
+	Value string
 }
 
-func (s *SqliteStore) Set(item *items.Item) error {
+func NewStore(db *sql.DB) *Store {
+	return &Store{db}
+}
+
+func (s *Store) Set(item *Item) error {
 	query := `insert into store_ (key_, value_) values ($key, $value) 
 on conflict(key_) do update set value_ = $value`
 
@@ -30,13 +34,13 @@ on conflict(key_) do update set value_ = $value`
 	return nil
 }
 
-func (s *SqliteStore) Get(key string) (*items.Item, error) {
+func (s *Store) Get(key string) (*Item, error) {
 	query := `select id_, key_, value_ from store_
 where key_ = $key`
 
 	row := s.db.QueryRow(query, sql.Named("key", key))
 
-	var item items.Item
+	var item Item
 
 	if err := row.Scan(&item.ID, &item.Key, &item.Value); err != nil {
 		return nil, fmt.Errorf("get key-value from database: %w", err)
@@ -45,7 +49,7 @@ where key_ = $key`
 	return &item, nil
 }
 
-func (s *SqliteStore) List() ([]items.Item, error) {
+func (s *Store) List() ([]Item, error) {
 	query := `select id_, key_, value_ from store_`
 
 	rows, err := s.db.Query(query)
@@ -54,10 +58,10 @@ func (s *SqliteStore) List() ([]items.Item, error) {
 	}
 	defer rows.Close()
 
-	var allItems []items.Item
+	var allItems []Item
 
 	for rows.Next() {
-		var item items.Item
+		var item Item
 
 		if err := rows.Scan(&item.ID, &item.Key, &item.Value); err != nil {
 			return nil, fmt.Errorf("scan row item: %w", err)
@@ -69,7 +73,7 @@ func (s *SqliteStore) List() ([]items.Item, error) {
 	return allItems, nil
 }
 
-func (s *SqliteStore) Remove(key string) error {
+func (s *Store) Remove(key string) error {
 	query := `delete from store_ where key_ = $key`
 
 	if _, err := s.db.Exec(query, sql.Named("key", key)); err != nil {

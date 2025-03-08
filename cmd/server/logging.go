@@ -5,24 +5,18 @@ import (
 	"github.com/charmbracelet/ssh"
 )
 
-func NewLoggingMiddleware(logger *log.Logger) func(next ssh.Handler) ssh.Handler {
-	return func(next ssh.Handler) ssh.Handler {
-		return func(sess ssh.Session) {
-			log.WithContext(sess.Context(), logger)
-			// FIXME: this doesn't work as expected
-			logger := log.With("session", sess.Context().SessionID())
+func loggingMiddleware(next ssh.Handler) ssh.Handler {
+	return func(sess ssh.Session) {
+		log.Info(
+			"connect",
+			"user", sess.Context().User(),
+			"address", sess.Context().RemoteAddr().String(),
+			"public", sess.PublicKey() != nil,
+			"client", sess.Context().ClientVersion(),
+		)
 
-			logger.Info(
-				"connect",
-				"user", sess.Context().User(),
-				"address", sess.Context().RemoteAddr().String(),
-				"public", sess.PublicKey() != nil,
-				"client", sess.Context().ClientVersion(),
-			)
+		next(sess)
 
-			next(sess)
-
-			logger.Info("disconnect")
-		}
+		log.Info("disconnect")
 	}
 }
