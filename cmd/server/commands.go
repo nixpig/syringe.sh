@@ -41,10 +41,13 @@ func rootCmd(sess ssh.Session) *cobra.Command {
 		SilenceUsage: true,
 		PersistentPreRunE: func(c *cobra.Command, args []string) error {
 			var err error
+			c.AddCommand()
 
 			dbName := fmt.Sprintf("%x.db", sha1.Sum(sess.PublicKey().Marshal()))
 
 			homeDir, _ := os.UserHomeDir()
+
+			// TODO: check if a database exists, if not then send code to email and await entry before continuing
 
 			dbDir := filepath.Join(homeDir, ".syringe")
 			if err := os.MkdirAll(dbDir, 0755); err != nil {
@@ -96,6 +99,11 @@ func setCmd() *cobra.Command {
 		Args: cobra.ExactArgs(2),
 		RunE: func(c *cobra.Command, args []string) error {
 			store := NewStore(db)
+
+			// TODO: verify the value being saved is encrypted with a private key
+			//       that corresponds to the public key so that we're not storing
+			//       unencrypted data
+
 			return store.Set(&Item{
 				Key:   args[0],
 				Value: args[1],
@@ -110,13 +118,13 @@ func getCmd() *cobra.Command {
 		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
 			store := NewStore(db)
+
 			item, err := store.Get(args[0])
 			if err != nil {
 				return err
 			}
 
 			c.OutOrStdout().Write([]byte(item.Value))
-
 			return nil
 		},
 	}
@@ -137,6 +145,7 @@ func listCmd() *cobra.Command {
 			for i, item := range items {
 				keys[i] = item.Key
 			}
+
 			c.OutOrStdout().Write([]byte(strings.Join(keys, "\n")))
 			return nil
 		},

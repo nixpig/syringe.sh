@@ -1,12 +1,12 @@
-package cli
+package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/log"
 	"github.com/nixpig/syringe.sh/api"
-	"github.com/nixpig/syringe.sh/internal/items"
 	"github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -17,6 +17,7 @@ import (
 const (
 	identityFlag = "identity"
 	storeFlag    = "store"
+	url          = "127.0.0.1:2323"
 )
 
 func New(v *viper.Viper) *cobra.Command {
@@ -72,19 +73,22 @@ var setCmd = &cobra.Command{
 			return fmt.Errorf("get public key: %w", err)
 		}
 
-		store, _ := c.Flags().GetString(storeFlag)
-		a, err := api.New(store)
-		if err != nil {
-			return fmt.Errorf("create new api: %w", err)
-		}
+		ctx := context.Background()
+		a := api.New(url).WithContext(ctx)
 		defer a.Close()
 
-		return set(
-			c.Context(),
-			a,
-			ssh.NewEncryptor(publicKey),
-			items.New(args[0], args[1]),
-		)
+		encrypt := ssh.NewEncryptor(publicKey)
+
+		encryptedValue, err := encrypt(args[1])
+		if err != nil {
+			return fmt.Errorf("encrypt: %w", err)
+		}
+
+		if err := a.Set(args[0], encryptedValue); err != nil {
+			return fmt.Errorf("set '%s' in store: %w", args[0], err)
+		}
+
+		return nil
 	},
 }
 
@@ -101,23 +105,23 @@ var getCmd = &cobra.Command{
 		}
 
 		store, _ := c.Flags().GetString(storeFlag)
-		a, err := api.New(store)
-		if err != nil {
-			return fmt.Errorf("create new api: %w", err)
-		}
+		ctx := context.Background()
+		a := api.New(store).WithContext(ctx)
 		defer a.Close()
 
-		item, err := get(
-			c.Context(),
-			a,
-			ssh.NewDecryptor(privateKey),
-			args[0],
-		)
+		decrypt := ssh.NewDecryptor(privateKey)
+
+		encryptedValue, err := a.Get(args[0])
 		if err != nil {
 			return err
 		}
 
-		c.OutOrStdout().Write([]byte(item.Value))
+		decryptedValue, err := decrypt(encryptedValue)
+		if err != nil {
+			return err
+		}
+
+		c.OutOrStdout().Write([]byte(decryptedValue))
 
 		return nil
 	},
@@ -130,13 +134,12 @@ var removeCmd = &cobra.Command{
 	Example: "  syringe remove username",
 	RunE: func(c *cobra.Command, args []string) error {
 		store, _ := c.Flags().GetString(storeFlag)
-		a, err := api.New(store)
-		if err != nil {
-			return fmt.Errorf("create new api: %w", err)
-		}
+
+		ctx := context.Background()
+		a := api.New(store).WithContext(ctx)
 		defer a.Close()
 
-		return remove(c.Context(), a, args[0])
+		return a.Remove(args[0])
 	},
 }
 
@@ -147,20 +150,14 @@ var listCmd = &cobra.Command{
 	Example: "  syringe list",
 	RunE: func(c *cobra.Command, args []string) error {
 		store, _ := c.Flags().GetString(storeFlag)
-		a, err := api.New(store)
-		if err != nil {
-			return fmt.Errorf("create new api: %w", err)
-		}
+
+		ctx := context.Background()
+		a := api.New(store).WithContext(ctx)
 		defer a.Close()
 
-		list, err := list(c.Context(), a)
+		keys, err := a.List()
 		if err != nil {
-			return fmt.Errorf("list: %w", err)
-		}
-
-		keys := make([]string, len(list))
-		for i, l := range list {
-			keys[i] = l.Key
+			return err
 		}
 
 		c.OutOrStdout().Write([]byte(strings.Join(keys, "\n")))

@@ -1,24 +1,48 @@
 package api
 
-import (
-	"github.com/charmbracelet/log"
-	"github.com/nixpig/syringe.sh/internal/items"
-)
+import "context"
 
 type API interface {
-	Set(*items.Item) error
-	Get(key string) (*items.Item, error)
-	List() ([]items.Item, error)
+	Set(key, value string) error
+	Get(key string) (string, error)
+	List() ([]string, error)
 	Remove(key string) error
 	Close() error
 }
 
-func New(store string) (API, error) {
-	// if _, err := url.ParseRequestURI(store); err != nil {
-	log.Debug("new store", "store", store)
-	return newFileAPI(store)
-	// }
+type hostAPI struct {
+	// calls remote API over SSH
+	url string
+	ctx context.Context
+}
 
-	// log.Debug("host api")
-	// return newHostAPI(store)
+func New(url string) *hostAPI {
+	return &hostAPI{
+		url: url,
+	}
+}
+
+func (l *hostAPI) WithContext(ctx context.Context) *hostAPI {
+	l.ctx = ctx
+	return l
+}
+
+func (l *hostAPI) Set(key, value string) error {
+	return nil
+}
+
+func (l *hostAPI) Get(key string) (string, error) {
+	return "", nil
+}
+
+func (l *hostAPI) List() ([]string, error) {
+	return nil, nil
+}
+
+func (l *hostAPI) Remove(key string) error {
+	return nil
+}
+
+func (l *hostAPI) Close() error {
+	return nil
 }
