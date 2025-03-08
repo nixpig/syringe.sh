@@ -16,7 +16,6 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/joho/godotenv"
-	gossh "golang.org/x/crypto/ssh"
 )
 
 const (
@@ -70,10 +69,8 @@ func main() {
 		}),
 		wish.WithMiddleware(middleware...),
 	)
-	if err != nil {
-		if err != nil && err != ssh.ErrServerClosed {
-			log.Fatal("server shutting down not gracefully", "err", err)
-		}
+	if err != nil && err != ssh.ErrServerClosed {
+		log.Fatal("server shutting down not gracefully", "err", err)
 	}
 
 	done := make(chan os.Signal, 1)
@@ -132,18 +129,7 @@ func loggingMiddleware(next ssh.Handler) ssh.Handler {
 func authMiddleware(next ssh.Handler) ssh.Handler {
 	return func(sess ssh.Session) {
 		username := sess.Context().User()
-		k, ok := sess.PublicKey().(gossh.PublicKey)
-		if !ok {
-			log.Error("failed to cast wish public key to go public key")
-		}
-
-		publicKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(k))
-		if err != nil {
-			log.Error("failed to parse authorised key", "err", err)
-			sess.Stderr().Write([]byte(fmt.Sprintf("Error: failed to parse authorised key: %s")))
-		}
-
-		log.Debug("authorised key", "publicKey", publicKey)
+		publicKey := sess.PublicKey()
 
 		publicKeysURL := fmt.Sprintf("https://github.com/%s.keys", username)
 
@@ -157,17 +143,26 @@ func authMiddleware(next ssh.Handler) ssh.Handler {
 
 		scanner := bufio.NewScanner(resp.Body)
 		for scanner.Scan() {
-			// log.Debug(scanner.Text())
+			k := scanner.Text()
+			authorisedKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(k))
+			if err != nil {
+				log.Warn("failed to parse key", "key", k, "err", err)
+				sess.Stderr().Write([]byte(fmt.Sprintf("Error: failed to parse authorised key: %s", err)))
+			}
 
+			if ssh.KeysEqual(publicKey, authorisedKey) {
+				next(sess)
+				return
+			}
 		}
 
 		if err := scanner.Err(); err != nil {
-			log.Errorf("failed to read response body", "err", err)
+			log.Error("failed to read response body", "err", err)
 			sess.Stderr().Write([]byte(fmt.Sprintf("Error: failed to read keys: %s", err)))
-			return
 		}
 
-		next(sess)
+		log.Error("no matching keys")
+		sess.Stderr().Write([]byte("Error: no matching keys found"))
 	}
 }
 
