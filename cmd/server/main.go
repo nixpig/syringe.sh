@@ -76,7 +76,7 @@ func main() {
 
 	<-done
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
 
 	log.Info("stopping server")

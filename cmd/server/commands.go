@@ -39,7 +39,7 @@ func cmdMiddleware(next ssh.Handler) ssh.Handler {
 				"err", err,
 			)
 
-			sess.Stderr().Write([]byte(ErrServer.Error()))
+			sess.Stderr().Write([]byte(newError(ErrServer, sess.Context().SessionID()).Error()))
 			return
 		}
 
@@ -54,7 +54,7 @@ func cmdMiddleware(next ssh.Handler) ssh.Handler {
 				"err", err,
 			)
 
-			sess.Stderr().Write([]byte(ErrServer.Error()))
+			sess.Stderr().Write([]byte(newError(ErrServer, sess.Context().SessionID()).Error()))
 			return
 		}
 
@@ -66,7 +66,7 @@ func cmdMiddleware(next ssh.Handler) ssh.Handler {
 				"err", err,
 			)
 
-			sess.Stderr().Write([]byte(ErrServer.Error()))
+			sess.Stderr().Write([]byte(newError(ErrServer, sess.Context().SessionID()).Error()))
 			return
 		}
 
@@ -78,7 +78,7 @@ func cmdMiddleware(next ssh.Handler) ssh.Handler {
 				"err", err,
 			)
 
-			sess.Stderr().Write([]byte(ErrServer.Error()))
+			sess.Stderr().Write([]byte(newError(ErrServer, sess.Context().SessionID()).Error()))
 			return
 		}
 
@@ -90,7 +90,7 @@ func cmdMiddleware(next ssh.Handler) ssh.Handler {
 					"err", err,
 				)
 
-				sess.Stderr().Write([]byte(ErrServer.Error()))
+				sess.Stderr().Write([]byte(newError(ErrServer, sess.Context().SessionID()).Error()))
 				return
 			}
 		}
@@ -118,7 +118,7 @@ func cmdMiddleware(next ssh.Handler) ssh.Handler {
 					"err", err,
 				)
 
-				sess.Stderr().Write([]byte(ErrCmd.Error()))
+				sess.Stderr().Write([]byte(newError(ErrCmd, sess.Context().SessionID()).Error()))
 				sess.Exit(1)
 			}
 			done <- true
@@ -126,7 +126,7 @@ func cmdMiddleware(next ssh.Handler) ssh.Handler {
 
 		select {
 		case <-ctx.Done():
-			sess.Stderr().Write([]byte(ErrTimeout.Error()))
+			sess.Stderr().Write([]byte(newError(ErrTimeout, sess.Context().SessionID()).Error()))
 			sess.Exit(1)
 			return
 		case <-done:
