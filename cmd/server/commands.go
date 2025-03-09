@@ -97,10 +97,11 @@ func cmdMiddleware(next ssh.Handler) ssh.Handler {
 		// NOTE: we don't pipe cobra errs, since we write custom error codes
 		cmd.SetIn(sess)
 		cmd.SetOut(sess)
+		cmd.SetErr(sess.Stderr())
 
 		if err := cmd.Execute(); err != nil {
 			log.Error(
-				"root cmd exec",
+				"exec cmd",
 				"session", sess.Context().SessionID(),
 				"err", err,
 			)
@@ -116,17 +117,11 @@ func cmdMiddleware(next ssh.Handler) ssh.Handler {
 
 func rootCmd(sess ssh.Session, store *Store) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "syringe",
-		SilenceUsage: true,
-		Run: func(c *cobra.Command, args []string) {
-			log.Error(
-				"root cmd exec",
-				"session", sess.Context().SessionID(),
-				"err", "no command specified",
-			)
-
-			sess.Stderr().Write([]byte(ErrCmd.Error()))
-			sess.Exit(1)
+		Use:           "syringe",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(c *cobra.Command, args []string) error {
+			return fmt.Errorf("no command specified")
 		},
 	}
 
@@ -146,7 +141,7 @@ func setCmd(sess ssh.Session, store *Store) *cobra.Command {
 	return &cobra.Command{
 		Use:  "set",
 		Args: cobra.ExactArgs(2),
-		Run: func(c *cobra.Command, args []string) {
+		RunE: func(c *cobra.Command, args []string) error {
 			// TODO: verify the value being saved is encrypted with a private key
 			//       that corresponds to the public key so that we're not storing
 			//       unencrypted data or data that can't be decrypted by the user
@@ -155,15 +150,10 @@ func setCmd(sess ssh.Session, store *Store) *cobra.Command {
 				Key:   args[0],
 				Value: args[1],
 			}); err != nil {
-				log.Error(
-					"set cmd",
-					"session", sess.Context().SessionID(),
-					"err", err,
-				)
-
-				sess.Stderr().Write([]byte(ErrCmd.Error()))
-				sess.Exit(1)
+				return fmt.Errorf("set value in store: %w", err)
 			}
+
+			return nil
 		},
 	}
 }
@@ -172,26 +162,17 @@ func getCmd(sess ssh.Session, store *Store) *cobra.Command {
 	return &cobra.Command{
 		Use:  "get",
 		Args: cobra.ExactArgs(1),
-		Run: func(c *cobra.Command, args []string) {
+		RunE: func(c *cobra.Command, args []string) error {
 			item, err := store.Get(args[0])
 			if err != nil {
-				log.Error(
-					"get cmd",
-					"session", sess.Context().SessionID(),
-					"err", err,
-				)
-
-				sess.Stderr().Write([]byte(ErrCmd.Error()))
-				sess.Exit(1)
+				return fmt.Errorf("get value from store: %w", err)
 			}
 
 			if _, err := c.OutOrStdout().Write([]byte(item.Value)); err != nil {
-				log.Error(
-					"write get value",
-					"session", sess.Context().SessionID(),
-					"err", err,
-				)
+				return fmt.Errorf("write value to stdout: %w", err)
 			}
+
+			return nil
 		},
 	}
 }
@@ -199,18 +180,11 @@ func getCmd(sess ssh.Session, store *Store) *cobra.Command {
 func listCmd(sess ssh.Session, store *Store) *cobra.Command {
 	return &cobra.Command{
 		Use:  "list",
-		Args: cobra.NoArgs,
-		Run: func(c *cobra.Command, args []string) {
+		Args: cobra.ExactArgs(0),
+		RunE: func(c *cobra.Command, args []string) error {
 			items, err := store.List()
 			if err != nil {
-				log.Error(
-					"list cmd",
-					"session", sess.Context().SessionID(),
-					"err", err,
-				)
-
-				sess.Stderr().Write([]byte(ErrCmd.Error()))
-				sess.Exit(1)
+				return fmt.Errorf("list keys in store: %w", err)
 			}
 
 			keys := make([]string, len(items))
@@ -219,12 +193,10 @@ func listCmd(sess ssh.Session, store *Store) *cobra.Command {
 			}
 
 			if _, err := c.OutOrStdout().Write([]byte(strings.Join(keys, "\n"))); err != nil {
-				log.Error(
-					"write keys list",
-					"session", sess.Context().SessionID(),
-					"err", err,
-				)
+				return fmt.Errorf("write keys to stdout: %w", err)
 			}
+
+			return nil
 		},
 	}
 }
@@ -233,17 +205,12 @@ func removeCmd(sess ssh.Session, store *Store) *cobra.Command {
 	return &cobra.Command{
 		Use:  "remove",
 		Args: cobra.ExactArgs(1),
-		Run: func(c *cobra.Command, args []string) {
+		RunE: func(c *cobra.Command, args []string) error {
 			if err := store.Remove(args[0]); err != nil {
-				log.Error(
-					"remove cmd",
-					"session", sess.Context().SessionID(),
-					"err", err,
-				)
-
-				sess.Stderr().Write([]byte(ErrCmd.Error()))
-				sess.Exit(1)
+				return fmt.Errorf("remove value from store: %w", err)
 			}
+
+			return nil
 		},
 	}
 }
