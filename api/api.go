@@ -1,7 +1,5 @@
 package api
 
-import "context"
-
 type API interface {
 	Set(key, value string) error
 	Get(key string) (string, error)
@@ -13,18 +11,12 @@ type API interface {
 type hostAPI struct {
 	// calls remote API over SSH
 	url string
-	ctx context.Context
 }
 
 func New(url string) *hostAPI {
 	return &hostAPI{
 		url: url,
 	}
-}
-
-func (l *hostAPI) WithContext(ctx context.Context) *hostAPI {
-	l.ctx = ctx
-	return l
 }
 
 func (l *hostAPI) Set(key, value string) error {

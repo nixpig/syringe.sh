@@ -87,8 +87,6 @@ func main() {
 	log.Info("server stopped")
 }
 
-// TODO: prevent concurrent access for same user
-
 func rateLimitingMiddleware(next ssh.Handler) ssh.Handler {
 	return func(sess ssh.Session) {
 		// TODO: rate limiting

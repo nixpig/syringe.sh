@@ -5,7 +5,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 )
@@ -26,7 +25,6 @@ func (s syringeServer) New(
 		wish.WithHostKeyPath(hostKeyPath),
 		wish.WithMaxTimeout(time.Second*30),
 		wish.WithPublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
-			log.Debug("check public key auth", "allowed", allowedKeyTypes, "actual", key.Type())
 			return slices.Contains(allowedKeyTypes, key.Type())
 		}),
 		wish.WithMiddleware(m...),

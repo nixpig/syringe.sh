@@ -3,10 +3,12 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"sync"
 )
 
 type Store struct {
 	db *sql.DB
+	mu sync.Mutex
 }
 
 type Item struct {
@@ -16,10 +18,16 @@ type Item struct {
 }
 
 func NewStore(db *sql.DB) *Store {
-	return &Store{db}
+	return &Store{
+		db: db,
+		mu: sync.Mutex{},
+	}
 }
 
 func (s *Store) Set(item *Item) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	query := `insert into store_ (key_, value_) values ($key, $value) 
 on conflict(key_) do update set value_ = $value`
 
@@ -74,6 +82,9 @@ func (s *Store) List() ([]Item, error) {
 }
 
 func (s *Store) Remove(key string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	query := `delete from store_ where key_ = $key`
 
 	if _, err := s.db.Exec(query, sql.Named("key", key)); err != nil {

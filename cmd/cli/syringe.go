@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -73,8 +72,7 @@ var setCmd = &cobra.Command{
 			return fmt.Errorf("get public key: %w", err)
 		}
 
-		ctx := context.Background()
-		a := api.New(url).WithContext(ctx)
+		a := api.New(url)
 		defer a.Close()
 
 		encrypt := ssh.NewEncryptor(publicKey)
@@ -105,8 +103,7 @@ var getCmd = &cobra.Command{
 		}
 
 		store, _ := c.Flags().GetString(storeFlag)
-		ctx := context.Background()
-		a := api.New(store).WithContext(ctx)
+		a := api.New(store)
 		defer a.Close()
 
 		decrypt := ssh.NewDecryptor(privateKey)
@@ -135,8 +132,7 @@ var removeCmd = &cobra.Command{
 	RunE: func(c *cobra.Command, args []string) error {
 		store, _ := c.Flags().GetString(storeFlag)
 
-		ctx := context.Background()
-		a := api.New(store).WithContext(ctx)
+		a := api.New(store)
 		defer a.Close()
 
 		return a.Remove(args[0])
@@ -151,8 +147,7 @@ var listCmd = &cobra.Command{
 	RunE: func(c *cobra.Command, args []string) error {
 		store, _ := c.Flags().GetString(storeFlag)
 
-		ctx := context.Background()
-		a := api.New(store).WithContext(ctx)
+		a := api.New(store)
 		defer a.Close()
 
 		keys, err := a.List()
