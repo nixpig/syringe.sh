@@ -23,7 +23,7 @@ func (s syringeServer) New(
 	server, err := wish.NewServer(
 		wish.WithAddress(host),
 		wish.WithHostKeyPath(hostKeyPath),
-		wish.WithMaxTimeout(time.Second*30),
+		wish.WithMaxTimeout(time.Second*60),
 		wish.WithPublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
 			return slices.Contains(allowedKeyTypes, key.Type())
 		}),

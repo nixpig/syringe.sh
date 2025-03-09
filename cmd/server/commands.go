@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"crypto/sha1"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
@@ -15,10 +17,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	commandTimeout = time.Second * 5
+)
+
 func cmdMiddleware(next ssh.Handler) ssh.Handler {
 	return func(sess ssh.Session) {
 		dbName := fmt.Sprintf("%x.db", sha1.Sum(sess.PublicKey().Marshal()))
 
+		// TODO: should be database directory on server
 		homeDir, _ := os.UserHomeDir()
 
 		// TODO: check if a database exists, if not then send code to email and await entry before continuing
@@ -94,21 +101,36 @@ func cmdMiddleware(next ssh.Handler) ssh.Handler {
 
 		cmd.SetArgs(sess.Command())
 
-		// NOTE: we don't pipe cobra errs, since we write custom error codes
 		cmd.SetIn(sess)
 		cmd.SetOut(sess)
 		cmd.SetErr(sess.Stderr())
 
-		if err := cmd.Execute(); err != nil {
-			log.Error(
-				"exec cmd",
-				"session", sess.Context().SessionID(),
-				"err", err,
-			)
+		done := make(chan bool, 1)
 
-			sess.Stderr().Write([]byte(ErrCmd.Error()))
+		ctx, cancel := context.WithTimeout(sess.Context(), commandTimeout)
+		defer cancel()
+
+		go func() {
+			if err := cmd.Execute(); err != nil {
+				log.Error(
+					"exec cmd",
+					"session", sess.Context().SessionID(),
+					"err", err,
+				)
+
+				sess.Stderr().Write([]byte(ErrCmd.Error()))
+				sess.Exit(1)
+			}
+			done <- true
+		}()
+
+		select {
+		case <-ctx.Done():
+			sess.Stderr().Write([]byte(ErrTimeout.Error()))
 			sess.Exit(1)
 			return
+		case <-done:
+			// done
 		}
 
 		next(sess)
@@ -192,7 +214,9 @@ func listCmd(sess ssh.Session, store *Store) *cobra.Command {
 				keys[i] = item.Key
 			}
 
-			if _, err := c.OutOrStdout().Write([]byte(strings.Join(keys, "\n"))); err != nil {
+			if _, err := c.OutOrStdout().Write(
+				[]byte(strings.Join(keys, "\n")),
+			); err != nil {
 				return fmt.Errorf("write keys to stdout: %w", err)
 			}
 
