@@ -1,7 +1,8 @@
-package main
+package server
 
 import (
 	"fmt"
+	"net"
 	"slices"
 	"time"
 
@@ -9,19 +10,23 @@ import (
 	"github.com/charmbracelet/wish"
 )
 
-var allowedKeyTypes = []string{"ssh-rsa", "ssh-ed25519"}
-
-type syringeServer struct {
-	s *ssh.Server
+var allowedKeyTypes = []string{
+	"ssh-rsa",
+	"ssh-ed25519",
 }
 
-func (s syringeServer) New(
+type server struct {
+	*ssh.Server
+}
+
+func New(
 	host string,
+	port string,
 	hostKeyPath string,
 	m ...wish.Middleware,
-) (*syringeServer, error) {
-	server, err := wish.NewServer(
-		wish.WithAddress(host),
+) (*server, error) {
+	s, err := wish.NewServer(
+		wish.WithAddress(net.JoinHostPort(host, port)),
 		wish.WithHostKeyPath(hostKeyPath),
 		wish.WithMaxTimeout(time.Second*60),
 		wish.WithPublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
@@ -33,7 +38,5 @@ func (s syringeServer) New(
 		return nil, fmt.Errorf("server stopped not gracefully: %w", err)
 	}
 
-	return &syringeServer{
-		s: server,
-	}, nil
+	return &server{s}, nil
 }

@@ -1,11 +1,10 @@
-package main
+package cli
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/log"
-	"github.com/nixpig/syringe.sh/api"
+	"github.com/nixpig/syringe.sh/internal/api"
 	"github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -15,7 +14,6 @@ import (
 
 const (
 	identityFlag = "identity"
-	storeFlag    = "store"
 	url          = "127.0.0.1:2323"
 )
 
@@ -27,26 +25,12 @@ func New(v *viper.Viper) *cobra.Command {
 		PersistentPreRunE: func(c *cobra.Command, args []string) error {
 			applyFlags(c, v)
 
-			debugLevel, _ := c.Flags().GetBool("debug")
-			if debugLevel {
-				log.SetLevel(log.DebugLevel)
-			}
-
-			identityPath, _ := c.Flags().GetString(identityFlag)
-			storePath, _ := c.Flags().GetString(storeFlag)
-			log.Debug("flags", identityFlag, identityPath, storeFlag, storePath)
-
 			return nil
 		},
 	}
 
-	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Set log level to debug")
-
 	rootCmd.PersistentFlags().StringP(identityFlag, "i", "", "Path to SSH key")
 	rootCmd.MarkPersistentFlagRequired(identityFlag)
-
-	rootCmd.PersistentFlags().StringP(storeFlag, "s", "", "Store as parent path or parent URL")
-	rootCmd.MarkPersistentFlagRequired(storeFlag)
 
 	bindFlags(rootCmd, v)
 
@@ -102,8 +86,7 @@ var getCmd = &cobra.Command{
 			return fmt.Errorf("get private key: %w", err)
 		}
 
-		store, _ := c.Flags().GetString(storeFlag)
-		a := api.New(store)
+		a := api.New(url)
 		defer a.Close()
 
 		decrypt := ssh.NewDecryptor(privateKey)
@@ -130,9 +113,7 @@ var removeCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(1),
 	Example: "  syringe remove username",
 	RunE: func(c *cobra.Command, args []string) error {
-		store, _ := c.Flags().GetString(storeFlag)
-
-		a := api.New(store)
+		a := api.New(url)
 		defer a.Close()
 
 		return a.Remove(args[0])
@@ -145,9 +126,7 @@ var listCmd = &cobra.Command{
 	Args:    cobra.ExactArgs(0),
 	Example: "  syringe list",
 	RunE: func(c *cobra.Command, args []string) error {
-		store, _ := c.Flags().GetString(storeFlag)
-
-		a := api.New(store)
+		a := api.New(url)
 		defer a.Close()
 
 		keys, err := a.List()

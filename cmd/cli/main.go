@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/charmbracelet/log"
+	"github.com/nixpig/syringe.sh/internal/cli"
 	"github.com/spf13/viper"
 )
 
@@ -13,7 +14,7 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 
-	if err := New(v).ExecuteContext(context.Background()); err != nil {
+	if err := cli.New(v).ExecuteContext(context.Background()); err != nil {
 		log.Fatal("execute command", "err", err)
 	}
 }

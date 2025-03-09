@@ -2,16 +2,22 @@ package main
 
 import (
 	"context"
-	"net"
+	"errors"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/joho/godotenv"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/nixpig/syringe.sh/database"
+	"github.com/nixpig/syringe.sh/internal/server"
 )
 
 const (
@@ -44,17 +50,61 @@ func main() {
 		log.Warn("no host key path configured", "keyEnv", keyEnv)
 	}
 
-	middleware := []wish.Middleware{
-		cmdMiddleware,
-		identityMiddleware,
-		loggingMiddleware,
+	// setup system database
+
+	homeDir, _ := os.UserHomeDir()
+	dbDir := filepath.Join(homeDir, ".syringe")
+	if err := os.MkdirAll(dbDir, 0755); err != nil {
+		log.Fatal(
+			"failed to create system directory",
+			"dbDir", dbDir,
+			"err", err,
+		)
 	}
 
-	server, err := syringeServer{}.New(
-		net.JoinHostPort(host, port),
-		key,
-		middleware...,
-	)
+	dbPath := filepath.Join(dbDir, "system.db")
+	// TODO: make this a connection pool
+	db, err := database.NewConnection(dbPath)
+	if err != nil {
+		log.Fatal(
+			"failed to create database connection",
+			"dbPath", dbPath,
+			"err", err,
+		)
+	}
+
+	driver, err := iofs.New(database.SystemMigrations, "sql")
+	if err != nil {
+		log.Fatal(
+			"failed to create new system database driver",
+			"err", err,
+		)
+	}
+
+	migrator, err := database.NewMigration(db, driver)
+	if err != nil {
+		log.Fatal(
+			"new system migration",
+			"err", err,
+		)
+	}
+
+	if err := migrator.Up(); err != nil {
+		if !errors.Is(err, migrate.ErrNoChange) {
+			log.Fatal(
+				"run system migration",
+				"err", err,
+			)
+		}
+	}
+
+	middleware := []wish.Middleware{
+		server.CmdMiddleware,
+		server.IdentityMiddleware,
+		server.LoggingMiddleware,
+	}
+
+	s, err := server.New(host, port, key, middleware...)
 	if err != nil {
 		log.Fatal("failed to create server", "err", err)
 	}
@@ -65,7 +115,7 @@ func main() {
 
 	log.Info("starting server", "host", host, "port", port)
 	go func() {
-		if err := server.s.ListenAndServe(); err != nil && err != ssh.ErrServerClosed {
+		if err := s.ListenAndServe(); err != nil && err != ssh.ErrServerClosed {
 			log.Error("server stopped", "err", err)
 		}
 
@@ -80,7 +130,7 @@ func main() {
 	defer cancel()
 
 	log.Info("stopping server")
-	if err := server.s.Shutdown(ctx); err != nil && err != ssh.ErrServerClosed {
+	if err := s.Shutdown(ctx); err != nil && err != ssh.ErrServerClosed {
 		log.Fatal("server failed to stop gracefully", "err", err)
 	}
 

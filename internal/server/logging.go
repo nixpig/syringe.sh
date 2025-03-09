@@ -1,11 +1,11 @@
-package main
+package server
 
 import (
 	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
 )
 
-func loggingMiddleware(next ssh.Handler) ssh.Handler {
+func LoggingMiddleware(next ssh.Handler) ssh.Handler {
 	return func(sess ssh.Session) {
 		command := ""
 		if len(sess.Command()) > 0 {

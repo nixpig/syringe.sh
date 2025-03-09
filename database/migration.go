@@ -1,4 +1,4 @@
-package main
+package database
 
 import (
 	"database/sql"
@@ -11,23 +11,11 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-//go:embed sql/*.sql
-var Migrations embed.FS
+//go:embed sql/*_tenant.*.sql
+var TenantMigrations embed.FS
 
-func NewConnection(filename string) (*sql.DB, error) {
-	connectionString := fmt.Sprintf("file:%s", filename)
-
-	db, err := sql.Open("sqlite3", connectionString)
-	if err != nil {
-		return nil, fmt.Errorf("open database connection (%s): %w", connectionString, err)
-	}
-
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("ping database: %w", err)
-	}
-
-	return db, nil
-}
+//go:embed sql/*_system.*.sql
+var SystemMigrations embed.FS
 
 type Migrator interface {
 	Up() error

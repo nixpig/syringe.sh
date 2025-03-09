@@ -1,4 +1,4 @@
-package main
+package stores
 
 import (
 	"database/sql"
@@ -6,25 +6,19 @@ import (
 	"sync"
 )
 
-type Store struct {
+type TenantStore struct {
 	db *sql.DB
 	mu sync.Mutex
 }
 
-type Item struct {
-	ID    string
-	Key   string
-	Value string
-}
-
-func NewStore(db *sql.DB) *Store {
-	return &Store{
+func NewTenantStore(db *sql.DB) *TenantStore {
+	return &TenantStore{
 		db: db,
 		mu: sync.Mutex{},
 	}
 }
 
-func (s *Store) Set(item *Item) error {
+func (s *TenantStore) Set(item *Item) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -42,7 +36,7 @@ on conflict(key_) do update set value_ = $value`
 	return nil
 }
 
-func (s *Store) Get(key string) (*Item, error) {
+func (s *TenantStore) Get(key string) (*Item, error) {
 	query := `select id_, key_, value_ from store_
 where key_ = $key`
 
@@ -57,7 +51,7 @@ where key_ = $key`
 	return &item, nil
 }
 
-func (s *Store) List() ([]Item, error) {
+func (s *TenantStore) List() ([]Item, error) {
 	query := `select id_, key_, value_ from store_`
 
 	rows, err := s.db.Query(query)
@@ -81,7 +75,7 @@ func (s *Store) List() ([]Item, error) {
 	return allItems, nil
 }
 
-func (s *Store) Remove(key string) error {
+func (s *TenantStore) Remove(key string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
