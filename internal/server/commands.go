@@ -13,7 +13,6 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/source/iofs"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nixpig/syringe.sh/database"
 	"github.com/nixpig/syringe.sh/internal/serrors"
@@ -60,23 +59,13 @@ func CmdMiddleware(next ssh.Handler) ssh.Handler {
 				"err", err,
 			)
 
-			sess.Stderr().Write([]byte(serrors.New("server", "failed to open tenant database", sessionID).Error()))
+			sess.Stderr().Write([]byte(serrors.New(
+				"server", "failed to open tenant database", sessionID,
+			).Error()))
 			return
 		}
 
-		driver, err := iofs.New(database.TenantMigrations, "sql")
-		if err != nil {
-			log.Error(
-				"new driver",
-				"session", sessionID,
-				"err", err,
-			)
-
-			sess.Stderr().Write([]byte(serrors.New("server", "failed to create tenant database driver", sessionID).Error()))
-			return
-		}
-
-		migrator, err := database.NewMigration(tenantDB, driver)
+		migrator, err := database.NewMigration(tenantDB, database.TenantMigrations)
 		if err != nil {
 			log.Error(
 				"new migration",
@@ -84,7 +73,9 @@ func CmdMiddleware(next ssh.Handler) ssh.Handler {
 				"err", err,
 			)
 
-			sess.Stderr().Write([]byte(serrors.New("server", "failed to create tenant database migration", sessionID).Error()))
+			sess.Stderr().Write([]byte(serrors.New(
+				"server", "failed to create tenant database migration", sessionID,
+			).Error()))
 			return
 		}
 
@@ -96,7 +87,9 @@ func CmdMiddleware(next ssh.Handler) ssh.Handler {
 					"err", err,
 				)
 
-				sess.Stderr().Write([]byte(serrors.New("server", "failed to run tenant database migration", sessionID).Error()))
+				sess.Stderr().Write([]byte(serrors.New(
+					"server", "failed to run tenant database migration", sessionID,
+				).Error()))
 				return
 			}
 		}
@@ -124,7 +117,9 @@ func CmdMiddleware(next ssh.Handler) ssh.Handler {
 					"err", err,
 				)
 
-				sess.Stderr().Write([]byte(serrors.New("cmd", "encountered error while running command", sessionID).Error()))
+				sess.Stderr().Write([]byte(serrors.New(
+					"cmd", "encountered error while running command", sessionID,
+				).Error()))
 				sess.Exit(1)
 			}
 			done <- true
@@ -133,7 +128,9 @@ func CmdMiddleware(next ssh.Handler) ssh.Handler {
 		select {
 		case <-ctx.Done():
 			log.Error("request timed out", "session", sessionID, "err", err)
-			sess.Stderr().Write([]byte(serrors.New("timeout", "request timed out", sessionID).Error()))
+			sess.Stderr().Write([]byte(serrors.New(
+				"timeout", "request timed out", sessionID,
+			).Error()))
 			sess.Exit(1)
 			return
 		case <-done:
@@ -169,11 +166,11 @@ func setCmd(s *stores.TenantStore) *cobra.Command {
 		Use:  "set",
 		Args: cobra.ExactArgs(2),
 		RunE: func(c *cobra.Command, args []string) error {
-			// TODO: verify the value being saved is encrypted with a private key
+			// TODO: verify the value being saved is signed with the private key
 			//       that corresponds to the public key so that we're not storing
 			//       unencrypted data or data that can't be decrypted by the user
 
-			if err := s.Set(&stores.Item{
+			if err := s.SetItem(&stores.Item{
 				Key:   args[0],
 				Value: args[1],
 			}); err != nil {
@@ -190,7 +187,7 @@ func getCmd(s *stores.TenantStore) *cobra.Command {
 		Use:  "get",
 		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
-			item, err := s.Get(args[0])
+			item, err := s.GetItemByKey(args[0])
 			if err != nil {
 				return fmt.Errorf("get value from store: %w", err)
 			}
@@ -209,7 +206,7 @@ func listCmd(s *stores.TenantStore) *cobra.Command {
 		Use:  "list",
 		Args: cobra.ExactArgs(0),
 		RunE: func(c *cobra.Command, args []string) error {
-			items, err := s.List()
+			items, err := s.ListItems()
 			if err != nil {
 				return fmt.Errorf("list keys in store: %w", err)
 			}
@@ -235,7 +232,7 @@ func removeCmd(s *stores.TenantStore) *cobra.Command {
 		Use:  "remove",
 		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := s.Remove(args[0]); err != nil {
+			if err := s.RemoveItemByKey(args[0]); err != nil {
 				return fmt.Errorf("remove value from store: %w", err)
 			}
 

@@ -13,7 +13,6 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nixpig/syringe.sh/database"
@@ -22,10 +21,11 @@ import (
 )
 
 const (
-	env     = ".env"
-	portEnv = "SYRINGE_PORT"
-	hostEnv = "SYRINGE_HOST"
-	keyEnv  = "SYRINGE_KEY"
+	env         = ".env"
+	portEnv     = "SYRINGE_PORT"
+	hostEnv     = "SYRINGE_HOST"
+	keyEnv      = "SYRINGE_KEY"
+	systemDBEnv = "SYRINGE_DB_SYSTEM_DIR"
 )
 
 func main() {
@@ -38,11 +38,12 @@ func main() {
 
 	port := os.Getenv(portEnv)
 	if port == "" {
-		log.Fatal("no port configured", "portEnv", portEnv)
+		log.Fatal("no port configured")
 	}
 
 	host := os.Getenv(hostEnv)
 	if host == "" {
+		log.Info("no host specified; defaulting to localhost")
 		host = "localhost"
 	}
 
@@ -51,20 +52,21 @@ func main() {
 		log.Warn("no host key path configured", "keyEnv", keyEnv)
 	}
 
-	// setup system database
+	dbDir := os.Getenv(systemDBEnv)
+	if dbDir == "" {
+		log.Fatal("no system database dir specified")
+	}
 
-	homeDir, _ := os.UserHomeDir()
-	dbDir := filepath.Join(homeDir, ".syringe")
 	if err := os.MkdirAll(dbDir, 0755); err != nil {
 		log.Fatal(
-			"failed to create system directory",
+			"failed to create system database directory",
 			"dbDir", dbDir,
 			"err", err,
 		)
 	}
 
 	dbPath := filepath.Join(dbDir, "system.db")
-	// TODO: make this a connection pool
+	// TODO: make this a connection pool?
 	db, err := database.NewConnection(dbPath)
 	if err != nil {
 		log.Fatal(
@@ -74,28 +76,14 @@ func main() {
 		)
 	}
 
-	driver, err := iofs.New(database.SystemMigrations, "sql")
+	migrator, err := database.NewMigration(db, database.SystemMigrations)
 	if err != nil {
-		log.Fatal(
-			"failed to create new system database driver",
-			"err", err,
-		)
-	}
-
-	migrator, err := database.NewMigration(db, driver)
-	if err != nil {
-		log.Fatal(
-			"new system migration",
-			"err", err,
-		)
+		log.Fatal("new system migration", "err", err)
 	}
 
 	if err := migrator.Up(); err != nil {
 		if !errors.Is(err, migrate.ErrNoChange) {
-			log.Fatal(
-				"run system migration",
-				"err", err,
-			)
+			log.Fatal("run system migration", "err", err)
 		}
 	}
 
@@ -116,7 +104,6 @@ func main() {
 
 	signal.Notify(done, os.Interrupt, syscall.SIGKILL, syscall.SIGINT)
 
-	log.Info("starting server", "host", host, "port", port)
 	go func() {
 		if err := s.ListenAndServe(); err != nil && err != ssh.ErrServerClosed {
 			log.Error("server stopped", "err", err)
@@ -125,14 +112,13 @@ func main() {
 		done <- nil
 	}()
 
-	log.Info("server started")
+	log.Info("server started", "host", host, "port", port)
 
 	<-done
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
 
-	log.Info("stopping server")
 	if err := s.Shutdown(ctx); err != nil && err != ssh.ErrServerClosed {
 		log.Fatal("server failed to stop gracefully", "err", err)
 	}

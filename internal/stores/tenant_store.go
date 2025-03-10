@@ -18,7 +18,7 @@ func NewTenantStore(db *sql.DB) *TenantStore {
 	}
 }
 
-func (s *TenantStore) Set(item *Item) error {
+func (s *TenantStore) SetItem(item *Item) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -36,7 +36,7 @@ on conflict(key_) do update set value_ = $value`
 	return nil
 }
 
-func (s *TenantStore) Get(key string) (*Item, error) {
+func (s *TenantStore) GetItemByKey(key string) (*Item, error) {
 	query := `select id_, key_, value_ from store_
 where key_ = $key`
 
@@ -51,7 +51,7 @@ where key_ = $key`
 	return &item, nil
 }
 
-func (s *TenantStore) List() ([]Item, error) {
+func (s *TenantStore) ListItems() ([]Item, error) {
 	query := `select id_, key_, value_ from store_`
 
 	rows, err := s.db.Query(query)
@@ -75,7 +75,7 @@ func (s *TenantStore) List() ([]Item, error) {
 	return allItems, nil
 }
 
-func (s *TenantStore) Remove(key string) error {
+func (s *TenantStore) RemoveItemByKey(key string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
