@@ -10,10 +10,12 @@ import (
 	"github.com/charmbracelet/wish"
 )
 
-var allowedKeyTypes = []string{
-	"ssh-rsa",
-	"ssh-ed25519",
-}
+var (
+	allowedKeyTypes = []string{
+		"ssh-rsa",
+		"ssh-ed25519",
+	}
+)
 
 type server struct {
 	*ssh.Server

@@ -10,6 +10,7 @@ var serrors = map[string]error{
 	"cmd":     errors.New("ErrCmd"),
 	"timeout": errors.New("ErrTimeout"),
 	"user":    errors.New("ErrUserCreate"),
+	"client":  errors.New("ErrClient"),
 }
 
 func New(errType, msg, id string) error {
