@@ -9,13 +9,14 @@ var serrors = map[string]error{
 	"server":  errors.New("ErrServer"),
 	"cmd":     errors.New("ErrCmd"),
 	"timeout": errors.New("ErrTimeout"),
+	"user":    errors.New("ErrUserCreate"),
 }
 
-func New(err string, sid string) error {
-	e, ok := serrors[err]
+func New(errType, msg, id string) error {
+	e, ok := serrors[errType]
 	if !ok {
 		e = errors.New("ErrUnknown")
 	}
 
-	return fmt.Errorf("%w %s", e, sid)
+	return fmt.Errorf("%w: %s (id: %s)", e, msg, id)
 }

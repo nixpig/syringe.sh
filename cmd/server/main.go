@@ -18,6 +18,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nixpig/syringe.sh/database"
 	"github.com/nixpig/syringe.sh/internal/server"
+	"github.com/nixpig/syringe.sh/internal/stores"
 )
 
 const (
@@ -98,9 +99,11 @@ func main() {
 		}
 	}
 
+	systemStore := stores.NewSystemStore(db)
+
 	middleware := []wish.Middleware{
 		server.CmdMiddleware,
-		server.IdentityMiddleware,
+		server.NewIdentityMiddleware(systemStore),
 		server.LoggingMiddleware,
 	}
 

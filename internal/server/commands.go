@@ -27,107 +27,25 @@ const (
 
 func CmdMiddleware(next ssh.Handler) ssh.Handler {
 	return func(sess ssh.Session) {
-		sessionId := sess.Context().SessionID()
+		sessionID := sess.Context().SessionID()
 
-		hashedPublicKey := fmt.Sprintf("%x", sha1.Sum(sess.PublicKey().Marshal()))
+		publicKeyHash := fmt.Sprintf("%x", sha1.Sum(sess.PublicKey().Marshal()))
 
 		// TODO: should be database directory on server
 		homeDir, _ := os.UserHomeDir()
 
-		// check for user and key in system database
-		systemDBName := "system.db"
-		systemDBDir := filepath.Join(homeDir, ".syringe")
-		if err := os.MkdirAll(systemDBDir, 0755); err != nil {
-			log.Error(
-				"create tenant database directory",
-				"session", sessionId,
-				"systemDBDir", systemDBDir,
-				"err", err,
-			)
-
-			sess.Stderr().Write([]byte(serrors.New("server", sessionId).Error()))
-			return
-		}
-
-		systemDBPath := filepath.Join(systemDBDir, systemDBName)
-		systemDB, err := database.NewConnection(systemDBPath)
-		if err != nil {
-			log.Error(
-				"new system database connection",
-				"session", sessionId,
-				"systemDBPath", systemDBPath,
-				"err", err,
-			)
-
-			sess.Stderr().Write([]byte(serrors.New("server", sessionId).Error()))
-			return
-		}
-
-		systemDriver, err := iofs.New(database.SystemMigrations, "sql")
-		if err != nil {
-			log.Error(
-				"new system driver",
-				"session", sessionId,
-				"err", err,
-			)
-
-			sess.Stderr().Write([]byte(serrors.New("server", sessionId).Error()))
-			return
-		}
-
-		systemMigrator, err := database.NewMigration(systemDB, systemDriver)
-		if err != nil {
-			log.Error(
-				"new system migration",
-				"session", sessionId,
-				"err", err,
-			)
-
-			sess.Stderr().Write([]byte(serrors.New("server", sessionId).Error()))
-			return
-		}
-
-		if err := systemMigrator.Up(); err != nil {
-			if !errors.Is(err, migrate.ErrNoChange) {
-				log.Error(
-					"run system migration",
-					"session", sessionId,
-					"err", err,
-				)
-
-				sess.Stderr().Write([]byte(serrors.New("server", sessionId).Error()))
-				return
-			}
-		}
-
-		systemStore := stores.NewSystemStore(systemDB)
-		user, err := systemStore.GetUser(sess.Context().User(), hashedPublicKey)
-		if err != nil || user == nil {
-			log.Info("user not found, create user", "username", sess.Context().User(), "hashedPublicKey", hashedPublicKey)
-			user = &stores.User{
-				Username:      sess.Context().User(),
-				PublicKeySHA1: hashedPublicKey,
-				Email:         time.Now().GoString(),
-			}
-			if err := systemStore.CreateUser(user); err != nil {
-				log.Fatal("create user failed", "err", err)
-			}
-		}
-
-		log.Info("USER", "user", user)
-
 		// TODO: check if a database exists, if not then send code to email and await entry before continuing
-		tenantDBName := fmt.Sprintf("%x.db", hashedPublicKey)
+		tenantDBName := fmt.Sprintf("%x.db", publicKeyHash)
 		tenantDBDir := filepath.Join(homeDir, ".syringe")
 		if err := os.MkdirAll(tenantDBDir, 0755); err != nil {
 			log.Error(
 				"create tenant database directory",
-				"session", sessionId,
+				"session", sessionID,
 				"tenantDBDir", tenantDBDir,
 				"err", err,
 			)
 
-			sess.Stderr().Write([]byte(serrors.New("server", sessionId).Error()))
+			sess.Stderr().Write([]byte(serrors.New("server", "failed to created tenant database directory", sessionID).Error()))
 			return
 		}
 
@@ -137,12 +55,12 @@ func CmdMiddleware(next ssh.Handler) ssh.Handler {
 		if err != nil {
 			log.Error(
 				"new tenant database connection",
-				"session", sessionId,
+				"session", sessionID,
 				"tenantDBPath", tenantDBPath,
 				"err", err,
 			)
 
-			sess.Stderr().Write([]byte(serrors.New("server", sessionId).Error()))
+			sess.Stderr().Write([]byte(serrors.New("server", "failed to open tenant database", sessionID).Error()))
 			return
 		}
 
@@ -150,11 +68,11 @@ func CmdMiddleware(next ssh.Handler) ssh.Handler {
 		if err != nil {
 			log.Error(
 				"new driver",
-				"session", sessionId,
+				"session", sessionID,
 				"err", err,
 			)
 
-			sess.Stderr().Write([]byte(serrors.New("server", sessionId).Error()))
+			sess.Stderr().Write([]byte(serrors.New("server", "failed to create tenant database driver", sessionID).Error()))
 			return
 		}
 
@@ -162,11 +80,11 @@ func CmdMiddleware(next ssh.Handler) ssh.Handler {
 		if err != nil {
 			log.Error(
 				"new migration",
-				"session", sessionId,
+				"session", sessionID,
 				"err", err,
 			)
 
-			sess.Stderr().Write([]byte(serrors.New("server", sessionId).Error()))
+			sess.Stderr().Write([]byte(serrors.New("server", "failed to create tenant database migration", sessionID).Error()))
 			return
 		}
 
@@ -174,11 +92,11 @@ func CmdMiddleware(next ssh.Handler) ssh.Handler {
 			if !errors.Is(err, migrate.ErrNoChange) {
 				log.Error(
 					"run migration",
-					"session", sessionId,
+					"session", sessionID,
 					"err", err,
 				)
 
-				sess.Stderr().Write([]byte(serrors.New("server", sessionId).Error()))
+				sess.Stderr().Write([]byte(serrors.New("server", "failed to run tenant database migration", sessionID).Error()))
 				return
 			}
 		}
@@ -202,11 +120,11 @@ func CmdMiddleware(next ssh.Handler) ssh.Handler {
 			if err := cmd.Execute(); err != nil {
 				log.Error(
 					"exec cmd",
-					"session", sessionId,
+					"session", sessionID,
 					"err", err,
 				)
 
-				sess.Stderr().Write([]byte(serrors.New("cmd", sessionId).Error()))
+				sess.Stderr().Write([]byte(serrors.New("cmd", "encountered error while running command", sessionID).Error()))
 				sess.Exit(1)
 			}
 			done <- true
@@ -214,14 +132,13 @@ func CmdMiddleware(next ssh.Handler) ssh.Handler {
 
 		select {
 		case <-ctx.Done():
-			sess.Stderr().Write([]byte(serrors.New("timeout", sessionId).Error()))
+			log.Error("request timed out", "session", sessionID, "err", err)
+			sess.Stderr().Write([]byte(serrors.New("timeout", "request timed out", sessionID).Error()))
 			sess.Exit(1)
 			return
 		case <-done:
-			// done
+			next(sess)
 		}
-
-		next(sess)
 	}
 }
 
