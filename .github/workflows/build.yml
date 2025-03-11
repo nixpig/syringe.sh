@@ -38,6 +38,9 @@ jobs:
         run: |
           make coveralls
 
-      - name: Build
-        run: make build
+      - name: Build server
+        run: make server
+
+      - name: Build cli
+        run: make cli
 
