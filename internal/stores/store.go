@@ -1,7 +1,7 @@
 package stores
 
 type Item struct {
-	ID    string
+	ID    int
 	Key   string
 	Value string
 }
