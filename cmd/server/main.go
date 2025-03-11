@@ -124,7 +124,7 @@ func main() {
 
 	done := make(chan os.Signal, 1)
 
-	signal.Notify(done, os.Interrupt, syscall.SIGKILL, syscall.SIGINT)
+	signal.Notify(done, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
 	go func() {
 		if err := s.ListenAndServe(); err != nil && err != ssh.ErrServerClosed {
