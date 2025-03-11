@@ -39,6 +39,8 @@ func (s *SystemStore) GetUser(username, publicKeySHA1 string) (*User, error) {
 }
 
 func (s *SystemStore) CreateUser(user *User) (int, error) {
+	// TODO: refactor to transaction
+
 	userQuery := `insert into users_ (username_, email_, verified_) values ($username, $email, $verified) returning id_`
 	row := s.db.QueryRow(
 		userQuery,

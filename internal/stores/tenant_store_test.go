@@ -20,7 +20,11 @@ const (
 )
 
 func TestTenantStore(t *testing.T) {
-	scenarios := map[string]func(t *testing.T, store *stores.TenantStore, mock sqlmock.Sqlmock){
+	scenarios := map[string]func(
+		t *testing.T,
+		store *stores.TenantStore,
+		mock sqlmock.Sqlmock,
+	){
 		"set item in tenant store (success)":              testSetItemInTenantStoreSuccess,
 		"set item in tenant store (db error)":             testSetItemInTenantStoreDBErr,
 		"get item by key from tenant store (success)":     testGetItemByKeyFromTenantStoreSuccess,
@@ -37,7 +41,7 @@ func TestTenantStore(t *testing.T) {
 		t.Run(scenario, func(t *testing.T) {
 			db, mock, err := sqlmock.New()
 			if err != nil {
-				t.Fatal("unable to create mock database: %w", err)
+				t.Fatalf("unable to create mock database: %s", err)
 			}
 			defer db.Close()
 
