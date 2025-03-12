@@ -13,8 +13,10 @@ import (
 )
 
 const (
-	setItemQuery         = `insert into store_ (key_, value_) values ($key, $value) on conflict(key_) do update set value_ = $value`
-	getItemByKeyQuery    = `select id_, key_, value_ from store_ where key_ = $key`
+	setItemQuery = `insert into store_ (key_, value_)
+		values ($key, $value) on conflict(key_) do update set value_ = $value`
+	getItemByKeyQuery = `select id_, key_, value_ from store_
+		where key_ = $key`
 	listItemsQuery       = `select id_, key_, value_ from store_`
 	removeItemByKeyQuery = `delete from store_ where key_ = $key`
 )
@@ -28,7 +30,8 @@ func TestTenantStore(t *testing.T) {
 		"set item in tenant store (success)":              testSetItemInTenantStoreSuccess,
 		"set item in tenant store (db error)":             testSetItemInTenantStoreDBErr,
 		"get item by key from tenant store (success)":     testGetItemByKeyFromTenantStoreSuccess,
-		"get item by key from tenant store (no rows err)": testGetItemByKeyFromTenantStoreNoRowsErr,
+		"get item by key from tenant store (no rows)":     testGetItemByKeyFromTenantStoreNoRows,
+		"get item by key from tenant store (row error)":   testGetItemByKeyFromTenantStoreRowErr,
 		"list items in tenant store (multiple items)":     testListItemsInTenantStoreMultipleItemsSuccess,
 		"list items in tenant store (single item)":        testListItemsInTenantStoreSingleItemSuccess,
 		"list items in tenant store (no items)":           testListItemsInTenantStoreNoItems,
@@ -52,7 +55,11 @@ func TestTenantStore(t *testing.T) {
 	}
 }
 
-func testSetItemInTenantStoreSuccess(t *testing.T, store *stores.TenantStore, mock sqlmock.Sqlmock) {
+func testSetItemInTenantStoreSuccess(
+	t *testing.T,
+	store *stores.TenantStore,
+	mock sqlmock.Sqlmock,
+) {
 	mock.ExpectExec(
 		regexp.QuoteMeta(setItemQuery),
 	).WithArgs(
@@ -69,7 +76,11 @@ func testSetItemInTenantStoreSuccess(t *testing.T, store *stores.TenantStore, mo
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func testSetItemInTenantStoreDBErr(t *testing.T, store *stores.TenantStore, mock sqlmock.Sqlmock) {
+func testSetItemInTenantStoreDBErr(
+	t *testing.T,
+	store *stores.TenantStore,
+	mock sqlmock.Sqlmock,
+) {
 	mock.ExpectExec(
 		regexp.QuoteMeta(setItemQuery),
 	).WithArgs(
@@ -86,7 +97,11 @@ func testSetItemInTenantStoreDBErr(t *testing.T, store *stores.TenantStore, mock
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func testGetItemByKeyFromTenantStoreSuccess(t *testing.T, store *stores.TenantStore, mock sqlmock.Sqlmock) {
+func testGetItemByKeyFromTenantStoreSuccess(
+	t *testing.T,
+	store *stores.TenantStore,
+	mock sqlmock.Sqlmock,
+) {
 	mock.ExpectQuery(
 		regexp.QuoteMeta(getItemByKeyQuery),
 	).WithArgs(
@@ -108,7 +123,11 @@ func testGetItemByKeyFromTenantStoreSuccess(t *testing.T, store *stores.TenantSt
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func testGetItemByKeyFromTenantStoreNoRowsErr(t *testing.T, store *stores.TenantStore, mock sqlmock.Sqlmock) {
+func testGetItemByKeyFromTenantStoreNoRows(
+	t *testing.T,
+	store *stores.TenantStore,
+	mock sqlmock.Sqlmock,
+) {
 	mock.ExpectQuery(
 		regexp.QuoteMeta(getItemByKeyQuery),
 	).WithArgs(
@@ -127,7 +146,34 @@ func testGetItemByKeyFromTenantStoreNoRowsErr(t *testing.T, store *stores.Tenant
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func testListItemsInTenantStoreMultipleItemsSuccess(t *testing.T, store *stores.TenantStore, mock sqlmock.Sqlmock) {
+func testGetItemByKeyFromTenantStoreRowErr(
+	t *testing.T,
+	store *stores.TenantStore,
+	mock sqlmock.Sqlmock,
+) {
+	mock.ExpectQuery(
+		regexp.QuoteMeta(getItemByKeyQuery),
+	).WithArgs(
+		sql.Named("key", "foo"),
+	).WillReturnRows(
+		sqlmock.
+			NewRows(
+				[]string{"id_", "key_", "value_"},
+			).RowError(1, fmt.Errorf("row_error")),
+	)
+
+	item, err := store.GetItemByKey("foo")
+
+	require.Error(t, err)
+	require.Nil(t, item)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testListItemsInTenantStoreMultipleItemsSuccess(
+	t *testing.T,
+	store *stores.TenantStore,
+	mock sqlmock.Sqlmock,
+) {
 	mock.ExpectQuery(
 		listItemsQuery,
 	).WillReturnRows(
@@ -152,7 +198,11 @@ func testListItemsInTenantStoreMultipleItemsSuccess(t *testing.T, store *stores.
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func testListItemsInTenantStoreSingleItemSuccess(t *testing.T, store *stores.TenantStore, mock sqlmock.Sqlmock) {
+func testListItemsInTenantStoreSingleItemSuccess(
+	t *testing.T,
+	store *stores.TenantStore,
+	mock sqlmock.Sqlmock,
+) {
 	mock.ExpectQuery(
 		listItemsQuery,
 	).WillReturnRows(
@@ -170,7 +220,11 @@ func testListItemsInTenantStoreSingleItemSuccess(t *testing.T, store *stores.Ten
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func testListItemsInTenantStoreNoItems(t *testing.T, store *stores.TenantStore, mock sqlmock.Sqlmock) {
+func testListItemsInTenantStoreNoItems(
+	t *testing.T,
+	store *stores.TenantStore,
+	mock sqlmock.Sqlmock,
+) {
 	mock.ExpectQuery(
 		listItemsQuery,
 	).WillReturnRows(sqlmock.NewRows([]string{"id_", "key_", "value_"}))
@@ -184,7 +238,11 @@ func testListItemsInTenantStoreNoItems(t *testing.T, store *stores.TenantStore, 
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func testListItemsInTenantStoreDBErr(t *testing.T, store *stores.TenantStore, mock sqlmock.Sqlmock) {
+func testListItemsInTenantStoreDBErr(
+	t *testing.T,
+	store *stores.TenantStore,
+	mock sqlmock.Sqlmock,
+) {
 	mock.ExpectQuery(
 		listItemsQuery,
 	).WillReturnError(fmt.Errorf("db_err"))
@@ -196,7 +254,11 @@ func testListItemsInTenantStoreDBErr(t *testing.T, store *stores.TenantStore, mo
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func testRemoveItemByKeyFromTenantStoreSuccess(t *testing.T, store *stores.TenantStore, mock sqlmock.Sqlmock) {
+func testRemoveItemByKeyFromTenantStoreSuccess(
+	t *testing.T,
+	store *stores.TenantStore,
+	mock sqlmock.Sqlmock,
+) {
 	mock.ExpectExec(
 		regexp.QuoteMeta(removeItemByKeyQuery),
 	).WithArgs(
@@ -209,7 +271,11 @@ func testRemoveItemByKeyFromTenantStoreSuccess(t *testing.T, store *stores.Tenan
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-func testRemoveItemByKeyFromTenantStoreDBErr(t *testing.T, store *stores.TenantStore, mock sqlmock.Sqlmock) {
+func testRemoveItemByKeyFromTenantStoreDBErr(
+	t *testing.T,
+	store *stores.TenantStore,
+	mock sqlmock.Sqlmock,
+) {
 	mock.ExpectExec(
 		regexp.QuoteMeta(removeItemByKeyQuery),
 	).WithArgs(

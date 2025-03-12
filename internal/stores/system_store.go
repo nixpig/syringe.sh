@@ -20,18 +20,24 @@ func NewSystemStore(db *sql.DB) *SystemStore {
 	}
 }
 
-func (s *SystemStore) GetUser(username, publicKeySHA1 string) (*User, error) {
-	query := `select u.id_, u.username_, u.email_, u.verified_, k.public_key_sha1_ from users_ u inner join public_keys_ k on u.id_ = k.user_id_ where u.username_ = $username and k.public_key_sha1_ = $publicKeySHA1`
+func (s *SystemStore) GetUser(username string) (*User, error) {
+	query := `select u.id_, u.username_, u.email_, u.verified_, k.public_key_sha1_
+		from users_ u inner join public_keys_ k on u.id_ = k.user_id_ where u.username_ = $username`
 
 	row := s.db.QueryRow(
 		query,
 		sql.Named("username", username),
-		sql.Named("publicKeySHA1", publicKeySHA1),
 	)
 
 	var user User
 
-	if err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Verified, &user.PublicKeySHA1); err != nil {
+	if err := row.Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.Verified,
+		&user.PublicKeySHA1,
+	); err != nil {
 		return nil, fmt.Errorf("scan user: %w", err)
 	}
 
@@ -41,7 +47,9 @@ func (s *SystemStore) GetUser(username, publicKeySHA1 string) (*User, error) {
 func (s *SystemStore) CreateUser(user *User) (int, error) {
 	// TODO: refactor to transaction
 
-	userQuery := `insert into users_ (username_, email_, verified_) values ($username, $email, $verified) returning id_`
+	userQuery := `insert into users_ (username_, email_, verified_)
+		values ($username, $email, $verified) returning id_`
+
 	row := s.db.QueryRow(
 		userQuery,
 		sql.Named("username", user.Username),
@@ -56,7 +64,8 @@ func (s *SystemStore) CreateUser(user *User) (int, error) {
 		return 0, fmt.Errorf("scan user: %w", err)
 	}
 
-	keyQuery := `insert into public_keys_ (public_key_sha1_, user_id_) values ($publicKeySHA1, $userID)`
+	keyQuery := `insert into public_keys_ (public_key_sha1_, user_id_)
+		values ($publicKeySHA1, $userID)`
 	if _, err := s.db.Exec(
 		keyQuery,
 		sql.Named("publicKeySHA1", user.PublicKeySHA1),

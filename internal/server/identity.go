@@ -20,7 +20,7 @@ func NewIdentityMiddleware(s *stores.SystemStore) wish.Middleware {
 			publicKeyHash := fmt.Sprintf("%x", sha1.Sum(sess.PublicKey().Marshal()))
 			email := time.Now().GoString()
 
-			user, err := s.GetUser(username, publicKeyHash)
+			user, err := s.GetUser(username)
 			if err != nil || user == nil {
 				sess.Write([]byte(fmt.Sprintf("User '%s' with provided key not found.\n", username)))
 
@@ -57,6 +57,11 @@ func NewIdentityMiddleware(s *stores.SystemStore) wish.Middleware {
 				))
 
 				user.ID = userID
+			}
+
+			if user.PublicKeySHA1 != publicKeyHash {
+				sess.Stderr().Write([]byte("Public key provided does not match stored"))
+				sess.Exit(1)
 			}
 
 			// TODO: add email verification
