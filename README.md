@@ -6,6 +6,10 @@
 
 Encrypted, passwordless, embeddable key-value store.
 
+> [!CAUTION]
+> This is a work in progress.
+> You **SHOULD NOT** be using this to store sensitive data at this time.
+
 
 ##
 
