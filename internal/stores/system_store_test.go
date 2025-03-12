@@ -26,8 +26,11 @@ func TestSystemStore(t *testing.T) {
 		store *stores.SystemStore,
 		mock sqlmock.Sqlmock,
 	){
-		"get user from system store (success)": testGetUserFromSystemStoreSuccess,
-		"get user from system store (no user)": testGetUserFromSystemStoreNoUser,
+		"get user from system store (success)":     testGetUserFromSystemStoreSuccess,
+		"get user from system store (no user)":     testGetUserFromSystemStoreNoUser,
+		"create user in system store (success)":    testCreateUserInSystemStoreSuccess,
+		"create user in system store (user error)": testCreateUserInSystemStoreUserErr,
+		"create user in system store (key error)":  testCreateUserInSystemStoreKeyErr,
 	}
 
 	for scenario, fn := range scenarios {
@@ -112,4 +115,105 @@ func testGetUserFromSystemStoreRowErr(
 	require.Error(t, err)
 	require.NoError(t, mock.ExpectationsWereMet())
 	require.Nil(t, user)
+}
+
+func testCreateUserInSystemStoreSuccess(
+	t *testing.T,
+	store *stores.SystemStore,
+	mock sqlmock.Sqlmock,
+) {
+	mock.ExpectBegin()
+	mock.ExpectQuery(
+		regexp.QuoteMeta(createUserQuery),
+	).WithArgs(
+		sql.Named("username", "janedoe"),
+		sql.Named("email", "janedoe@example.org"),
+		sql.Named("verified", true),
+		sql.Named("publicKeySHA1", "some_public_key"),
+	).WillReturnRows(sqlmock.NewRows(
+		[]string{"id_"},
+	).AddRow(23))
+
+	mock.ExpectExec(
+		regexp.QuoteMeta(createKeyQuery),
+	).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectCommit()
+
+	userID, err := store.CreateUser(&stores.User{
+		Username:      "janedoe",
+		Email:         "janedoe@example.org",
+		Verified:      true,
+		PublicKeySHA1: "some_public_key",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 23, userID)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCreateUserInSystemStoreUserErr(
+	t *testing.T,
+	store *stores.SystemStore,
+	mock sqlmock.Sqlmock,
+) {
+	mock.ExpectBegin()
+	mock.ExpectQuery(
+		regexp.QuoteMeta(createUserQuery),
+	).WithArgs(
+		sql.Named("username", "janedoe"),
+		sql.Named("email", "janedoe@example.org"),
+		sql.Named("verified", true),
+		sql.Named("publicKeySHA1", "some_public_key"),
+	).WillReturnRows(sqlmock.NewRows(
+		[]string{"id_"},
+	))
+
+	mock.ExpectRollback()
+
+	userID, err := store.CreateUser(&stores.User{
+		Username:      "janedoe",
+		Email:         "janedoe@example.org",
+		Verified:      true,
+		PublicKeySHA1: "some_public_key",
+	})
+
+	require.Error(t, err)
+	require.Equal(t, 0, userID)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCreateUserInSystemStoreKeyErr(
+	t *testing.T,
+	store *stores.SystemStore,
+	mock sqlmock.Sqlmock,
+) {
+	mock.ExpectBegin()
+	mock.ExpectQuery(
+		regexp.QuoteMeta(createUserQuery),
+	).WithArgs(
+		sql.Named("username", "janedoe"),
+		sql.Named("email", "janedoe@example.org"),
+		sql.Named("verified", true),
+		sql.Named("publicKeySHA1", "some_public_key"),
+	).WillReturnRows(sqlmock.NewRows(
+		[]string{"id_"},
+	).AddRow(23))
+
+	mock.ExpectExec(
+		regexp.QuoteMeta(createKeyQuery),
+	).WillReturnError(fmt.Errorf("key_err"))
+
+	mock.ExpectRollback()
+
+	userID, err := store.CreateUser(&stores.User{
+		Username:      "janedoe",
+		Email:         "janedoe@example.org",
+		Verified:      true,
+		PublicKeySHA1: "some_public_key",
+	})
+
+	require.Error(t, err)
+	require.Equal(t, 0, userID)
+	require.NoError(t, mock.ExpectationsWereMet())
 }

@@ -30,7 +30,7 @@ func NewIdentityMiddleware(s *stores.SystemStore) wish.Middleware {
 					"username", username,
 					"email", email,
 					"publicKeyHash", publicKeyHash,
-					"getUserErr", err,
+					"reason", err,
 				)
 
 				// Currently only supporting a user with a single key, since to add a
