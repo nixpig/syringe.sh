@@ -36,6 +36,7 @@ func TestTenantStore(t *testing.T) {
 		"list items in tenant store (single item)":        testListItemsInTenantStoreSingleItemSuccess,
 		"list items in tenant store (no items)":           testListItemsInTenantStoreNoItems,
 		"list items in tenant store (db error)":           testListItemsInTenantStoreDBErr,
+		"list items in tenant store (scan error)":         testListItemsInTenantStoreMultipleItemsScanErr,
 		"remove item by key from tenant store (success)":  testRemoveItemByKeyFromTenantStoreSuccess,
 		"remove item by key from tenant store (db error)": testRemoveItemByKeyFromTenantStoreDBErr,
 	}
@@ -195,6 +196,32 @@ func testListItemsInTenantStoreMultipleItemsSuccess(
 		{ID: 2, Key: "baz", Value: "qux"},
 		{ID: 3, Key: "ned", Value: "dur"},
 	}, items)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testListItemsInTenantStoreMultipleItemsScanErr(
+	t *testing.T,
+	store *stores.TenantStore,
+	mock sqlmock.Sqlmock,
+) {
+	mock.ExpectQuery(
+		listItemsQuery,
+	).WillReturnRows(
+
+		sqlmock.
+			NewRows(
+				[]string{"id_", "key_", "value_"},
+			).AddRow(
+			23, "foo", "bar",
+		).RowError(
+			0, fmt.Errorf("scan_err"),
+		))
+
+	items, err := store.ListItems()
+
+	var emptyItems []stores.Item
+	require.NoError(t, err)
+	require.Equal(t, emptyItems, items)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 

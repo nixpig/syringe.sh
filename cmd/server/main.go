@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"slices"
 	"syscall"
 	"time"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nixpig/syringe.sh/database"
-	"github.com/nixpig/syringe.sh/internal/serrors"
 	"github.com/nixpig/syringe.sh/internal/server"
 	"github.com/nixpig/syringe.sh/internal/stores"
 )
@@ -29,11 +27,6 @@ const (
 	keyEnv      = "SYRINGE_KEY"
 	systemDBEnv = "SYRINGE_DB_SYSTEM_DIR"
 )
-
-var allowedClients = []string{
-	"SSH-2.0-Syringe_0.0.4",
-	"SSH-2.0-OpenSSH_9.9",
-}
 
 func main() {
 	log.SetLevel(log.DebugLevel)
@@ -100,21 +93,7 @@ func main() {
 		server.CmdMiddleware,
 		server.NewIdentityMiddleware(systemStore),
 		server.LoggingMiddleware,
-		func(next ssh.Handler) ssh.Handler {
-			return func(sess ssh.Session) {
-				clientVersion := sess.Context().ClientVersion()
-				if !slices.Contains(allowedClients, clientVersion) {
-					log.Error("disallowed client", "version", clientVersion)
-					sess.Stderr().Write([]byte(serrors.New(
-						"client", "unsupported client", sess.Context().SessionID(),
-					).Error()))
-					sess.Exit(1)
-					return
-				}
-
-				next(sess)
-			}
-		},
+		server.ClientMiddleware,
 	}
 
 	s, err := server.New(host, port, key, middleware...)
