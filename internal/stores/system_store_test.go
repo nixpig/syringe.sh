@@ -26,11 +26,13 @@ func TestSystemStore(t *testing.T) {
 		store *stores.SystemStore,
 		mock sqlmock.Sqlmock,
 	){
-		"get user from system store (success)":     testGetUserFromSystemStoreSuccess,
-		"get user from system store (no user)":     testGetUserFromSystemStoreNoUser,
-		"create user in system store (success)":    testCreateUserInSystemStoreSuccess,
-		"create user in system store (user error)": testCreateUserInSystemStoreUserErr,
-		"create user in system store (key error)":  testCreateUserInSystemStoreKeyErr,
+		"get user from system store (success)":          testGetUserFromSystemStoreSuccess,
+		"get user from system store (no user)":          testGetUserFromSystemStoreNoUser,
+		"create user in system store (success)":         testCreateUserInSystemStoreSuccess,
+		"create user in system store (user error)":      testCreateUserInSystemStoreUserErr,
+		"create user in system store (key error)":       testCreateUserInSystemStoreKeyErr,
+		"create user in system store (tx begin error)":  testCreateUserInSystemStoreTXBeginErr,
+		"create user in system store (tx commit error)": testCreateUserInSystemStoreTXCommitErr,
 	}
 
 	for scenario, fn := range scenarios {
@@ -205,6 +207,60 @@ func testCreateUserInSystemStoreKeyErr(
 	).WillReturnError(fmt.Errorf("key_err"))
 
 	mock.ExpectRollback()
+
+	userID, err := store.CreateUser(&stores.User{
+		Username:      "janedoe",
+		Email:         "janedoe@example.org",
+		Verified:      true,
+		PublicKeySHA1: "some_public_key",
+	})
+
+	require.Error(t, err)
+	require.Equal(t, 0, userID)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCreateUserInSystemStoreTXBeginErr(
+	t *testing.T,
+	store *stores.SystemStore,
+	mock sqlmock.Sqlmock,
+) {
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("begin_tx_err"))
+
+	userID, err := store.CreateUser(&stores.User{
+		Username:      "janedoe",
+		Email:         "janedoe@example.org",
+		Verified:      true,
+		PublicKeySHA1: "some_public_key",
+	})
+
+	require.Error(t, err)
+	require.Equal(t, 0, userID)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func testCreateUserInSystemStoreTXCommitErr(
+	t *testing.T,
+	store *stores.SystemStore,
+	mock sqlmock.Sqlmock,
+) {
+	mock.ExpectBegin()
+	mock.ExpectQuery(
+		regexp.QuoteMeta(createUserQuery),
+	).WithArgs(
+		sql.Named("username", "janedoe"),
+		sql.Named("email", "janedoe@example.org"),
+		sql.Named("verified", true),
+		sql.Named("publicKeySHA1", "some_public_key"),
+	).WillReturnRows(sqlmock.NewRows(
+		[]string{"id_"},
+	).AddRow(23))
+
+	mock.ExpectExec(
+		regexp.QuoteMeta(createKeyQuery),
+	).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectCommit().WillReturnError(fmt.Errorf("commit_tx_err"))
 
 	userID, err := store.CreateUser(&stores.User{
 		Username:      "janedoe",
