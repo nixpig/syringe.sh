@@ -15,10 +15,18 @@ import (
 func NewIdentityMiddleware(s *stores.SystemStore) wish.Middleware {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
+			publicKeyHash := fmt.Sprintf("%x", sha1.Sum(sess.PublicKey().Marshal()))
+			sess.Context().SetValue("publicKeyHash", publicKeyHash)
+
 			sessionID := sess.Context().SessionID()
 			username := sess.Context().User()
-			publicKeyHash := fmt.Sprintf("%x", sha1.Sum(sess.PublicKey().Marshal()))
 			email := time.Now().GoString()
+
+			cmd := sess.Command()
+			if len(cmd) > 0 && cmd[0] == "register" {
+				log.Debug("register user", "session", sessionID, "username", username, "email", email, "publicKeyHash", publicKeyHash)
+				next(sess)
+			}
 
 			user, err := s.GetUser(username)
 			if err != nil || user == nil {

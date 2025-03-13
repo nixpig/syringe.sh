@@ -26,6 +26,7 @@ const (
 	hostEnv     = "SYRINGE_HOST"
 	keyEnv      = "SYRINGE_KEY"
 	systemDBEnv = "SYRINGE_DB_SYSTEM_DIR"
+	tenantDBEnv = "SYRINGE_DB_TENANT_DIR"
 )
 
 func main() {
@@ -87,13 +88,22 @@ func main() {
 		}
 	}
 
+	tenantDBDir := os.Getenv("SYRINGE_DB_TENANT_DIR")
+	if err := os.MkdirAll(tenantDBDir, 0755); err != nil {
+		log.Fatal(
+			"create tenant database directory",
+			"tenantDBDir", tenantDBDir,
+			"err", err,
+		)
+	}
+
 	systemStore := stores.NewSystemStore(db)
 
 	middleware := []wish.Middleware{
-		server.CmdMiddleware,
+		server.NewCmdMiddleware(systemStore),
 		server.NewIdentityMiddleware(systemStore),
-		server.LoggingMiddleware,
 		server.ClientMiddleware,
+		server.LoggingMiddleware,
 	}
 
 	s, err := server.New(host, port, key, middleware...)
