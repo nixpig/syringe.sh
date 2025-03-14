@@ -26,8 +26,8 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 		return func(sess ssh.Session) {
 			cmd := sess.Command()
 			if len(cmd) == 0 {
-				log.Debug("no command")
-				next(sess)
+				sess.Stderr().Write([]byte("Error: no command specified"))
+				sess.Exit(1)
 				return
 			}
 
@@ -36,36 +36,33 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 
 			publicKeyHash, ok := sess.Context().Value("publicKeyHash").(string)
 			if !ok {
-				log.Error("failed to get public key hash from context")
-				sess.Stderr().Write([]byte("Error: "))
+				sess.Stderr().Write([]byte("Error: failed to get public key"))
 				sess.Exit(1)
 			}
 
 			email, ok := sess.Context().Value("email").(string)
 			if !ok {
-				log.Error("failed to get email from context")
-				sess.Stderr().Write([]byte("Error: "))
+				sess.Stderr().Write([]byte("Error: failed to get email"))
 				sess.Exit(1)
 				return
 			}
 
 			authenticated, ok := sess.Context().Value("authenticated").(bool)
 			if !ok {
-				log.Warn("failed to get authenticated from context, defaulting to 'false'")
+				log.Debug("failed to get authenticated context", "session", sessionID)
 				authenticated = false
 			}
 
 			if authenticated {
 				db, err := tenantDB(publicKeyHash, sessionID)
 				if err != nil {
-					log.Error("connect to tenant db (authenticated)", "err", err)
-					sess.Stderr().Write([]byte("Error: failed to connect to database"))
+					log.Error("connect to tenant database", "session", sessionID, "err", err)
+					sess.Stderr().Write([]byte("Error: database connection error"))
 					sess.Exit(1)
 					return
-
 				}
 
-				tenantStore := stores.NewTenantStore(db)
+				tenantStore := stores.NewTenantStore(sess.Context(), db)
 
 				switch cmd[0] {
 				case "set":
@@ -76,7 +73,8 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 					}
 
 					if err := setCmd(tenantStore, cmd[1], cmd[2]); err != nil {
-						sess.Stderr().Write([]byte(fmt.Sprintf("Error: 'set': %s", err)))
+						log.Debug("set", "session", sessionID, "err", err)
+						sess.Stderr().Write([]byte(fmt.Sprintf("Error: failed to set '%s'", cmd[1])))
 						sess.Exit(1)
 						return
 					}
@@ -92,7 +90,8 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 
 					value, err := getCmd(tenantStore, cmd[1])
 					if err != nil {
-						sess.Stderr().Write([]byte(fmt.Sprintf("Error: 'get': %s", err)))
+						log.Debug("get", "session", sessionID, "key", cmd[1], "err", err)
+						sess.Stderr().Write([]byte(fmt.Sprintf("Error: failed to get '%s'", cmd[1])))
 						sess.Exit(1)
 						return
 					}
@@ -109,7 +108,8 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 					}
 
 					if err := removeCmd(tenantStore, cmd[1]); err != nil {
-						sess.Stderr().Write([]byte(fmt.Sprintf("Error: 'remove': %s", err)))
+						log.Debug("remove", "session", sessionID, "key", cmd[1], "err", err)
+						sess.Stderr().Write([]byte(fmt.Sprintf("Error: failed to remove '%s'", cmd[1])))
 						sess.Exit(1)
 						return
 					}
@@ -126,7 +126,8 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 
 					list, err := listCmd(tenantStore)
 					if err != nil {
-						sess.Stderr().Write([]byte(fmt.Sprintf("Error: 'list': %s", err)))
+						log.Debug("list", "session", sessionID, "err", err)
+						sess.Stderr().Write([]byte("Error: failed to list"))
 						sess.Exit(1)
 						return
 					}
@@ -150,7 +151,14 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 					email,
 					publicKeyHash,
 				); err != nil {
-					log.Debug("register", "err", err)
+					log.Debug(
+						"register",
+						"session", sessionID,
+						"username", username,
+						"email", email,
+						"publicKeyHash", publicKeyHash,
+						"err", err,
+					)
 					sess.Stderr().Write([]byte("Error: failed to register"))
 					sess.Exit(1)
 					return
@@ -162,39 +170,6 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 				sess.Exit(1)
 				return
 			}
-
-			// done := make(chan bool, 1)
-			//
-			// ctx, cancel := context.WithTimeout(sess.Context(), commandTimeout)
-			// defer cancel()
-			//
-			// go func() {
-			// 	if err := cmd.Execute(); err != nil {
-			// 		log.Error(
-			// 			"exec cmd",
-			// 			"session", sessionID,
-			// 			"err", err,
-			// 		)
-			//
-			// 		sess.Stderr().Write([]byte(serrors.New(
-			// 			"cmd", "encountered error while running command", sessionID,
-			// 		).Error()))
-			// 		sess.Exit(1)
-			// 	}
-			// 	done <- true
-			// }()
-
-			// select {
-			// case <-ctx.Done():
-			// 	log.Error("request timed out", "session", sessionID, "err", err)
-			// 	sess.Stderr().Write([]byte(serrors.New(
-			// 		"timeout", "request timed out", sessionID,
-			// 	).Error()))
-			// 	sess.Exit(1)
-			// 	return
-			// case <-done:
-			// 	next(sess)
-			// }
 		}
 	}
 }

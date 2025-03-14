@@ -1,21 +1,28 @@
 package stores
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"sync"
 )
 
 type TenantStore struct {
-	db *sql.DB
-	mu sync.Mutex
+	ctx context.Context
+	db  *sql.DB
+	mu  sync.Mutex
 }
 
-func NewTenantStore(db *sql.DB) *TenantStore {
+func NewTenantStore(ctx context.Context, db *sql.DB) *TenantStore {
 	return &TenantStore{
-		db: db,
-		mu: sync.Mutex{},
+		ctx: ctx,
+		db:  db,
+		mu:  sync.Mutex{},
 	}
+}
+
+func (s *TenantStore) Context() context.Context {
+	return s.ctx
 }
 
 func (s *TenantStore) SetItem(item *Item) error {
@@ -25,7 +32,8 @@ func (s *TenantStore) SetItem(item *Item) error {
 	query := `insert into store_ (key_, value_) values ($key, $value) 
 on conflict(key_) do update set value_ = $value`
 
-	if _, err := s.db.Exec(
+	if _, err := s.db.ExecContext(
+		s.ctx,
 		query,
 		sql.Named("key", item.Key),
 		sql.Named("value", item.Value),
@@ -40,7 +48,7 @@ func (s *TenantStore) GetItemByKey(key string) (*Item, error) {
 	query := `select id_, key_, value_ from store_
 where key_ = $key`
 
-	row := s.db.QueryRow(query, sql.Named("key", key))
+	row := s.db.QueryRowContext(s.ctx, query, sql.Named("key", key))
 
 	var item Item
 
@@ -54,7 +62,7 @@ where key_ = $key`
 func (s *TenantStore) ListItems() ([]Item, error) {
 	query := `select id_, key_, value_ from store_`
 
-	rows, err := s.db.Query(query)
+	rows, err := s.db.QueryContext(s.ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("get all key-values from database: %w", err)
 	}
@@ -81,7 +89,9 @@ func (s *TenantStore) RemoveItemByKey(key string) error {
 
 	query := `delete from store_ where key_ = $key`
 
-	if _, err := s.db.Exec(query, sql.Named("key", key)); err != nil {
+	if _, err := s.db.ExecContext(
+		s.ctx, query, sql.Named("key", key),
+	); err != nil {
 		return fmt.Errorf("delete item: %w", err)
 	}
 

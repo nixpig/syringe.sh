@@ -85,7 +85,7 @@ func main() {
 
 	migrator, err := database.NewMigration(db, database.SystemMigrations)
 	if err != nil {
-		log.Fatal("faile to create new system database migration", "err", err)
+		log.Fatal("failed to create new system database migration", "err", err)
 	}
 
 	if err := migrator.Up(); err != nil {
@@ -97,7 +97,7 @@ func main() {
 	tenantDBDir := os.Getenv("SYRINGE_DB_TENANT_DIR")
 	if err := os.MkdirAll(tenantDBDir, 0755); err != nil {
 		log.Fatal(
-			"faile to create tenant database directory",
+			"failed to create tenant database directory",
 			"tenantDBDir", tenantDBDir,
 			"err", err,
 		)
