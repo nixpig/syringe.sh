@@ -1,4 +1,4 @@
-package server
+package middleware
 
 import (
 	"crypto/sha1"
@@ -25,26 +25,14 @@ func NewIdentityMiddleware(s *stores.SystemStore) wish.Middleware {
 			}
 			sess.Context().SetValue("email", email)
 
-			sessionID := sess.Context().SessionID()
-			username := sess.Context().User()
-
-			cmd := sess.Command()
-			if len(cmd) > 0 && cmd[0] == "register" {
-				log.Debug("register user", "session", sessionID, "username", username, "email", email, "publicKeyHash", publicKeyHash)
-				next(sess)
-			}
-
 			authenticated := false
-			user, err := s.GetUser(username)
+			user, err := s.GetUser(sess.Context().User())
 			if err == nil && user != nil && user.PublicKeySHA1 == publicKeyHash {
 				authenticated = true
 			}
-
-			log.Debug("is user authenticated", "authenticated", authenticated)
-
 			sess.Context().SetValue("authenticated", authenticated)
 
-			// TODO: add email verification
+			log.Debug("is user authenticated", "authenticated", authenticated)
 
 			next(sess)
 		}

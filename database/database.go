@@ -12,7 +12,10 @@ func NewConnection(filename string) (*sql.DB, error) {
 
 	db, err := sql.Open("sqlite3", connectionString)
 	if err != nil {
-		return nil, fmt.Errorf("open database connection (%s): %w", connectionString, err)
+		return nil, fmt.Errorf(
+			"open database connection (%s): %w",
+			connectionString, err,
+		)
 	}
 
 	if err := db.Ping(); err != nil {

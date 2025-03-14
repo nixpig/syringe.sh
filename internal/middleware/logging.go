@@ -1,6 +1,8 @@
-package server
+package middleware
 
 import (
+	"time"
+
 	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
 )
@@ -23,11 +25,14 @@ func LoggingMiddleware(next ssh.Handler) ssh.Handler {
 			"publicKeyType", sess.PublicKey().Type(),
 		)
 
+		now := time.Now()
+
 		next(sess)
 
 		log.Info(
 			"disconnect",
 			"session", sess.Context().SessionID(),
+			"elapsed", time.Since(now),
 		)
 	}
 }

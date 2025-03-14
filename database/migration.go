@@ -8,7 +8,6 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 //go:embed sql/*_tenant.*.sql
@@ -45,12 +44,7 @@ func NewMigration(db *sql.DB, migrations embed.FS) (*Migration, error) {
 		return nil, fmt.Errorf("sqlite3 with instance: %w", err)
 	}
 
-	m, err := migrate.NewWithInstance(
-		"file",
-		driver,
-		"sqlite3",
-		instance,
-	)
+	m, err := migrate.NewWithInstance("file", driver, "sqlite3", instance)
 	if err != nil {
 		return nil, fmt.Errorf("create migration: %w", err)
 	}

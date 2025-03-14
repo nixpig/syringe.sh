@@ -1,4 +1,4 @@
-package server
+package middleware
 
 import (
 	"database/sql"
@@ -13,7 +13,6 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/nixpig/syringe.sh/database"
 	"github.com/nixpig/syringe.sh/internal/stores"
 )
@@ -254,6 +253,8 @@ func registerCmd(
 	}); err != nil {
 		return err
 	}
+
+	// TODO: add email verification
 
 	// Note: tenant database will just be created automatically if it doesn't
 	// exist when first command is run

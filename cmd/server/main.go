@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"errors"
+	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"slices"
 	"syscall"
 	"time"
 
@@ -14,9 +16,8 @@ import (
 	"github.com/charmbracelet/wish"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/joho/godotenv"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/nixpig/syringe.sh/database"
-	"github.com/nixpig/syringe.sh/internal/server"
+	"github.com/nixpig/syringe.sh/internal/middleware"
 	"github.com/nixpig/syringe.sh/internal/stores"
 )
 
@@ -29,9 +30,14 @@ const (
 	tenantDBEnv = "SYRINGE_DB_TENANT_DIR"
 )
 
+// TODO: store allowed key types in database??
+var allowedKeyTypes = []string{
+	"ssh-rsa",
+	"ssh-ed25519",
+}
+
 func main() {
 	log.SetLevel(log.DebugLevel)
-	// TODO: use viper instead of (or in addition to) env file?
 	log.Info("loading environment", "env", env)
 	if err := godotenv.Load(env); err != nil {
 		log.Warn("failed to load environment file", "env", env, "err", err)
@@ -44,7 +50,7 @@ func main() {
 
 	host := os.Getenv(hostEnv)
 	if host == "" {
-		log.Info("no host specified; defaulting to localhost")
+		log.Warn("no host specified; defaulting to localhost")
 		host = "localhost"
 	}
 
@@ -79,19 +85,19 @@ func main() {
 
 	migrator, err := database.NewMigration(db, database.SystemMigrations)
 	if err != nil {
-		log.Fatal("new system migration", "err", err)
+		log.Fatal("faile to create new system database migration", "err", err)
 	}
 
 	if err := migrator.Up(); err != nil {
 		if !errors.Is(err, migrate.ErrNoChange) {
-			log.Fatal("run system migration", "err", err)
+			log.Fatal("failed to run system database migration", "err", err)
 		}
 	}
 
 	tenantDBDir := os.Getenv("SYRINGE_DB_TENANT_DIR")
 	if err := os.MkdirAll(tenantDBDir, 0755); err != nil {
 		log.Fatal(
-			"create tenant database directory",
+			"faile to create tenant database directory",
 			"tenantDBDir", tenantDBDir,
 			"err", err,
 		)
@@ -100,13 +106,21 @@ func main() {
 	systemStore := stores.NewSystemStore(db)
 
 	middleware := []wish.Middleware{
-		server.NewCmdMiddleware(systemStore),
-		server.NewIdentityMiddleware(systemStore),
-		server.ClientMiddleware,
-		server.LoggingMiddleware,
+		middleware.NewCmdMiddleware(systemStore),
+		middleware.NewIdentityMiddleware(systemStore),
+		middleware.ClientMiddleware,
+		middleware.LoggingMiddleware,
 	}
 
-	s, err := server.New(host, port, key, middleware...)
+	s, err := wish.NewServer(
+		wish.WithAddress(net.JoinHostPort(host, port)),
+		wish.WithHostKeyPath(key),
+		wish.WithMaxTimeout(time.Second*10), // TODO: make timeout global config?
+		wish.WithPublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
+			return slices.Contains(allowedKeyTypes, key.Type())
+		}),
+		wish.WithMiddleware(middleware...),
+	)
 	if err != nil {
 		log.Fatal("failed to create server", "err", err)
 	}
@@ -114,10 +128,11 @@ func main() {
 	done := make(chan os.Signal, 1)
 
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	log.Info("starting server...")
 
 	go func() {
 		if err := s.ListenAndServe(); err != nil && err != ssh.ErrServerClosed {
-			log.Error("server stopped", "err", err)
+			log.Error("failed to start server", "err", err)
 		}
 
 		done <- nil
@@ -131,7 +146,7 @@ func main() {
 	defer cancel()
 
 	if err := s.Shutdown(ctx); err != nil && err != ssh.ErrServerClosed {
-		log.Fatal("server failed to stop gracefully", "err", err)
+		log.Fatal("failed to stop server gracefully", "err", err)
 	}
 
 	log.Info("server stopped")
