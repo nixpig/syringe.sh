@@ -145,11 +145,21 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 
 			switch cmd[0] {
 			case "register":
-				registerCmd(systemStore, username, email, publicKeyHash)
+				if err := registerCmd(
+					systemStore,
+					username,
+					email,
+					publicKeyHash,
+				); err != nil {
+					log.Debug("register", "err", err)
+					sess.Stderr().Write([]byte("Error: failed to register"))
+					sess.Exit(1)
+					return
+				}
 				sess.Exit(0)
 				return
 			default:
-				sess.Stderr().Write([]byte("You are not authenticated."))
+				sess.Stderr().Write([]byte("Error: you are not authenticated"))
 				sess.Exit(1)
 				return
 			}

@@ -3,6 +3,7 @@ package server
 import (
 	"crypto/sha1"
 	"fmt"
+	"net/mail"
 
 	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
@@ -16,7 +17,12 @@ func NewIdentityMiddleware(s *stores.SystemStore) wish.Middleware {
 			publicKeyHash := fmt.Sprintf("%x", sha1.Sum(sess.PublicKey().Marshal()))
 			sess.Context().SetValue("publicKeyHash", publicKeyHash)
 
-			email := "tbd@example.org"
+			email := "nixpig@example.org"
+			if _, err := mail.ParseAddress(email); err != nil {
+				sess.Stderr().Write([]byte("Error: invalid email address"))
+				sess.Exit(1)
+				return
+			}
 			sess.Context().SetValue("email", email)
 
 			sessionID := sess.Context().SessionID()
