@@ -52,10 +52,9 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 
 			authenticated, ok := sess.Context().Value("authenticated").(bool)
 			if !ok {
+				log.Warn("failed to get authenticated from context, defaulting to 'false'")
 				authenticated = false
 			}
-
-			log.Debug("is user authenticated", "authenticated", authenticated)
 
 			if authenticated {
 				db, err := tenantDB(publicKeyHash, sessionID)
@@ -140,17 +139,20 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 					sess.Stderr().Write([]byte(fmt.Sprintf("Error: unknown command '%s'", cmd[0])))
 					sess.Exit(1)
 					return
+
 				}
 			}
 
 			switch cmd[0] {
 			case "register":
 				registerCmd(systemStore, username, email, publicKeyHash)
-
+				sess.Exit(0)
+				return
+			default:
+				sess.Stderr().Write([]byte("You are not authenticated."))
+				sess.Exit(1)
+				return
 			}
-
-			next(sess)
-			return
 
 			// done := make(chan bool, 1)
 			//
@@ -243,7 +245,9 @@ func registerCmd(
 		return err
 	}
 
-	// TODO: create tenant database after creating user record
+	// Note: tenant database will just be created automatically if it doesn't
+	// exist when first command is run
+	// ...see tenantDB function
 
 	return nil
 }
