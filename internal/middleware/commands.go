@@ -18,7 +18,7 @@ import (
 )
 
 // TODO: better strategy for logging, writing errors and exiting
-// TODO: better logic for commands and switching - maybe something like Cobra would be better?
+// TODO: better logic for commands and switching when register should/shouldn't be available
 
 func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 	return func(next ssh.Handler) ssh.Handler {
@@ -32,20 +32,20 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 			sessionID := sess.Context().SessionID()
 			username := sess.Context().User()
 
-			publicKeyHash, ok := sess.Context().Value("publicKeyHash").(string)
+			publicKeyHash, ok := sess.Context().Value(contextKeyHash).(string)
 			if !ok {
 				sess.Stderr().Write([]byte("Error: failed to get public key"))
 				sess.Exit(1)
 			}
 
-			email, ok := sess.Context().Value("email").(string)
+			email, ok := sess.Context().Value(contextKeyEmail).(string)
 			if !ok {
 				sess.Stderr().Write([]byte("Error: failed to get email"))
 				sess.Exit(1)
 				return
 			}
 
-			authenticated, ok := sess.Context().Value("authenticated").(bool)
+			authenticated, ok := sess.Context().Value(contextKeyAuthenticated).(bool)
 			if !ok {
 				log.Debug("failed to get authenticated context", "session", sessionID)
 				authenticated = false
@@ -76,26 +76,35 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 				))
 			}
 
-			done := make(chan bool, 1)
+			doneCh := make(chan bool, 1)
+			errCh := make(chan error, 1)
 
 			go func() {
 				if err := cmd.ExecuteContext(sess.Context()); err != nil {
-					log.Error("cmd", "session", sessionID, "err", err)
-					sess.Stderr().Write([]byte(err.Error()))
-					done <- false
+					errCh <- err
+					return
 				}
 
-				done <- true
+				doneCh <- true
 			}()
 
-			end := <-done
-			if end {
-				next(sess)
-			} else {
+			select {
+			case <-sess.Context().Done():
+				log.Error("timeout", "session", sessionID)
+				sess.Stderr().Write([]byte("Error: timed out"))
 				sess.Exit(1)
 				return
-			}
 
+			case err := <-errCh:
+				log.Error("cmd", "session", sessionID, "err", err)
+				sess.Stderr().Write([]byte("Error: " + err.Error()))
+				sess.Exit(1)
+				return
+
+			case <-doneCh:
+				log.Debug("done", "session", sessionID)
+				next(sess)
+			}
 		}
 	}
 }

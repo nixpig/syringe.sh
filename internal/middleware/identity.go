@@ -11,11 +11,15 @@ import (
 	"github.com/nixpig/syringe.sh/internal/stores"
 )
 
+var contextKeyHash = struct{ string }{"publicKeyHash"}
+var contextKeyEmail = struct{ string }{"email"}
+var contextKeyAuthenticated = struct{ string }{"authenticated"}
+
 func NewIdentityMiddleware(s *stores.SystemStore) wish.Middleware {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
 			publicKeyHash := fmt.Sprintf("%x", sha1.Sum(sess.PublicKey().Marshal()))
-			sess.Context().SetValue("publicKeyHash", publicKeyHash)
+			sess.Context().SetValue(contextKeyHash, publicKeyHash)
 
 			// TODO: pull email from key? reject keys without email?
 			email := "nixpig@example.org"
@@ -24,16 +28,16 @@ func NewIdentityMiddleware(s *stores.SystemStore) wish.Middleware {
 				sess.Exit(1)
 				return
 			}
-			sess.Context().SetValue("email", email)
+			sess.Context().SetValue(contextKeyEmail, email)
 
 			authenticated := false
 			user, err := s.GetUser(sess.Context().User())
 			if err == nil && user != nil && user.PublicKeySHA1 == publicKeyHash {
 				authenticated = true
 			}
-			sess.Context().SetValue("authenticated", authenticated)
+			sess.Context().SetValue(contextKeyAuthenticated, authenticated)
 
-			log.Debug("is user authenticated", "authenticated", authenticated)
+			log.Debug("authenticate", "authenticated", authenticated)
 
 			next(sess)
 		}
