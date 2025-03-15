@@ -22,7 +22,7 @@ func ClientMiddleware(next ssh.Handler) ssh.Handler {
 				"session", sess.Context().SessionID(),
 				"version", clientVersion,
 			)
-			sess.Stderr().Write([]byte("Error: unsupported client"))
+			sess.Stderr().Write([]byte("unsupported client"))
 			sess.Exit(1)
 			return
 		}

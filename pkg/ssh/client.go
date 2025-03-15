@@ -35,14 +35,7 @@ func (s *SSHClient) Run(cmd string, out io.Writer) error {
 
 	output, err := session.CombinedOutput(cmd)
 	if err != nil {
-		if _, err := out.Write(output); err != nil {
-			return fmt.Errorf("write to output: %w", err)
-		}
-		return fmt.Errorf("combined output: %w", err)
-	}
-
-	if _, err := out.Write(output); err != nil {
-		return fmt.Errorf("last write: %w", err)
+		return fmt.Errorf("%s", output)
 	}
 
 	return nil

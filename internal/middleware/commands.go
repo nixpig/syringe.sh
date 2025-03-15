@@ -35,13 +35,13 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 
 			publicKeyHash, ok := sess.Context().Value(contextKeyHash).(string)
 			if !ok {
-				sess.Stderr().Write([]byte("Error: failed to get public key"))
+				sess.Stderr().Write([]byte("failed to get public key"))
 				sess.Exit(1)
 			}
 
 			email, ok := sess.Context().Value(contextKeyEmail).(string)
 			if !ok {
-				sess.Stderr().Write([]byte("Error: failed to get email"))
+				sess.Stderr().Write([]byte("failed to get email"))
 				sess.Exit(1)
 				return
 			}
@@ -56,7 +56,7 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 				db, err := tenantDB(publicKeyHash, sessionID)
 				if err != nil {
 					log.Error("connect to tenant database", "session", sessionID, "err", err)
-					sess.Stderr().Write([]byte("Error: database connection error"))
+					sess.Stderr().Write([]byte("database connection error"))
 					sess.Exit(1)
 					return
 				}
@@ -92,13 +92,13 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 			select {
 			case <-sess.Context().Done():
 				log.Error("timeout", "session", sessionID)
-				sess.Stderr().Write([]byte("Error: timed out"))
+				sess.Stderr().Write([]byte("timed out"))
 				sess.Exit(1)
 				return
 
 			case err := <-errCh:
 				log.Error("cmd", "session", sessionID, "err", err)
-				sess.Stderr().Write([]byte("Error: " + err.Error()))
+				sess.Stderr().Write([]byte(err.Error()))
 				sess.Exit(1)
 				return
 

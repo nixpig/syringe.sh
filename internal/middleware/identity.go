@@ -24,7 +24,7 @@ func NewIdentityMiddleware(s *stores.SystemStore) wish.Middleware {
 			// TODO: pull email from key? reject keys without email?
 			email := "nixpig@example.org"
 			if _, err := mail.ParseAddress(email); err != nil {
-				sess.Stderr().Write([]byte("Error: invalid email address"))
+				sess.Stderr().Write([]byte("invalid email address"))
 				sess.Exit(1)
 				return
 			}

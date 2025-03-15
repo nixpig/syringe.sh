@@ -19,9 +19,13 @@ import (
 
 const (
 	identityFlag = "identity"
-	host         = "127.0.0.1"
-	port         = 2323
+	usernameFlag = "username"
+	emailFlag    = "email"
+	hostFlag     = "host"
+	portFlag     = "port"
 )
+
+var a *api.HostAPI
 
 func New(v *viper.Viper) *cobra.Command {
 	rootCmd := &cobra.Command{
@@ -31,55 +35,65 @@ func New(v *viper.Viper) *cobra.Command {
 		PersistentPreRunE: func(c *cobra.Command, args []string) error {
 			applyFlags(c, v)
 
+			authMethod, err := ssh.AuthMethod(v.GetString(identityFlag), c.OutOrStdout())
+			if err != nil {
+				log.Fatal("failed to create auth method: %s", err)
+			}
+
+			client, err := ssh.NewSSHClient(
+				v.GetString(hostFlag),
+				v.GetInt(portFlag),
+				v.GetString(usernameFlag),
+				authMethod,
+				filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"),
+			)
+			if err != nil {
+				log.Fatal("failed to create ssh client", "err", err)
+			}
+
+			a = api.New(client, c.OutOrStdout())
+			a.SetOut(c.OutOrStdout())
+
 			return nil
 		},
+		PersistentPostRun: func(c *cobra.Command, args []string) {
+			a.Close()
+		},
+	}
+
+	username := ""
+	currentUser, err := user.Current()
+	if err == nil {
+		username = currentUser.Username
 	}
 
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 	rootCmd.PersistentFlags().StringP(identityFlag, "i", "", "Path to SSH key")
+	rootCmd.PersistentFlags().StringP(usernameFlag, "u", username, "Username")
+	rootCmd.PersistentFlags().StringP(emailFlag, "e", "", "Email")
+	rootCmd.PersistentFlags().StringP(hostFlag, "d", "localhost", "Host")
+	rootCmd.PersistentFlags().IntP(portFlag, "p", 22, "Port")
+
 	rootCmd.MarkPersistentFlagRequired(identityFlag)
-	rootCmd.PersistentFlags().Set(identityFlag, v.GetString(identityFlag))
+	rootCmd.MarkPersistentFlagRequired(usernameFlag)
+	// rootCmd.MarkPersistentFlagRequired(emailFlag)
+	rootCmd.MarkPersistentFlagRequired(hostFlag)
+	rootCmd.MarkPersistentFlagRequired(portFlag)
 
 	bindFlags(rootCmd, v)
 
-	currentUser, err := user.Current()
-	if err != nil || currentUser.Username == "" {
-		log.Fatal("failed to determine username")
-	}
-
-	authMethod, err := ssh.AuthMethod(v.GetString(identityFlag), rootCmd.OutOrStdout())
-	if err != nil {
-		log.Fatal("failed to create auth method: %s", err)
-	}
-
-	client, err := ssh.NewSSHClient(
-		host,
-		port,
-		currentUser.Username,
-		authMethod,
-		filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"),
-	)
-	if err != nil {
-		log.Fatal("failed to create ssh client: %s", err)
-	}
-
-	a := api.New(client, rootCmd.OutOrStdout())
-	rootCmd.PersistentPostRun = func(c *cobra.Command, args []string) {
-		a.Close()
-	}
-
 	rootCmd.AddCommand(
-		registerCmd(a),
-		setCmd(a),
-		getCmd(a),
-		listCmd(a),
-		removeCmd(a),
+		registerCmd(),
+		setCmd(),
+		getCmd(),
+		listCmd(),
+		removeCmd(),
 	)
 
 	return rootCmd
 }
 
-func registerCmd(a api.API) *cobra.Command {
+func registerCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "register [flags]",
 		Short: "Register a user and key",
@@ -90,7 +104,7 @@ func registerCmd(a api.API) *cobra.Command {
 	}
 }
 
-func setCmd(a api.API) *cobra.Command {
+func setCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "set [flags] KEY VALUE",
 		Short:   "Set a key-value",
@@ -119,7 +133,7 @@ func setCmd(a api.API) *cobra.Command {
 	}
 }
 
-func getCmd(a api.API) *cobra.Command {
+func getCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "get [flags] KEY",
 		Short:   "Get a value from the store",
@@ -127,9 +141,11 @@ func getCmd(a api.API) *cobra.Command {
 		Example: "  syringe get username",
 		RunE: func(c *cobra.Command, args []string) error {
 			identity, _ := c.Flags().GetString(identityFlag)
-			privateKey, err := ssh.GetPrivateKey(identity, c.OutOrStderr(), term.ReadPassword)
+			privateKey, err := ssh.GetPrivateKey(
+				identity, c.OutOrStderr(), term.ReadPassword,
+			)
 			if err != nil {
-				return fmt.Errorf("get private key: %w", err)
+				return fmt.Errorf("failed to get private key from identity: %w", err)
 			}
 
 			decrypt := ssh.NewDecryptor(privateKey)
@@ -159,7 +175,7 @@ func getCmd(a api.API) *cobra.Command {
 	}
 }
 
-func removeCmd(a api.API) *cobra.Command {
+func removeCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "remove [flags] KEY",
 		Short:   "Remove a record from the store",
@@ -171,7 +187,7 @@ func removeCmd(a api.API) *cobra.Command {
 	}
 }
 
-func listCmd(a api.API) *cobra.Command {
+func listCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "list [flags]",
 		Short:   "List all records in store",

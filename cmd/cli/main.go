@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"os"
 
-	"github.com/charmbracelet/log"
 	"github.com/nixpig/syringe.sh/internal/cli"
 	"github.com/spf13/viper"
 )
@@ -15,11 +15,9 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 
-	v.SetDefault("identity", "/home/nixpig/.ssh/id_rsa_test")
-
 	ctx := context.Background()
 
 	if err := cli.New(v).ExecuteContext(ctx); err != nil {
-		log.Fatal("execute command", "err", err)
+		os.Exit(1)
 	}
 }

@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/nixpig/syringe.sh/pkg/ssh"
 )
@@ -18,44 +17,44 @@ type API interface {
 	Close() error
 }
 
-type hostAPI struct {
+type HostAPI struct {
 	// calls remote API over SSH
 	client *ssh.SSHClient
 	out    io.Writer
 }
 
-func New(client *ssh.SSHClient, out io.Writer) *hostAPI {
-	return &hostAPI{
+func New(client *ssh.SSHClient, out io.Writer) *HostAPI {
+	return &HostAPI{
 		client: client,
 		out:    out,
 	}
 }
 
-func (l *hostAPI) SetOut(w io.Writer) {
+func (l *HostAPI) SetOut(w io.Writer) {
 	l.out = w
 }
 
-func (l *hostAPI) Register() error {
-	return l.client.Run("register", os.Stdout)
+func (l *HostAPI) Register() error {
+	return l.client.Run("register", l.out)
 }
 
-func (l *hostAPI) Set(key, value string) error {
+func (l *HostAPI) Set(key, value string) error {
 	return l.client.Run(fmt.Sprintf("set %s %s", key, value), l.out)
 }
 
-func (l *hostAPI) Get(key string) error {
+func (l *HostAPI) Get(key string) error {
 	return l.client.Run(fmt.Sprintf("get %s", key), l.out)
 }
 
-func (l *hostAPI) List() error {
+func (l *HostAPI) List() error {
 	return l.client.Run("list", l.out)
 }
 
-func (l *hostAPI) Remove(key string) error {
+func (l *HostAPI) Remove(key string) error {
 	return l.client.Run(fmt.Sprintf("remove %s", key), l.out)
 }
 
-func (l *hostAPI) Close() error {
+func (l *HostAPI) Close() error {
 	l.client.Close()
 	return nil
 }
