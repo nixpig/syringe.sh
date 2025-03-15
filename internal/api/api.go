@@ -18,7 +18,6 @@ type API interface {
 }
 
 type HostAPI struct {
-	// calls remote API over SSH
 	client *ssh.SSHClient
 	out    io.Writer
 }

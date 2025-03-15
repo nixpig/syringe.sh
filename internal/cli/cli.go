@@ -8,7 +8,6 @@ import (
 	"os/user"
 	"path/filepath"
 
-	"github.com/charmbracelet/log"
 	"github.com/nixpig/syringe.sh/internal/api"
 	"github.com/nixpig/syringe.sh/pkg/ssh"
 	"github.com/spf13/cobra"
@@ -25,6 +24,7 @@ const (
 	portFlag     = "port"
 )
 
+// TODO: how can we avoid this global variable?
 var a *api.HostAPI
 
 func New(v *viper.Viper) *cobra.Command {
@@ -32,27 +32,47 @@ func New(v *viper.Viper) *cobra.Command {
 		Use:     "syringe",
 		Short:   "Encrypted key-value store",
 		Version: "",
+		// SilenceErrors: true,
 		PersistentPreRunE: func(c *cobra.Command, args []string) error {
 			applyFlags(c, v)
 
-			authMethod, err := ssh.AuthMethod(v.GetString(identityFlag), c.OutOrStdout())
+			identity, _ := c.Flags().GetString(identityFlag)
+			if identity == "" {
+				return fmt.Errorf("no identity")
+			}
+
+			host, _ := c.Flags().GetString(hostFlag)
+			if host == "" {
+				return fmt.Errorf("no host")
+			}
+
+			port, _ := c.Flags().GetInt(portFlag)
+			if port < 1 || port > 65535 {
+				return fmt.Errorf("invalid port number")
+			}
+
+			username, _ := c.Flags().GetString(usernameFlag)
+			if username == "" {
+				return fmt.Errorf("username is empty")
+			}
+
+			authMethod, err := ssh.AuthMethod(identity, c.OutOrStdout())
 			if err != nil {
-				log.Fatal("failed to create auth method: %s", err)
+				return fmt.Errorf("failed to create auth method: %w", err)
 			}
 
 			client, err := ssh.NewSSHClient(
-				v.GetString(hostFlag),
-				v.GetInt(portFlag),
-				v.GetString(usernameFlag),
+				host,
+				port,
+				username,
 				authMethod,
 				filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"),
 			)
 			if err != nil {
-				log.Fatal("failed to create ssh client", "err", err)
+				fmt.Errorf("failed to create ssh client: %w", err)
 			}
 
 			a = api.New(client, c.OutOrStdout())
-			a.SetOut(c.OutOrStdout())
 
 			return nil
 		},
@@ -73,12 +93,6 @@ func New(v *viper.Viper) *cobra.Command {
 	rootCmd.PersistentFlags().StringP(emailFlag, "e", "", "Email")
 	rootCmd.PersistentFlags().StringP(hostFlag, "d", "localhost", "Host")
 	rootCmd.PersistentFlags().IntP(portFlag, "p", 22, "Port")
-
-	rootCmd.MarkPersistentFlagRequired(identityFlag)
-	rootCmd.MarkPersistentFlagRequired(usernameFlag)
-	// rootCmd.MarkPersistentFlagRequired(emailFlag)
-	rootCmd.MarkPersistentFlagRequired(hostFlag)
-	rootCmd.MarkPersistentFlagRequired(portFlag)
 
 	bindFlags(rootCmd, v)
 
@@ -141,6 +155,7 @@ func getCmd() *cobra.Command {
 		Example: "  syringe get username",
 		RunE: func(c *cobra.Command, args []string) error {
 			identity, _ := c.Flags().GetString(identityFlag)
+
 			privateKey, err := ssh.GetPrivateKey(
 				identity, c.OutOrStderr(), term.ReadPassword,
 			)

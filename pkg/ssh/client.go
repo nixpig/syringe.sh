@@ -1,6 +1,7 @@
 package ssh
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net"
@@ -33,9 +34,13 @@ func (s *SSHClient) Run(cmd string, out io.Writer) error {
 
 	defer session.Close()
 
-	output, err := session.CombinedOutput(cmd)
-	if err != nil {
-		return fmt.Errorf("%s", output)
+	e := bytes.Buffer{}
+
+	session.Stdout = out
+	session.Stderr = io.Writer(&e)
+
+	if err := session.Run(cmd); err != nil {
+		return fmt.Errorf(e.String())
 	}
 
 	return nil
