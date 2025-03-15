@@ -142,7 +142,7 @@ func main() {
 
 	<-done
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
 	if err := s.Shutdown(ctx); err != nil && err != ssh.ErrServerClosed {

@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
@@ -15,21 +14,20 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/nixpig/syringe.sh/database"
 	"github.com/nixpig/syringe.sh/internal/stores"
+	"github.com/spf13/cobra"
 )
 
-const (
-	commandTimeout = time.Second * 5
-)
+// TODO: better strategy for logging, writing errors and exiting
+// TODO: better logic for commands and switching - maybe something like Cobra would be better?
 
 func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
-			cmd := sess.Command()
-			if len(cmd) == 0 {
-				sess.Stderr().Write([]byte("Error: no command specified"))
-				sess.Exit(1)
-				return
-			}
+			cmd := rootCmd(sess)
+			cmd.SetArgs(sess.Command())
+			cmd.SetIn(sess)
+			cmd.SetOut(sess)
+			cmd.SetErr(sess.Stderr())
 
 			sessionID := sess.Context().SessionID()
 			username := sess.Context().User()
@@ -63,181 +61,151 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 				}
 
 				tenantStore := stores.NewTenantStore(sess.Context(), db)
-
-				switch cmd[0] {
-				case "set":
-					if len(cmd) != 3 {
-						sess.Stderr().Write([]byte(fmt.Sprintf("Error: 'set' accepts 2 args, received %d", len(cmd)-1)))
-						sess.Exit(1)
-						return
-					}
-
-					if err := setCmd(tenantStore, cmd[1], cmd[2]); err != nil {
-						log.Debug("set", "session", sessionID, "err", err)
-						sess.Stderr().Write([]byte(fmt.Sprintf("Error: failed to set '%s'", cmd[1])))
-						sess.Exit(1)
-						return
-					}
-					next(sess)
-					return
-
-				case "get":
-					if len(cmd) != 2 {
-						sess.Stderr().Write([]byte(fmt.Sprintf("Error: 'get' accepts 1 args, received %d", len(cmd)-1)))
-						sess.Exit(1)
-						return
-					}
-
-					value, err := getCmd(tenantStore, cmd[1])
-					if err != nil {
-						log.Debug("get", "session", sessionID, "key", cmd[1], "err", err)
-						sess.Stderr().Write([]byte(fmt.Sprintf("Error: failed to get '%s'", cmd[1])))
-						sess.Exit(1)
-						return
-					}
-
-					sess.Write([]byte(value))
-					next(sess)
-					return
-
-				case "remove":
-					if len(cmd) != 2 {
-						sess.Stderr().Write([]byte(fmt.Sprintf("Error: 'remove' accepts 1 args, received %d", len(cmd)-1)))
-						sess.Exit(1)
-						return
-					}
-
-					if err := removeCmd(tenantStore, cmd[1]); err != nil {
-						log.Debug("remove", "session", sessionID, "key", cmd[1], "err", err)
-						sess.Stderr().Write([]byte(fmt.Sprintf("Error: failed to remove '%s'", cmd[1])))
-						sess.Exit(1)
-						return
-					}
-
-					next(sess)
-					return
-
-				case "list":
-					if len(cmd) != 1 {
-						sess.Stderr().Write([]byte(fmt.Sprintf("Error: 'list' accepts 0 args, received %d", len(cmd)-1)))
-						sess.Exit(1)
-						return
-					}
-
-					list, err := listCmd(tenantStore)
-					if err != nil {
-						log.Debug("list", "session", sessionID, "err", err)
-						sess.Stderr().Write([]byte("Error: failed to list"))
-						sess.Exit(1)
-						return
-					}
-					sess.Write([]byte(strings.Join(list, "\n")))
-					next(sess)
-					return
-
-				default:
-					sess.Stderr().Write([]byte(fmt.Sprintf("Error: unknown command '%s'", cmd[0])))
-					sess.Exit(1)
-					return
-
-				}
-			}
-
-			switch cmd[0] {
-			case "register":
-				if err := registerCmd(
+				cmd.AddCommand(
+					setCmd(tenantStore),
+					getCmd(tenantStore),
+					listCmd(tenantStore),
+					removeCmd(tenantStore),
+				)
+			} else {
+				cmd.AddCommand(registerCmd(
 					systemStore,
 					username,
 					email,
 					publicKeyHash,
-				); err != nil {
-					log.Debug(
-						"register",
-						"session", sessionID,
-						"username", username,
-						"email", email,
-						"publicKeyHash", publicKeyHash,
-						"err", err,
-					)
-					sess.Stderr().Write([]byte("Error: failed to register"))
-					sess.Exit(1)
-					return
+				))
+			}
+
+			done := make(chan bool, 1)
+
+			go func() {
+				if err := cmd.ExecuteContext(sess.Context()); err != nil {
+					log.Error("cmd", "session", sessionID, "err", err)
+					sess.Stderr().Write([]byte(err.Error()))
+					done <- false
 				}
-				sess.Exit(0)
-				return
-			default:
-				sess.Stderr().Write([]byte("Error: you are not authenticated"))
+
+				done <- true
+			}()
+
+			end := <-done
+			if end {
+				next(sess)
+			} else {
 				sess.Exit(1)
 				return
 			}
+
 		}
 	}
 }
 
-func setCmd(s *stores.TenantStore, key, value string) error {
-	if err := s.SetItem(&stores.Item{
-		Key:   key,
-		Value: value,
-	}); err != nil {
-		return err
+func rootCmd(sess ssh.Session) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:           "syringe",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(c *cobra.Command, args []string) error {
+			return fmt.Errorf("no command specified")
+		},
 	}
 
-	return nil
+	cmd.CompletionOptions.HiddenDefaultCmd = true
+
+	return cmd
 }
 
-func getCmd(s *stores.TenantStore, key string) (string, error) {
-	item, err := s.GetItemByKey(key)
-	if err != nil {
-		return "", err
-	}
+func setCmd(s *stores.TenantStore) *cobra.Command {
+	return &cobra.Command{
+		Use:  "set",
+		Args: cobra.ExactArgs(2),
+		RunE: func(c *cobra.Command, args []string) error {
+			if err := s.SetItem(&stores.Item{
+				Key:   args[0],
+				Value: args[1],
+			}); err != nil {
+				return err
+			}
 
-	return item.Value, err
+			return nil
+		},
+	}
 }
 
-func listCmd(s *stores.TenantStore) ([]string, error) {
-	items, err := s.ListItems()
-	if err != nil {
-		return []string{}, err
-	}
+func getCmd(s *stores.TenantStore) *cobra.Command {
+	return &cobra.Command{
+		Use:  "get",
+		Args: cobra.ExactArgs(1),
+		RunE: func(c *cobra.Command, args []string) error {
+			item, err := s.GetItemByKey(args[0])
+			if err != nil {
+				return err
+			}
 
-	keys := make([]string, len(items))
-	for i, item := range items {
-		keys[i] = item.Key
+			c.OutOrStdout().Write([]byte(item.Value))
+			return nil
+		},
 	}
-
-	return keys, nil
 }
 
-func removeCmd(s *stores.TenantStore, key string) error {
-	if err := s.RemoveItemByKey(key); err != nil {
-		return err
-	}
+func listCmd(s *stores.TenantStore) *cobra.Command {
+	return &cobra.Command{
+		Use:  "list",
+		Args: cobra.ExactArgs(0),
+		RunE: func(c *cobra.Command, args []string) error {
+			items, err := s.ListItems()
+			if err != nil {
+				return err
+			}
 
-	return nil
+			keys := make([]string, len(items))
+			for i, item := range items {
+				keys[i] = item.Key
+			}
+
+			c.OutOrStdout().Write([]byte(strings.Join(keys, "\n")))
+			return nil
+		},
+	}
+}
+
+func removeCmd(s *stores.TenantStore) *cobra.Command {
+	return &cobra.Command{
+		Use:  "remove",
+		Args: cobra.ExactArgs(1),
+		RunE: func(c *cobra.Command, args []string) error {
+			if err := s.RemoveItemByKey(args[0]); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	}
 }
 
 func registerCmd(
 	s *stores.SystemStore,
 	username, email, publicKeyHash string,
-) error {
-	if _, err := s.CreateUser(&stores.User{
-		Username:      username,
-		Email:         email,
-		PublicKeySHA1: publicKeyHash,
-		Verified:      false,
-	}); err != nil {
-		return err
+) *cobra.Command {
+	return &cobra.Command{
+		Use:  "register",
+		Args: cobra.ExactArgs(0),
+		RunE: func(c *cobra.Command, args []string) error {
+			if _, err := s.CreateUser(&stores.User{
+				Username:      username,
+				Email:         email,
+				PublicKeySHA1: publicKeyHash,
+				Verified:      false,
+			}); err != nil {
+				return err
+			}
+
+			return nil
+		},
 	}
-
-	// TODO: add email verification
-
-	// Note: tenant database will just be created automatically if it doesn't
-	// exist when first command is run
-	// ...see tenantDB function
-
-	return nil
 }
 
+// TODO: move this somewhere sensible!
 func tenantDB(publicKeyHash, sessionID string) (*sql.DB, error) {
 	tenantDBDir := os.Getenv("SYRINGE_DB_TENANT_DIR")
 	tenantDBName := fmt.Sprintf("%x.db", publicKeyHash)
