@@ -63,7 +63,10 @@ func New(v *viper.Viper) *cobra.Command {
 		log.Fatal("failed to create ssh client: %s", err)
 	}
 
-	a := api.New(client, nil)
+	a := api.New(client, rootCmd.OutOrStdout())
+	rootCmd.PersistentPostRun = func(c *cobra.Command, args []string) {
+		a.Close()
+	}
 
 	rootCmd.AddCommand(
 		registerCmd(a),
@@ -82,8 +85,6 @@ func registerCmd(a api.API) *cobra.Command {
 		Short: "Register a user and key",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(c *cobra.Command, args []string) error {
-			defer a.Close()
-
 			return a.Register()
 		},
 	}
@@ -96,8 +97,6 @@ func setCmd(a api.API) *cobra.Command {
 		Args:    cobra.ExactArgs(2),
 		Example: "  syringe set username nixpig",
 		RunE: func(c *cobra.Command, args []string) error {
-			a.SetOut(c.OutOrStderr())
-			defer a.Close()
 			identity, _ := c.Flags().GetString(identityFlag)
 			publicKey, err := ssh.GetPublicKey(identity + ".pub")
 			if err != nil {
@@ -127,7 +126,6 @@ func getCmd(a api.API) *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		Example: "  syringe get username",
 		RunE: func(c *cobra.Command, args []string) error {
-			defer a.Close()
 			identity, _ := c.Flags().GetString(identityFlag)
 			privateKey, err := ssh.GetPrivateKey(identity, c.OutOrStderr(), term.ReadPassword)
 			if err != nil {
@@ -168,9 +166,6 @@ func removeCmd(a api.API) *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		Example: "  syringe remove username",
 		RunE: func(c *cobra.Command, args []string) error {
-			a.SetOut(c.OutOrStdout())
-			defer a.Close()
-
 			return a.Remove(args[0])
 		},
 	}
@@ -183,9 +178,6 @@ func listCmd(a api.API) *cobra.Command {
 		Args:    cobra.ExactArgs(0),
 		Example: "  syringe list",
 		RunE: func(c *cobra.Command, args []string) error {
-			a.SetOut(c.OutOrStdout())
-			defer a.Close()
-
 			return a.List()
 		},
 	}
