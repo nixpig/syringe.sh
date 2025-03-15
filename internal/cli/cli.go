@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net/mail"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -29,31 +30,41 @@ var a *api.HostAPI
 
 func New(v *viper.Viper) *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:     "syringe",
-		Short:   "Encrypted key-value store",
-		Version: "",
-		// SilenceErrors: true,
+		Use:          "syringe",
+		Short:        "Encrypted key-value store",
+		Version:      "",
+		SilenceUsage: true,
 		PersistentPreRunE: func(c *cobra.Command, args []string) error {
 			applyFlags(c, v)
 
 			identity, _ := c.Flags().GetString(identityFlag)
 			if identity == "" {
+				c.Help()
 				return fmt.Errorf("no identity")
 			}
 
 			host, _ := c.Flags().GetString(hostFlag)
 			if host == "" {
+				c.Help()
 				return fmt.Errorf("no host")
 			}
 
 			port, _ := c.Flags().GetInt(portFlag)
 			if port < 1 || port > 65535 {
+				c.Help()
 				return fmt.Errorf("invalid port number")
 			}
 
 			username, _ := c.Flags().GetString(usernameFlag)
 			if username == "" {
+				c.Help()
 				return fmt.Errorf("username is empty")
+			}
+
+			email, _ := c.Flags().GetString(emailFlag)
+			if _, err := mail.ParseAddress(email); err != nil {
+				c.Help()
+				return fmt.Errorf("invalid email")
 			}
 
 			authMethod, err := ssh.AuthMethod(identity, c.OutOrStdout())
