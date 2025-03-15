@@ -23,6 +23,7 @@ import (
 func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
+			log.Debug(sess.RawCommand())
 			cmd := rootCmd(sess)
 			cmd.SetArgs(sess.Command())
 			cmd.SetIn(sess)

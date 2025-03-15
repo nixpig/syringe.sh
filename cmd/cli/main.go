@@ -10,11 +10,16 @@ import (
 
 func main() {
 	v := viper.New()
+	// TODO: sort out config properly
 	// if err := initialiseConfig(os.Getenv("SYRINGE_CONFIG_PATH"), v); err != nil {
 	// 	log.Fatal(err)
 	// }
 
-	if err := cli.New(v).ExecuteContext(context.Background()); err != nil {
+	v.SetDefault("identity", "/home/nixpig/.ssh/id_rsa_test")
+
+	ctx := context.Background()
+
+	if err := cli.New(v).ExecuteContext(ctx); err != nil {
 		log.Fatal("execute command", "err", err)
 	}
 }

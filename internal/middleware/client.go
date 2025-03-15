@@ -9,7 +9,7 @@ import (
 
 // TODO: read allowed clients from config or database?
 var allowedClients = []string{
-	"SSH-2.0-Syringe_0.0.4",
+	"SSH-2.0-Syringe",
 	"SSH-2.0-OpenSSH_9.9",
 }
 
