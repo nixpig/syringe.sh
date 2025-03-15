@@ -1,6 +1,7 @@
 package stores_test
 
 import (
+	"context"
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
@@ -49,7 +50,8 @@ func TestTenantStore(t *testing.T) {
 			}
 			defer db.Close()
 
-			store := stores.NewTenantStore(db)
+			ctx := context.Background()
+			store := stores.NewTenantStore(ctx, db)
 
 			fn(t, store, mock)
 		})
