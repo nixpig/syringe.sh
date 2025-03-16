@@ -4,39 +4,65 @@
 
 # 🔐 `syringe.sh`
 
-Encrypted, passwordless, embeddable key-value store.
+Encrypted key-value store over SSH.
 
 > [!CAUTION]
-> This is a work in progress.
-> You **SHOULD NOT** be using this to store sensitive data at this time.
+> This is an experimental work in progress. **DO NOT** use to store sensitive data.
 
+SSH (Secure Shell) is a cryptographic network protocol for secure communication between computers over an unsecured network that uses keys for secure authentication. If you've ever `ssh`'d into a remote machine or used CLI tools like `git` then you've used SSH.
 
-##
+syringe.sh uses SSH as the protocol for communication between the client (your machine) and the server (in the cloud).
 
+Your public key is uploaded to the server. Your private key is then used to authenticate when you connect.
 
+Data is encrypted locally using your private key before being sent to the server and stored in a separate database tied to your public key.
 
-- `syringe set foo bar` - Set an item named 'foo' with value 'bar'
-- `syringe get foo` - Get the item named 'foo'
-- `syringe remove foo` - Rmove the item named 'foo'
-- `syringe list` - List all items
+Data can only be decrypted locally using your private key. Without your private key, nobody can decrypt and read your data.
 
-- `--identity` - Specify path the to SSH key to use, defaults to: 
-- `--store` - Specify path to the store to use, defaults to: 
-- `--config` - Specify path to a config file, defaults to: 
-
-Precedence of config and flags.
-- Config _not_ required, but if it's present then use it.
-- Environment variables not required, but if they're present then use them.
-
-## ONLY DEAL WITH FLAGS AND DEFAULT VALUES FOR THE MOMENT!!
-- Flags overrides all.
-
-## Default values
-- identity = whatever is currently loaded in the ssh keyring
-- store = $HOME/.syringe/{id}.db
-
-Config: 
-```env
-identity=
-store=
 ```
+┌────────────────────────────────┐
+│ STDIN                          │
+│ syringe secret set SKEY s3cr3t │
+└─────┬──────────────────────────┘
+      │
+  ┌───▼────────────────┐                        ┌─────────────────┐
+  │      ┌────────────┐│       Encrypted        │┌───────┐        │
+  │ CLI  │ 🔐 Encrypt ├─────────────────────────►│ Store │ Server │
+  │      └────────────┘│          SSH           │└───┬───┘        │
+  └────────────────────┘                        └────│────────────┘
+                                                ┌────▼────┐
+                                                │ User DB │┐  K: SKEY
+                                                └┬────────┘│  V: <encrypted>
+                                                 └─────────┘
+
+┌─────────────────────────┐
+│ STDIN                   │
+│ syringe secret get SKEY │
+└─────┬───────────────────┘
+      │
+  ┌───▼────────────────┐                        ┌─────────────────┐
+  │      ┌────────────┐│       Encrypted        │┌───────┐        │
+  │ CLI  │ 🔓️ Decrypt │◄─────────────────────────│ Store │ Server │
+  │      └────┬───────┘│          SSH           │└───────┘        │
+  └───────────│────────┘                        └────▲────────────┘
+         ┌────▼─────┐                           ┌────│────┐
+         │ STDOUT   │                           │ User DB │┐  K: SKEY
+         │ s3cr3t   │                           └┬────────┘│  V: <encrypted>
+         └──────────┘                            └─────────┘
+
+```
+
+## A quick demo
+
+![demo of syringe.sh](demo.gif)
+
+
+## CLI
+
+### Supported SSH key types
+
+The following key types are supported for the syringe client.
+
+- RSA
+
+
