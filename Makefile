@@ -62,6 +62,10 @@ clean:
 	rm -rf tmp *.out
 	go clean
 
+.PHONY: vhs
+vhs:
+	vhs demo.tape
+
 .PHONY: env
 env: 
 	# Environment variables

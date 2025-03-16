@@ -9,6 +9,8 @@ Encrypted key-value store over SSH.
 > [!CAUTION]
 > This is an experimental work in progress. **DO NOT** use to store sensitive data.
 
+![demo of syringe.sh](demo.gif)
+
 SSH (Secure Shell) is a cryptographic network protocol for secure communication between computers over an unsecured network that uses keys for secure authentication. If you've ever `ssh`'d into a remote machine or used CLI tools like `git` then you've used SSH.
 
 syringe.sh uses SSH as the protocol for communication between the client (your machine) and the server (in the cloud).
@@ -52,9 +54,6 @@ Data can only be decrypted locally using your private key. Without your private 
 
 ```
 
-## A quick demo
-
-![demo of syringe.sh](demo.gif)
 
 
 ## CLI
