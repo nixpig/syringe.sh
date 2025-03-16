@@ -22,11 +22,12 @@ type HostAPI struct {
 	out    io.Writer
 }
 
-func New(client *ssh.SSHClient, out io.Writer) *HostAPI {
-	return &HostAPI{
-		client: client,
-		out:    out,
-	}
+func New() *HostAPI {
+	return &HostAPI{}
+}
+
+func (l *HostAPI) SetClient(client *ssh.SSHClient) {
+	l.client = client
 }
 
 func (l *HostAPI) SetOut(w io.Writer) {

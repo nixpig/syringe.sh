@@ -30,10 +30,9 @@ const (
 	defaultPort = 2323
 )
 
-// TODO: how can we avoid this global variable?
-var a *api.HostAPI
-
 func New(v *viper.Viper) *cobra.Command {
+	a := api.New()
+
 	rootCmd := &cobra.Command{
 		Use:          "syringe",
 		Short:        "Encrypted key-value store",
@@ -103,7 +102,8 @@ func New(v *viper.Viper) *cobra.Command {
 				return fmt.Errorf("failed to create ssh client: %w", err)
 			}
 
-			a = api.New(client, c.OutOrStdout())
+			a.SetClient(client)
+			a.SetOut(c.OutOrStdout())
 
 			return nil
 		},
@@ -135,17 +135,17 @@ func New(v *viper.Viper) *cobra.Command {
 	bindFlags(rootCmd, v)
 
 	rootCmd.AddCommand(
-		registerCmd(v),
-		setCmd(v),
-		getCmd(v),
-		listCmd(v),
-		removeCmd(v),
+		registerCmd(v, a),
+		setCmd(v, a),
+		getCmd(v, a),
+		listCmd(v, a),
+		removeCmd(v, a),
 	)
 
 	return rootCmd
 }
 
-func registerCmd(v *viper.Viper) *cobra.Command {
+func registerCmd(v *viper.Viper, a *api.HostAPI) *cobra.Command {
 	return &cobra.Command{
 		Use:   "register [flags]",
 		Short: "Register a user and key",
@@ -156,7 +156,7 @@ func registerCmd(v *viper.Viper) *cobra.Command {
 	}
 }
 
-func setCmd(v *viper.Viper) *cobra.Command {
+func setCmd(v *viper.Viper, a *api.HostAPI) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set [flags] KEY VALUE",
 		Short:   "Set a key-value",
@@ -185,7 +185,7 @@ func setCmd(v *viper.Viper) *cobra.Command {
 	}
 }
 
-func getCmd(v *viper.Viper) *cobra.Command {
+func getCmd(v *viper.Viper, a *api.HostAPI) *cobra.Command {
 	return &cobra.Command{
 		Use:     "get [flags] KEY",
 		Short:   "Get a value from the store",
@@ -228,7 +228,7 @@ func getCmd(v *viper.Viper) *cobra.Command {
 	}
 }
 
-func removeCmd(v *viper.Viper) *cobra.Command {
+func removeCmd(v *viper.Viper, a *api.HostAPI) *cobra.Command {
 	return &cobra.Command{
 		Use:     "remove [flags] KEY",
 		Short:   "Remove a record from the store",
@@ -240,7 +240,7 @@ func removeCmd(v *viper.Viper) *cobra.Command {
 	}
 }
 
-func listCmd(v *viper.Viper) *cobra.Command {
+func listCmd(v *viper.Viper, a *api.HostAPI) *cobra.Command {
 	return &cobra.Command{
 		Use:     "list [flags]",
 		Short:   "List all records in store",
