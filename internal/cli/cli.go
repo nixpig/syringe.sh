@@ -100,7 +100,7 @@ func New(v *viper.Viper) *cobra.Command {
 				filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"),
 			)
 			if err != nil {
-				fmt.Errorf("failed to create ssh client: %w", err)
+				return fmt.Errorf("failed to create ssh client: %w", err)
 			}
 
 			a = api.New(client, c.OutOrStdout())

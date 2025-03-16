@@ -40,7 +40,7 @@ func (s *SSHClient) Run(cmd string, out io.Writer) error {
 	session.Stderr = io.Writer(&e)
 
 	if err := session.Run(cmd); err != nil {
-		return fmt.Errorf(e.String())
+		return fmt.Errorf("%s", e.String())
 	}
 
 	return nil
