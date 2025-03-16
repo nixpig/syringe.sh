@@ -23,6 +23,7 @@ const (
 	emailFlag    = "email"
 	hostFlag     = "host"
 	portFlag     = "port"
+	configFlag   = "config"
 )
 
 // TODO: how can we avoid this global variable?
@@ -37,31 +38,45 @@ func New(v *viper.Viper) *cobra.Command {
 		PersistentPreRunE: func(c *cobra.Command, args []string) error {
 			applyFlags(c, v)
 
-			identity, _ := c.Flags().GetString(identityFlag)
+			v.SetConfigType("env")
+			configPath, _ := c.Flags().GetString(configFlag)
+			if configPath != "" {
+				v.SetConfigFile(configPath)
+			} else {
+				configDir, _ := os.UserConfigDir()
+				if configDir != "" {
+					v.AddConfigPath(filepath.Join(configDir, ".syringe"))
+					v.SetConfigName("config")
+				}
+			}
+
+			v.ReadInConfig()
+
+			identity := v.GetString(identityFlag)
 			if identity == "" {
 				c.Help()
 				return fmt.Errorf("no identity")
 			}
 
-			host, _ := c.Flags().GetString(hostFlag)
+			host := v.GetString(hostFlag)
 			if host == "" {
 				c.Help()
 				return fmt.Errorf("no host")
 			}
 
-			port, _ := c.Flags().GetInt(portFlag)
+			port := v.GetInt(portFlag)
 			if port < 1 || port > 65535 {
 				c.Help()
 				return fmt.Errorf("invalid port number")
 			}
 
-			username, _ := c.Flags().GetString(usernameFlag)
+			username := v.GetString(usernameFlag)
 			if username == "" {
 				c.Help()
 				return fmt.Errorf("username is empty")
 			}
 
-			email, _ := c.Flags().GetString(emailFlag)
+			email := v.GetString(emailFlag)
 			if _, err := mail.ParseAddress(email); err != nil {
 				c.Help()
 				return fmt.Errorf("invalid email")
@@ -104,6 +119,7 @@ func New(v *viper.Viper) *cobra.Command {
 	rootCmd.PersistentFlags().StringP(emailFlag, "e", "", "Email")
 	rootCmd.PersistentFlags().StringP(hostFlag, "d", "localhost", "Host")
 	rootCmd.PersistentFlags().IntP(portFlag, "p", 22, "Port")
+	rootCmd.PersistentFlags().StringP(configFlag, "c", "", "Config file location")
 
 	bindFlags(rootCmd, v)
 
