@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/nixpig/syringe.sh/internal/api"
 	"github.com/nixpig/syringe.sh/pkg/ssh"
@@ -24,6 +25,9 @@ const (
 	hostFlag     = "host"
 	portFlag     = "port"
 	configFlag   = "config"
+
+	defaultHost = "ssh.syringe.sh"
+	defaultPort = 2323
 )
 
 // TODO: how can we avoid this global variable?
@@ -38,18 +42,9 @@ func New(v *viper.Viper) *cobra.Command {
 		PersistentPreRunE: func(c *cobra.Command, args []string) error {
 			applyFlags(c, v)
 
+			configPath := v.GetString(configFlag)
 			v.SetConfigType("env")
-			configPath, _ := c.Flags().GetString(configFlag)
-			if configPath != "" {
-				v.SetConfigFile(configPath)
-			} else {
-				configDir, _ := os.UserConfigDir()
-				if configDir != "" {
-					v.AddConfigPath(filepath.Join(configDir, ".syringe"))
-					v.SetConfigName("config")
-				}
-			}
-
+			v.SetConfigFile(configPath)
 			v.ReadInConfig()
 
 			identity := v.GetString(identityFlag)
@@ -77,6 +72,16 @@ func New(v *viper.Viper) *cobra.Command {
 			}
 
 			email := v.GetString(emailFlag)
+			if email == "" {
+				f, err := os.ReadFile(identity + ".pub")
+				if err == nil {
+					parts := strings.Split(string(f), " ")
+					if len(parts) > 0 {
+						email = strings.TrimSpace(parts[len(parts)-1])
+					}
+				}
+
+			}
 			if _, err := mail.ParseAddress(email); err != nil {
 				c.Help()
 				return fmt.Errorf("invalid email")
@@ -107,34 +112,40 @@ func New(v *viper.Viper) *cobra.Command {
 		},
 	}
 
-	username := ""
+	defaultUsername := ""
 	currentUser, err := user.Current()
 	if err == nil {
-		username = currentUser.Username
+		defaultUsername = currentUser.Username
+	}
+
+	defaultConfigPath := ""
+	configDir, _ := os.UserConfigDir()
+	if configDir != "" {
+		defaultConfigPath = filepath.Join(configDir, "syringe.cfg")
 	}
 
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 	rootCmd.PersistentFlags().StringP(identityFlag, "i", "", "Path to SSH key")
-	rootCmd.PersistentFlags().StringP(usernameFlag, "u", username, "Username")
+	rootCmd.PersistentFlags().StringP(usernameFlag, "u", defaultUsername, "Username")
 	rootCmd.PersistentFlags().StringP(emailFlag, "e", "", "Email")
-	rootCmd.PersistentFlags().StringP(hostFlag, "d", "localhost", "Host")
-	rootCmd.PersistentFlags().IntP(portFlag, "p", 22, "Port")
-	rootCmd.PersistentFlags().StringP(configFlag, "c", "", "Config file location")
+	rootCmd.PersistentFlags().StringP(hostFlag, "d", defaultHost, "Host")
+	rootCmd.PersistentFlags().IntP(portFlag, "p", defaultPort, "Port")
+	rootCmd.PersistentFlags().StringP(configFlag, "c", defaultConfigPath, "Config file location")
 
 	bindFlags(rootCmd, v)
 
 	rootCmd.AddCommand(
-		registerCmd(),
-		setCmd(),
-		getCmd(),
-		listCmd(),
-		removeCmd(),
+		registerCmd(v),
+		setCmd(v),
+		getCmd(v),
+		listCmd(v),
+		removeCmd(v),
 	)
 
 	return rootCmd
 }
 
-func registerCmd() *cobra.Command {
+func registerCmd(v *viper.Viper) *cobra.Command {
 	return &cobra.Command{
 		Use:   "register [flags]",
 		Short: "Register a user and key",
@@ -145,14 +156,14 @@ func registerCmd() *cobra.Command {
 	}
 }
 
-func setCmd() *cobra.Command {
+func setCmd(v *viper.Viper) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set [flags] KEY VALUE",
 		Short:   "Set a key-value",
 		Args:    cobra.ExactArgs(2),
 		Example: "  syringe set username nixpig",
 		RunE: func(c *cobra.Command, args []string) error {
-			identity, _ := c.Flags().GetString(identityFlag)
+			identity := v.GetString(identityFlag)
 			publicKey, err := ssh.GetPublicKey(identity + ".pub")
 			if err != nil {
 				return fmt.Errorf("get public key: %w", err)
@@ -174,14 +185,14 @@ func setCmd() *cobra.Command {
 	}
 }
 
-func getCmd() *cobra.Command {
+func getCmd(v *viper.Viper) *cobra.Command {
 	return &cobra.Command{
 		Use:     "get [flags] KEY",
 		Short:   "Get a value from the store",
 		Args:    cobra.ExactArgs(1),
 		Example: "  syringe get username",
 		RunE: func(c *cobra.Command, args []string) error {
-			identity, _ := c.Flags().GetString(identityFlag)
+			identity := v.GetString(identityFlag)
 
 			privateKey, err := ssh.GetPrivateKey(
 				identity, c.OutOrStderr(), term.ReadPassword,
@@ -217,7 +228,7 @@ func getCmd() *cobra.Command {
 	}
 }
 
-func removeCmd() *cobra.Command {
+func removeCmd(v *viper.Viper) *cobra.Command {
 	return &cobra.Command{
 		Use:     "remove [flags] KEY",
 		Short:   "Remove a record from the store",
@@ -229,7 +240,7 @@ func removeCmd() *cobra.Command {
 	}
 }
 
-func listCmd() *cobra.Command {
+func listCmd(v *viper.Viper) *cobra.Command {
 	return &cobra.Command{
 		Use:     "list [flags]",
 		Short:   "List all records in store",
