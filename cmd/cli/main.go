@@ -10,7 +10,7 @@ import (
 
 func main() {
 	v := viper.New()
-	// TODO: sort out config properly
+	// TODO: sort out server config properly
 	// if err := initialiseConfig(os.Getenv("SYRINGE_CONFIG_PATH"), v); err != nil {
 	// 	log.Fatal(err)
 	// }

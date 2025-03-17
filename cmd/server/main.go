@@ -30,7 +30,8 @@ const (
 	tenantDBEnv = "SYRINGE_DB_TENANT_DIR"
 )
 
-// TODO: store allowed key types in database??
+var maxTimeout = 10 * time.Second
+
 var allowedKeyTypes = []string{
 	"ssh-rsa",
 	"ssh-ed25519",
@@ -73,7 +74,6 @@ func main() {
 	}
 
 	dbPath := filepath.Join(dbDir, "system.db")
-	// TODO: make this a connection pool?
 	db, err := database.NewConnection(dbPath)
 	if err != nil {
 		log.Fatal(
@@ -115,7 +115,7 @@ func main() {
 	s, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, port)),
 		wish.WithHostKeyPath(key),
-		wish.WithMaxTimeout(time.Second*10), // TODO: make timeout global config?
+		wish.WithMaxTimeout(maxTimeout),
 		wish.WithPublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
 			return slices.Contains(allowedKeyTypes, key.Type())
 		}),

@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/ssh"
 )
 
-// TODO: read allowed clients from config or database?
 var allowedClients = []string{
 	"SSH-2.0-Syringe",
 }

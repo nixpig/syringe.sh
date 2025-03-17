@@ -79,7 +79,6 @@ func New(v *viper.Viper) *cobra.Command {
 						email = strings.TrimSpace(parts[len(parts)-1])
 					}
 				}
-
 			}
 			if _, err := mail.ParseAddress(email); err != nil {
 				c.Help()

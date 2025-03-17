@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/mail"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,20 +19,20 @@ import (
 )
 
 // TODO: better strategy for logging, writing errors and exiting
-// TODO: better logic for commands and switching when register should/shouldn't be available
 
 func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 	return func(next ssh.Handler) ssh.Handler {
 		return func(sess ssh.Session) {
 			log.Debug(sess.RawCommand())
-			cmd := rootCmd(sess)
+			cmd := rootCmd()
 			cmd.SetArgs(sess.Command())
 			cmd.SetIn(sess)
 			cmd.SetOut(sess)
 			cmd.SetErr(sess.Stderr())
 
 			sessionID := sess.Context().SessionID()
-			username := sess.Context().User()
+
+			sess.Context().SetValue(contextKeyUsername, sess.Context().User())
 
 			publicKeyHash, ok := sess.Context().Value(contextKeyHash).(string)
 			if !ok {
@@ -39,43 +40,23 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 				sess.Exit(1)
 			}
 
-			email, ok := sess.Context().Value(contextKeyEmail).(string)
-			if !ok {
-				sess.Stderr().Write([]byte("failed to get email"))
+			db, err := tenantDB(publicKeyHash)
+			if err != nil {
+				log.Error("connect to tenant database", "session", sessionID, "err", err)
+				sess.Stderr().Write([]byte("database connection error"))
 				sess.Exit(1)
 				return
 			}
 
-			authenticated, ok := sess.Context().Value(contextKeyAuthenticated).(bool)
-			if !ok {
-				log.Debug("failed to get authenticated context", "session", sessionID)
-				authenticated = false
-			}
-
-			if authenticated {
-				db, err := tenantDB(publicKeyHash, sessionID)
-				if err != nil {
-					log.Error("connect to tenant database", "session", sessionID, "err", err)
-					sess.Stderr().Write([]byte("database connection error"))
-					sess.Exit(1)
-					return
-				}
-
-				tenantStore := stores.NewTenantStore(sess.Context(), db)
-				cmd.AddCommand(
-					setCmd(tenantStore),
-					getCmd(tenantStore),
-					listCmd(tenantStore),
-					removeCmd(tenantStore),
-				)
-			} else {
-				cmd.AddCommand(registerCmd(
-					systemStore,
-					username,
-					email,
-					publicKeyHash,
-				))
-			}
+			tenantStore := stores.NewTenantStore(db)
+			cmd.AddCommand(
+				setCmd(tenantStore),
+				getCmd(tenantStore),
+				listCmd(tenantStore),
+				removeCmd(tenantStore),
+				registerCmd(systemStore),
+			)
+			cmd.AddCommand()
 
 			doneCh := make(chan bool, 1)
 			errCh := make(chan error, 1)
@@ -110,7 +91,7 @@ func NewCmdMiddleware(systemStore *stores.SystemStore) wish.Middleware {
 	}
 }
 
-func rootCmd(sess ssh.Session) *cobra.Command {
+func rootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "syringe",
 		SilenceUsage:  true,
@@ -129,11 +110,21 @@ func setCmd(s *stores.TenantStore) *cobra.Command {
 	return &cobra.Command{
 		Use:  "set",
 		Args: cobra.ExactArgs(2),
+		PreRunE: func(c *cobra.Command, args []string) error {
+			authenticated, ok := c.Context().Value(contextKeyAuthenticated).(bool)
+			if !ok || !authenticated {
+				return fmt.Errorf("not authenticated")
+			}
+			return nil
+		},
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := s.SetItem(&stores.Item{
-				Key:   args[0],
-				Value: args[1],
-			}); err != nil {
+			if err := s.SetItem(
+				c.Context(),
+				&stores.Item{
+					Key:   args[0],
+					Value: args[1],
+				},
+			); err != nil {
 				return err
 			}
 
@@ -146,8 +137,15 @@ func getCmd(s *stores.TenantStore) *cobra.Command {
 	return &cobra.Command{
 		Use:  "get",
 		Args: cobra.ExactArgs(1),
+		PreRunE: func(c *cobra.Command, args []string) error {
+			authenticated, ok := c.Context().Value(contextKeyAuthenticated).(bool)
+			if !ok || !authenticated {
+				return fmt.Errorf("not authenticated")
+			}
+			return nil
+		},
 		RunE: func(c *cobra.Command, args []string) error {
-			item, err := s.GetItemByKey(args[0])
+			item, err := s.GetItemByKey(c.Context(), args[0])
 			if err != nil {
 				return err
 			}
@@ -162,8 +160,15 @@ func listCmd(s *stores.TenantStore) *cobra.Command {
 	return &cobra.Command{
 		Use:  "list",
 		Args: cobra.ExactArgs(0),
+		PreRunE: func(c *cobra.Command, args []string) error {
+			authenticated, ok := c.Context().Value(contextKeyAuthenticated).(bool)
+			if !ok || !authenticated {
+				return fmt.Errorf("not authenticated")
+			}
+			return nil
+		},
 		RunE: func(c *cobra.Command, args []string) error {
-			items, err := s.ListItems()
+			items, err := s.ListItems(c.Context())
 			if err != nil {
 				return err
 			}
@@ -183,8 +188,15 @@ func removeCmd(s *stores.TenantStore) *cobra.Command {
 	return &cobra.Command{
 		Use:  "remove",
 		Args: cobra.ExactArgs(1),
+		PreRunE: func(c *cobra.Command, args []string) error {
+			authenticated, ok := c.Context().Value(contextKeyAuthenticated).(bool)
+			if !ok || !authenticated {
+				return fmt.Errorf("not authenticated")
+			}
+			return nil
+		},
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := s.RemoveItemByKey(args[0]); err != nil {
+			if err := s.RemoveItemByKey(c.Context(), args[0]); err != nil {
 				return err
 			}
 
@@ -193,14 +205,34 @@ func removeCmd(s *stores.TenantStore) *cobra.Command {
 	}
 }
 
-func registerCmd(
-	s *stores.SystemStore,
-	username, email, publicKeyHash string,
-) *cobra.Command {
+func registerCmd(s *stores.SystemStore) *cobra.Command {
 	return &cobra.Command{
 		Use:  "register",
 		Args: cobra.ExactArgs(0),
+		PreRunE: func(c *cobra.Command, args []string) error {
+			authenticated, ok := c.Context().Value(contextKeyAuthenticated).(bool)
+			if ok && authenticated {
+				return fmt.Errorf("already registered")
+			}
+			return nil
+		},
 		RunE: func(c *cobra.Command, args []string) error {
+			username, ok := c.Context().Value(contextKeyUsername).(string)
+			if !ok {
+				return fmt.Errorf("failed to get username")
+			}
+
+			publicKeyHash, ok := c.Context().Value(contextKeyHash).(string)
+			if !ok {
+				return fmt.Errorf("failed to get public key")
+			}
+
+			// TODO: this needs to be passed from client/maybe username should just be email??
+			email := "nixpig@example.org"
+			if _, err := mail.ParseAddress(email); err != nil {
+				return fmt.Errorf("invalid email address")
+			}
+
 			if _, err := s.CreateUser(&stores.User{
 				Username:      username,
 				Email:         email,
@@ -216,7 +248,7 @@ func registerCmd(
 }
 
 // TODO: move this somewhere sensible!
-func tenantDB(publicKeyHash, sessionID string) (*sql.DB, error) {
+func tenantDB(publicKeyHash string) (*sql.DB, error) {
 	tenantDBDir := os.Getenv("SYRINGE_DB_TENANT_DIR")
 	tenantDBName := fmt.Sprintf("%x.db", publicKeyHash)
 	tenantDBPath := filepath.Join(tenantDBDir, tenantDBName)
