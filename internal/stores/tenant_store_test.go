@@ -50,8 +50,7 @@ func TestTenantStore(t *testing.T) {
 			}
 			defer db.Close()
 
-			ctx := context.Background()
-			store := stores.NewTenantStore(ctx, db)
+			store := stores.NewTenantStore(db)
 
 			fn(t, store, mock)
 		})
@@ -70,7 +69,9 @@ func testSetItemInTenantStoreSuccess(
 		sql.Named("value", "bar"),
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
-	err := store.SetItem(&stores.Item{
+	ctx := context.Background()
+
+	err := store.SetItem(ctx, &stores.Item{
 		Key:   "foo",
 		Value: "bar",
 	})
@@ -91,7 +92,9 @@ func testSetItemInTenantStoreDBErr(
 		sql.Named("value", "bar"),
 	).WillReturnError(fmt.Errorf("db_err"))
 
-	err := store.SetItem(&stores.Item{
+	ctx := context.Background()
+
+	err := store.SetItem(ctx, &stores.Item{
 		Key:   "foo",
 		Value: "bar",
 	})
@@ -115,7 +118,9 @@ func testGetItemByKeyFromTenantStoreSuccess(
 			AddRow(1, "foo", "bar"),
 	)
 
-	item, err := store.GetItemByKey("foo")
+	ctx := context.Background()
+
+	item, err := store.GetItemByKey(ctx, "foo")
 
 	require.NoError(t, err)
 	require.Equal(t, &stores.Item{
@@ -142,7 +147,9 @@ func testGetItemByKeyFromTenantStoreNoRows(
 			),
 	)
 
-	item, err := store.GetItemByKey("foo")
+	ctx := context.Background()
+
+	item, err := store.GetItemByKey(ctx, "foo")
 
 	require.ErrorIs(t, err, sql.ErrNoRows)
 	require.Nil(t, item)
@@ -165,7 +172,9 @@ func testGetItemByKeyFromTenantStoreRowErr(
 			).RowError(1, fmt.Errorf("row_error")),
 	)
 
-	item, err := store.GetItemByKey("foo")
+	ctx := context.Background()
+
+	item, err := store.GetItemByKey(ctx, "foo")
 
 	require.Error(t, err)
 	require.Nil(t, item)
@@ -190,7 +199,9 @@ func testListItemsInTenantStoreMultipleItemsSuccess(
 		}...),
 	)
 
-	items, err := store.ListItems()
+	ctx := context.Background()
+
+	items, err := store.ListItems(ctx)
 
 	require.NoError(t, err)
 	require.Equal(t, []stores.Item{
@@ -219,7 +230,9 @@ func testListItemsInTenantStoreMultipleItemsScanErr(
 			0, fmt.Errorf("scan_err"),
 		))
 
-	items, err := store.ListItems()
+	ctx := context.Background()
+
+	items, err := store.ListItems(ctx)
 
 	var emptyItems []stores.Item
 	require.NoError(t, err)
@@ -240,7 +253,9 @@ func testListItemsInTenantStoreSingleItemSuccess(
 			AddRow(1, "foo", "bar"),
 	)
 
-	items, err := store.ListItems()
+	ctx := context.Background()
+
+	items, err := store.ListItems(ctx)
 
 	require.NoError(t, err)
 	require.Equal(t, []stores.Item{
@@ -258,7 +273,9 @@ func testListItemsInTenantStoreNoItems(
 		listItemsQuery,
 	).WillReturnRows(sqlmock.NewRows([]string{"id_", "key_", "value_"}))
 
-	items, err := store.ListItems()
+	ctx := context.Background()
+
+	items, err := store.ListItems(ctx)
 
 	var expect []stores.Item
 
@@ -276,7 +293,9 @@ func testListItemsInTenantStoreDBErr(
 		listItemsQuery,
 	).WillReturnError(fmt.Errorf("db_err"))
 
-	items, err := store.ListItems()
+	ctx := context.Background()
+
+	items, err := store.ListItems(ctx)
 
 	require.Error(t, err)
 	require.Nil(t, items)
@@ -294,7 +313,9 @@ func testRemoveItemByKeyFromTenantStoreSuccess(
 		sql.Named("key", "foo"),
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
-	err := store.RemoveItemByKey("foo")
+	ctx := context.Background()
+
+	err := store.RemoveItemByKey(ctx, "foo")
 
 	require.NoError(t, err)
 	require.NoError(t, mock.ExpectationsWereMet())
@@ -311,7 +332,9 @@ func testRemoveItemByKeyFromTenantStoreDBErr(
 		sql.Named("key", "foo"),
 	).WillReturnError(fmt.Errorf("db_err"))
 
-	err := store.RemoveItemByKey("foo")
+	ctx := context.Background()
+
+	err := store.RemoveItemByKey(ctx, "foo")
 
 	require.Error(t, err)
 	require.NoError(t, mock.ExpectationsWereMet())
